@@ -18,7 +18,6 @@
 
 #define LOG_NDEBUG 0
 
-#include "android_runtime/AndroidRuntime.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_rc_ext.h"
 #include "hardware/bt_vendor_rc.h"
