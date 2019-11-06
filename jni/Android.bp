@@ -31,7 +31,6 @@ cc_library_shared {
     defaults: ["bredr_vs_btadva_cc-default"],
     compile_multilib: "first",
     srcs: [
-        "bluetooth_socket_manager.cc",
         "com_android_bluetooth_btservice_AdapterService.cpp",
         "com_android_bluetooth_btservice_BluetoothKeystore.cpp",
         "com_android_bluetooth_hfp.cpp",
@@ -46,8 +45,6 @@ cc_library_shared {
         "com_android_bluetooth_pan.cpp",
         "com_android_bluetooth_gatt.cpp",
         "com_android_bluetooth_sdp.cpp",
-        "IUserManager.cc",
-        "permission_helpers.cc",
     ],
     header_libs: ["libbluetooth_headers", "libnativehelper_header_only"],
     include_dirs: [
@@ -56,9 +53,7 @@ cc_library_shared {
         "vendor/qcom/opensource/commonsys/system/bt/utils/include",
     ],
     shared_libs: [
-        "libandroid_runtime",
-        "libbinder",
-        "libbluetooth-binder",
+        "libbase",
         "libchrome",
         "libnativehelper",
         "liblog",
