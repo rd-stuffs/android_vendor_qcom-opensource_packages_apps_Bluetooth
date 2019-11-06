@@ -319,8 +319,9 @@ public class AdapterService extends Service {
     private DatabaseManager mDatabaseManager;
     private SilenceDeviceManager mSilenceDeviceManager;
     private AppOpsManager mAppOps;
-    private VendorSocket mVendorSocket;
 
+    private VendorSocket mVendorSocket;
+    private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
     private BluetoothKeystoreService mBluetoothKeystoreService;
     private A2dpService mA2dpService;
     private A2dpSinkService mA2dpSinkService;
@@ -359,7 +360,6 @@ public class AdapterService extends Service {
 
     private volatile boolean mTestModeEnabled = false;
 
-    //_REF*/
     /**
      * Register a {@link ProfileService} with AdapterService.
      *
@@ -682,6 +682,8 @@ public class AdapterService extends Service {
         mSilenceDeviceManager = new SilenceDeviceManager(this, new ServiceFactory(),
                 Looper.getMainLooper());
         mSilenceDeviceManager.start();
+
+        mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
         setAdapterService(this);
 
@@ -1092,6 +1094,11 @@ public class AdapterService extends Service {
 
         if (mProfileServicesState != null) {
             mProfileServicesState.clear();
+        }
+
+        if (mBluetoothSocketManagerBinder != null) {
+            mBluetoothSocketManagerBinder.cleanUp();
+            mBluetoothSocketManagerBinder = null;
         }
 
         if (mBinder != null) {
@@ -2567,7 +2574,8 @@ public class AdapterService extends Service {
             if (service == null) {
                 return null;
             }
-            return service.getSocketManager();
+
+            return IBluetoothSocketManager.Stub.asInterface(service.mBluetoothSocketManagerBinder);
         }
 
         @Override
@@ -4027,14 +4035,14 @@ public class AdapterService extends Service {
 
     }
 
-    IBluetoothSocketManager getSocketManager() {
+    /*IBluetoothSocketManager getSocketManager() {
         android.os.IBinder obj = getSocketManagerNative();
         if (obj == null) {
             return null;
         }
 
         return IBluetoothSocketManager.Stub.asInterface(obj);
-    }
+    }*/
 
     public int getNumOfOffloadedIrkSupported() {
         return mAdapterProperties.getNumOfOffloadedIrkSupported();
@@ -5186,8 +5194,6 @@ public class AdapterService extends Service {
     native boolean getRemoteMasInstancesNative(byte[] address);
 
     private native int readEnergyInfo();
-
-    private native IBinder getSocketManagerNative();
 
     private native void setSystemUiUidNative(int systemUiUid);
 
