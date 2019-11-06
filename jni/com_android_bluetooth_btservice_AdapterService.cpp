@@ -15,8 +15,6 @@
  */
 
 #define LOG_TAG "BluetoothServiceJni"
-#include "android_runtime/AndroidRuntime.h"
-#include "android_runtime/Log.h"
 #include "bluetooth_socket_manager.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_sock.h"
@@ -46,6 +44,7 @@
 #include <mutex>
 
 using android::bluetooth::BluetoothSocketManagerBinderServer;
+#include <pthread.h>
 
 namespace android {
 // Both
@@ -89,7 +88,10 @@ static struct {
 
 static const bt_interface_t *sBluetoothInterface = NULL;
 static const btsock_interface_t *sBluetoothSocketInterface = NULL;
+static JavaVM* vm = NULL;
 static JNIEnv *callbackEnv = NULL;
+static pthread_t sCallbackThread;
+static bool sHaveCallbackThread;
 
 static jobject sJniAdapterServiceObj = NULL;
 static jobject sJniCallbacksObj = NULL;
@@ -103,6 +105,10 @@ std::mutex sSocketManagerMutex;
 const bt_interface_t* getBluetoothInterface() { return sBluetoothInterface; }
 
 JNIEnv* getCallbackEnv() { return callbackEnv; }
+
+bool isCallbackThread() {
+  return sHaveCallbackThread && pthread_equal(sCallbackThread, pthread_self());
+}
 
 static void adapter_state_change_callback(bt_state_t status) {
   CallbackEnv sCallbackEnv(__func__);
@@ -557,7 +563,6 @@ static void generate_local_oob_data_callback(tBT_TRANSPORT transport,
 }
 
 static void callback_thread_event(bt_cb_thread_evt event) {
-  JavaVM* vm = AndroidRuntime::getJavaVM();
   if (event == ASSOCIATE_JVM) {
     JavaVMAttachArgs args;
     char name[] = "BT Service Callback Thread";
@@ -565,13 +570,16 @@ static void callback_thread_event(bt_cb_thread_evt event) {
     args.name = name;
     args.group = NULL;
     vm->AttachCurrentThread(&callbackEnv, &args);
+    sHaveCallbackThread = true;
+    sCallbackThread = pthread_self();
     ALOGV("Callback thread attached: %p", callbackEnv);
   } else if (event == DISASSOCIATE_JVM) {
-    if (callbackEnv != AndroidRuntime::getJNIEnv()) {
+    if (!isCallbackThread()) {
       ALOGE("Callback: '%s' is not called on the correct thread", __func__);
       return;
     }
     vm->DetachCurrentThread();
+    sHaveCallbackThread = false;
   }
 }
 
@@ -638,8 +646,7 @@ static void* sAlarmCallbackData;
 
 class JNIThreadAttacher {
  public:
-  JNIThreadAttacher() : vm_(nullptr), env_(nullptr) {
-    vm_ = AndroidRuntime::getJavaVM();
+  JNIThreadAttacher(JavaVM* vm) : vm_(vm), env_(nullptr) {
     status_ = vm_->GetEnv((void**)&env_, JNI_VERSION_1_6);
 
     if (status_ != JNI_OK && status_ != JNI_EDETACHED) {
@@ -686,7 +693,7 @@ class JNIThreadAttacher {
 #ifdef ENABLE_JAVA_WAKE_LOCKS
 static bool set_wake_alarm_callout(uint64_t delay_millis, bool should_wake,
                                    alarm_cb cb, void* data) {
-  JNIThreadAttacher attacher;
+  JNIThreadAttacher attacher(vm);
   JNIEnv* env = attacher.getEnv();
   jboolean ret = JNI_FALSE;
 
@@ -716,7 +723,7 @@ static bool set_wake_alarm_callout(uint64_t delay_millis, bool should_wake,
 }
 
 static int acquire_wake_lock_callout(const char* lock_name) {
-  JNIThreadAttacher attacher;
+  JNIThreadAttacher attacher(vm);
   JNIEnv* env = attacher.getEnv();
 
   if (env == nullptr) {
@@ -745,7 +752,7 @@ static int acquire_wake_lock_callout(const char* lock_name) {
 }
 
 static int release_wake_lock_callout(const char* lock_name) {
-  JNIThreadAttacher attacher;
+  JNIThreadAttacher attacher(vm);
   JNIEnv* env = attacher.getEnv();
 
   if (env == nullptr) {
@@ -872,6 +879,10 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
       env->GetMethodID(clazz, "releaseWakeLock", "(Ljava/lang/String;)Z");
   method_energyInfo = env->GetMethodID(
       clazz, "energyInfoCallback", "(IIJJJJ[Landroid/bluetooth/UidTraffic;)V");
+
+  if (env->GetJavaVM(&vm) != JNI_OK) {
+    ALOGE("Could not get JavaVM");
+  }
 
   if (hal_util_load_bt_library((bt_interface_t const**)&sBluetoothInterface)) {
     ALOGE("No Bluetooth Library found");

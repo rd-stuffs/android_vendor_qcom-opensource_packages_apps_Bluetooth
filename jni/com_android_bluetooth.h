@@ -28,6 +28,7 @@
 namespace android {
 
 JNIEnv* getCallbackEnv();
+bool isCallbackThread();
 
 class CallbackEnv {
 public:
@@ -44,10 +45,9 @@ public:
     }
 
     bool valid() const {
-      JNIEnv *env = AndroidRuntime::getJNIEnv();
-      if (!mCallbackEnv || (mCallbackEnv != env)) {
-          ALOGE("%s: Callback env fail: env: %p, callback: %p", mName, env, mCallbackEnv);
-          return false;
+      if (!mCallbackEnv || !isCallbackThread()) {
+        ALOGE("%s: Callback env fail", mName);
+        return false;
       }
       return true;
     }
