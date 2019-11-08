@@ -57,7 +57,6 @@ cc_library_shared {
         "libchrome",
         "libnativehelper",
         "liblog",
-        "libutils",
         "libbase",
     ],
     static_libs: [
