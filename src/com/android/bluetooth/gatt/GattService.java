@@ -3202,13 +3202,12 @@ public class GattService extends ProfileService {
             this, attributionSource, "Starting GATT scan.")) {
             return;
         }
-
         enforcePrivilegedPermissionIfNeeded(settings);
         String callingPackage = attributionSource.getPackageName();
         settings = enforceReportDelayFloor(settings);
         enforcePrivilegedPermissionIfNeeded(filters);
         final ScanClient scanClient = new ScanClient(scannerId, settings, filters);
-        scanClient.userHandle = UserHandle.of(UserHandle.getCallingUserId());
+        scanClient.userHandle = Binder.getCallingUserHandle();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
         scanClient.eligibleForSanitizedExposureNotification =
                 callingPackage.equals(mExposureNotificationPackage);
@@ -3255,7 +3254,7 @@ public class GattService extends ProfileService {
 
         mScanManager.addPendingScanToQueue(scanClient);
         mScanManager.startScan(scanClient);
-    }
+	}
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
     void registerPiAndStartScan(PendingIntent pendingIntent, ScanSettings settings,
@@ -3289,7 +3288,7 @@ public class GattService extends ProfileService {
         }
 
         ScannerMap.App app = mScannerMap.add(uuid, null, null, piInfo, this);
-        app.mUserHandle = UserHandle.of(UserHandle.getCallingUserId());
+        app.mUserHandle = UserHandle.getUserHandleForUid(Binder.getCallingUid());
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
         app.mEligibleForSanitizedExposureNotification =
                 callingPackage.equals(mExposureNotificationPackage);

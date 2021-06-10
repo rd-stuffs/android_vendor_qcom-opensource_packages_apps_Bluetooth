@@ -4923,7 +4923,7 @@ public class AdapterService extends Service {
     }
 
     boolean startDiscovery(AttributionSource attributionSource) {
-        UserHandle callingUser = UserHandle.of(UserHandle.getCallingUserId());
+        UserHandle callingUser = Binder.getCallingUserHandle();
         debugLog("startDiscovery");
         String callingPackage = attributionSource.getPackageName();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
