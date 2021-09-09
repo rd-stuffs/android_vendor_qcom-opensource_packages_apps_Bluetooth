@@ -786,7 +786,7 @@ public class AdapterService extends Service {
         mJniCallbacks.init(mBondStateMachine, mRemoteDevices);
 
         try {
-            mBatteryStats.noteResetBleScan();
+            mBatteryStats.noteBleScanReset();
         } catch (RemoteException e) {
             Log.w(TAG, "RemoteException trying to send a reset to BatteryStats");
         }
