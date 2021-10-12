@@ -635,11 +635,14 @@ public class GattService extends ProfileService {
 
         @Override
         public void startScan(int scannerId, ScanSettings settings, List<ScanFilter> filters,
-                List storages, AttributionSource attributionSource) {
+                AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
+            // FIXME: where do we get the storages from?
+            List<List<ResultStorageDescriptor>> storages =
+                new ArrayList<List<ResultStorageDescriptor>>();
             service.startScan(scannerId, settings, filters, storages, attributionSource);
         }
 
