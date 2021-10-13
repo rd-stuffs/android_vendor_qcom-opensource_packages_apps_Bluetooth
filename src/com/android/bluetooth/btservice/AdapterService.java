@@ -1224,10 +1224,6 @@ public class AdapterService extends Service {
             mSdpManager = null;
         }
 
-        if (mBluetoothKeystoreService != null) {
-            mBluetoothKeystoreService.cleanup();
-        }
-
         if (mNativeAvailable) {
             debugLog("cleanup() - Cleaning up adapter native");
             cleanupNative();
@@ -1248,6 +1244,11 @@ public class AdapterService extends Service {
 
         if (mJniCallbacks != null) {
             mJniCallbacks.cleanup();
+        }
+
+        if (mBluetoothKeystoreService != null) {
+            debugLog("cleanup(): mBluetoothKeystoreService.cleanup()");
+            mBluetoothKeystoreService.cleanup();
         }
 
         if (mPhonePolicy != null) {
