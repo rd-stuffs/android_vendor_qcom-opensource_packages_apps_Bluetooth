@@ -283,7 +283,8 @@ static void device_found_callback(int num_properties,
 }
 
 static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
-                                        bt_bond_state_t state) {
+                                        bt_bond_state_t state,
+                                        int fail_reason) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
@@ -302,11 +303,14 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
                                    (jbyte*)bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_bondStateChangeCallback,
-                               (jint)status, addr.get(), (jint)state);
+                               (jint)status, addr.get(), (jint)state,
+                               (jint)fail_reason);
 }
 
 static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
-                                       bt_acl_state_t state, bt_hci_error_code_t hci_reason) {
+                                       bt_acl_state_t state,
+                                       int transport_link_type,
+                                       bt_hci_error_code_t hci_reason) {
   if (!bd_addr) {
     ALOGE("Address is null in %s", __func__);
     return;
@@ -325,7 +329,8 @@ static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
                                    (jbyte*)bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_aclStateChangeCallback,
-                               (jint)status, addr.get(), (jint)state, (jint)hci_reason);
+                               (jint)status, addr.get(), (jint)state,
+                               (jint)transport_link_type, (jint)hci_reason);
 }
 
 static void discovery_state_changed_callback(bt_discovery_state_t state) {
@@ -1478,7 +1483,7 @@ static jboolean setDevicePropertyNative(JNIEnv* env, jobject obj,
 }
 
 static jboolean getRemoteServicesNative(JNIEnv* env, jobject obj,
-                                        jbyteArray address) {
+                                        jbyteArray address, jint transport) {
   ALOGV("%s", __func__);
 
   if (!sBluetoothInterface) return JNI_FALSE;
@@ -1489,7 +1494,8 @@ static jboolean getRemoteServicesNative(JNIEnv* env, jobject obj,
     return JNI_FALSE;
   }
 
-  int ret = sBluetoothInterface->get_remote_services((RawAddress*)addr);
+  int ret = 
+      sBluetoothInterface->get_remote_services((RawAddress*)addr, transport);
   env->ReleaseByteArrayElements(address, addr, 0);
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
