@@ -2197,25 +2197,44 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public boolean connectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
-            AdapterService service = getService();
-            if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
-            }
-            enforceBluetoothPrivilegedPermission(service);
-            return service.connectAllEnabledProfiles(device);
+        public List<BluetoothDevice> getActiveDevices(int profile,
+                AttributionSource source) {
+            // FIXME: Add implementation
+            return new ArrayList<>();
         }
 
         @Override
-        public boolean disconnectAllEnabledProfiles(BluetoothDevice device,
-                AttributionSource source) {
+        public int connectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
             AdapterService service = getService();
-            if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+
+            if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
+                Log.w(TAG, "connectAllEnabledProfiles() - Not allowed for non-active user");
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+
+            if (!service.connectAllEnabledProfiles(device)) {
+                return BluetoothStatusCodes.ERROR_UNKNOWN;
+            }
+            return BluetoothStatusCodes.SUCCESS;
+        }
+
+        @Override
+        public int disconnectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+
+            if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                Log.w(TAG, "connectAllEnabledProfiles() - Not allowed for non-active user");
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -2329,18 +2348,22 @@ public class AdapterService extends Service {
 
         @Override
         public boolean fetchRemoteUuids(BluetoothDevice device) {
-            return fetchRemoteUuidsWithAttribution(device, Utils.getCallingAttributionSource());
+            return fetchRemoteUuidsWithAttribution(device, BluetoothDevice.TRANSPORT_AUTO, Utils.getCallingAttributionSource());
         }
 
         @Override
         public boolean fetchRemoteUuidsWithAttribution(
-                BluetoothDevice device, AttributionSource attributionSource) {
+                BluetoothDevice device, int transport, AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(service, TAG, "fetchRemoteUuids")
                     || !Utils.checkConnectPermissionForDataDelivery(
                             service, attributionSource, "AdapterService fetchRemoteUuids")) {
                 return false;
+            }
+
+            if (transport != BluetoothDevice.TRANSPORT_AUTO) {
+                enforceBluetoothPrivilegedPermission(service);
             }
 
             service.fetchRemoteUuids(device);
@@ -3597,14 +3620,14 @@ public class AdapterService extends Service {
      * @return true if all profiles successfully disconnected, false if an error occurred
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
-    public boolean disconnectAllEnabledProfiles(BluetoothDevice device) {
+    public int disconnectAllEnabledProfiles(BluetoothDevice device) {
         CallAudioIntf mCallAudio = CallAudioIntf.get();
         MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
         boolean disconnectMedia = false;
 
         if (!profileServicesRunning()) {
             Log.e(TAG, "disconnectAllEnabledProfiles: Not all profile services bound");
-            return false;
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
         boolean isLeAudioEnabled = ApmConstIntf.getLeAudioEnabled();
         if(isLeAudioEnabled) {
@@ -3707,7 +3730,7 @@ public class AdapterService extends Service {
         }
         //_REF*/
 
-        return true;
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     /**
