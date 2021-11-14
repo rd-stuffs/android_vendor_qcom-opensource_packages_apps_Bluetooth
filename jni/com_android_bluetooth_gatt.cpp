@@ -2095,7 +2095,7 @@ static PeriodicAdvertisingParameters parsePeriodicParams(JNIEnv* env,
   methodId = env->GetMethodID(clazz, "getInterval", "()I");
   uint16_t interval = env->CallIntMethod(i, methodId);
 
-  p.enable = true;
+  p.enable = 0x03; // Set bit0 (enable) and bit1 (ADI)
   p.min_interval = interval;
   p.max_interval = interval + 16; /* 20ms difference betwen min and max */
   uint16_t props = 0;
