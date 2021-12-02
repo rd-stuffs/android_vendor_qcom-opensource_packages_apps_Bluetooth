@@ -34,6 +34,8 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioPlaybackConfiguration;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
@@ -542,7 +544,11 @@ public final class Avrcp {
                                 "MSG_NATIVE_REQ_GET_RC_FEATURES: address=" + address + ", features="
                                         + msg.arg1 + ", mFeatures=" + mFeatures);
                     }
-                    mAudioManager.avrcpSupportsAbsoluteVolume(address, isAbsoluteVolumeSupported());
+                    mAudioManager.setDeviceVolumeBehavior(new AudioDeviceAttributes(
+                                AudioDeviceAttributes.ROLE_OUTPUT, AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                                address), isAbsoluteVolumeSupported() ?
+                                AudioManager.DEVICE_VOLUME_BEHAVIOR_ABSOLUTE
+                            : AudioManager.DEVICE_VOLUME_BEHAVIOR_VARIABLE);
                     mLastLocalVolume = -1;
                     mRemoteVolume = -1;
                     mLocalVolume = -1;
@@ -1680,7 +1686,11 @@ public final class Avrcp {
 
     private void blackListCurrentDevice(String reason) {
         mFeatures &= ~BTRC_FEAT_ABSOLUTE_VOLUME;
-        mAudioManager.avrcpSupportsAbsoluteVolume(mAddress, isAbsoluteVolumeSupported());
+        mAudioManager.setDeviceVolumeBehavior(new AudioDeviceAttributes(
+                    AudioDeviceAttributes.ROLE_OUTPUT, AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                    mAddress), isAbsoluteVolumeSupported() ?
+                    AudioManager.DEVICE_VOLUME_BEHAVIOR_ABSOLUTE
+                : AudioManager.DEVICE_VOLUME_BEHAVIOR_VARIABLE);
 
         SharedPreferences pref =
                 mContext.getSharedPreferences(ABSOLUTE_VOLUME_BLACKLIST, Context.MODE_PRIVATE);
