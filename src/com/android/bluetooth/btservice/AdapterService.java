@@ -2795,6 +2795,16 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public int isCisCentralSupported() {
+            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+        }
+
+        @Override
+        public int isLePeriodicAdvertisingSyncTransferSenderSupported() {
+            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+        }
+
+        @Override
         public int getLeMaximumAdvertisingDataLength() {
             AdapterService service = getService();
             if (service == null) {

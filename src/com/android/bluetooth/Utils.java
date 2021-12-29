@@ -43,7 +43,7 @@ import android.app.AppOpsManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.companion.Association;
+import android.companion.AssociationInfo;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -327,7 +327,7 @@ public final class Utils {
                     + " is inaccurate for calling uid " + callingUid);
         }
 
-        for (Association association : cdm.getAllAssociations()) {
+        for (AssociationInfo association : cdm.getAllAssociations()) {
             if (association.getPackageName().equals(callingPackage)
                     && association.getDeviceMacAddress().equals(device.getAddress())) {
                 return true;
