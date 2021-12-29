@@ -58,6 +58,7 @@ android_app {
         "androidx.core_core",
         "androidx.lifecycle_lifecycle-livedata",
         "androidx.room_room-runtime",
+        "modules-utils-bytesmatcher",
     ],
 
     plugins: [

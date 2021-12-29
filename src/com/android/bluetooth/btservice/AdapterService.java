@@ -106,7 +106,6 @@ import android.os.AsyncTask;
 import android.os.BatteryStats;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.BytesMatcher;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -166,6 +165,7 @@ import com.android.internal.os.BackgroundThread;
 import com.android.internal.os.BinderCallsStats;
 import com.android.internal.util.ArrayUtils;
 import android.media.MediaMetadata;
+import com.android.modules.utils.BytesMatcher;
 
 import java.lang.reflect.*;
 
