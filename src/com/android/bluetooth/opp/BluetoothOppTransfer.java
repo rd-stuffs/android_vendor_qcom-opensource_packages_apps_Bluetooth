@@ -81,6 +81,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
     private static final String SOCKET_LINK_KEY_ERROR = "Invalid exchange";
 
+    private static final Object INSTANCE_LOCK = new Object();
+
     private Context mContext;
 
     private BluetoothAdapter mAdapter;
@@ -161,8 +163,10 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                         markConnectionFailed(null);
                         return;
                     }
-                    mConnectThread =
-                            new SocketConnectThread(mDevice, false, true, record.getL2capPsm());
+                    synchronized (INSTANCE_LOCK) {
+                        mConnectThread =
+                                new SocketConnectThread(mDevice, false, true, record.getL2capPsm());
+                    }
                     mConnectThread.start();
                     mDevice = null;
                 }
@@ -205,9 +209,11 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
             Log.i(TAG, " handleMessage :" + msg.what);
             switch (msg.what) {
                 case SOCKET_ERROR_RETRY:
-                    mConnectThread = new SocketConnectThread((BluetoothDevice) msg.obj, true);
-
-                    mConnectThread.start();
+                    BluetoothDevice device = (BluetoothDevice) msg.obj;
+                    synchronized (INSTANCE_LOCK) {
+                        mConnectThread = new SocketConnectThread(device, true);
+                        mConnectThread.start();
+                    }
                     break;
                 case TRANSPORT_ERROR:
                     /*
@@ -217,7 +223,9 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     if (V) {
                         Log.v(TAG, "receive TRANSPORT_ERROR msg");
                     }
-
+                    synchronized (INSTANCE_LOCK) {
+                        mConnectThread = null;
+                    }
                     markBatchFailed(BluetoothShare.STATUS_CONNECTION_ERROR);
                     mBatch.mStatus = Constants.BATCH_STATUS_FAILED;
 
@@ -230,7 +238,9 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     if (V) {
                         Log.v(TAG, "Transfer receive TRANSPORT_CONNECTED msg");
                     }
-
+                    synchronized (INSTANCE_LOCK) {
+                        mConnectThread = null;
+                    }
                     mTransport = (ObexTransport) msg.obj;
                     startObexSession();
 
@@ -513,7 +523,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         }
 
         cleanUp();
-        synchronized (this) {
+        synchronized (INSTANCE_LOCK) {
             if (mConnectThread != null) {
                 try {
                     mConnectThread.interrupt();
