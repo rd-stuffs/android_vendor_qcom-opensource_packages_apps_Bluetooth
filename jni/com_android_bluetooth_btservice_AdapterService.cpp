@@ -622,14 +622,15 @@ static void link_quality_report_callback(
 }
 
 static bt_callbacks_t sBluetoothCallbacks = {
-    sizeof(sBluetoothCallbacks),  adapter_state_change_callback,
-    adapter_properties_callback,  remote_device_properties_callback,
-    device_found_callback,        discovery_state_changed_callback,
-    pin_request_callback,         ssp_request_callback,
-    bond_state_changed_callback,  acl_state_changed_callback,
-    callback_thread_event,        dut_mode_recv_callback,
-    le_test_mode_recv_callback,   energy_info_recv_callback,
-    link_quality_report_callback, generate_local_oob_data_callback};
+    sizeof(sBluetoothCallbacks), adapter_state_change_callback,
+    adapter_properties_callback, remote_device_properties_callback,
+    device_found_callback,       discovery_state_changed_callback,
+    pin_request_callback,        ssp_request_callback,
+    bond_state_changed_callback, NULL,
+    acl_state_changed_callback,  callback_thread_event,
+    dut_mode_recv_callback,      le_test_mode_recv_callback,
+    energy_info_recv_callback,   link_quality_report_callback,
+    generate_local_oob_data_callback};
 
 // The callback to call when the wake alarm fires.
 static alarm_cb sAlarmCallback;
