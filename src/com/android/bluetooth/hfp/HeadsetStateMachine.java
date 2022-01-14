@@ -3048,7 +3048,6 @@ public class HeadsetStateMachine extends StateMachine {
         }
         if (mAgIndicatorEnableState != null && mAgIndicatorEnableState.signal) {
             events |= PhoneStateListener.LISTEN_SIGNAL_STRENGTHS;
-            events |= PhoneStateListener.LISTEN_ALWAYS_REPORTED_SIGNAL_STRENGTH;
         }
         mSystemInterface.getHeadsetPhoneState().listenForPhoneState(mDevice, events);
     }

@@ -34,6 +34,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
@@ -786,7 +787,7 @@ public class GattService extends ProfileService {
                 int authReq, byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
-                return BluetoothGatt.GATT_WRITE_REQUEST_FAIL;
+                return BluetoothStatusCodes.ERROR_UNKNOWN;
             }
             return service.writeCharacteristic(clientIf, address, handle, writeType, authReq, value,
                     attributionSource);
@@ -803,13 +804,13 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void writeDescriptor(int clientIf, String address, int handle, int authReq,
+        public int writeDescriptor(int clientIf, String address, int handle, int authReq,
                 byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
-                return;
+                return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
             }
-            service.writeDescriptor(clientIf, address, handle, authReq, value, attributionSource);
+            return service.writeDescriptor(clientIf, address, handle, authReq, value, attributionSource);
         }
 
         @Override
@@ -1849,7 +1850,7 @@ public class GattService extends ProfileService {
         }
     }
 
-    void onWriteCharacteristic(int connId, int status, int handle) throws RemoteException {
+    void onWriteCharacteristic(int connId, int status, int handle, byte[] data) throws RemoteException {
         String address = mClientMap.addressByConnId(connId);
         synchronized (mPermits) {
             Log.d(TAG, "onWriteCharacteristic() - increasing permit for address="
@@ -1867,12 +1868,15 @@ public class GattService extends ProfileService {
         }
 
         if (!app.isCongested) {
-            app.callback.onCharacteristicWrite(address, status, handle);
+            app.callback.onCharacteristicWrite(address, status, handle, data);
         } else {
             if (status == BluetoothGatt.GATT_CONNECTION_CONGESTED) {
                 status = BluetoothGatt.GATT_SUCCESS;
             }
-            CallbackInfo callbackInfo = new CallbackInfo(address, status, handle);
+            CallbackInfo callbackInfo = new CallbackInfo.Builder(address, status)
+                    .setHandle(handle)
+                    .setValue(data)
+                    .build();
             app.queueCallback(callbackInfo);
         }
     }
@@ -1904,7 +1908,7 @@ public class GattService extends ProfileService {
         }
     }
 
-    void onWriteDescriptor(int connId, int status, int handle) throws RemoteException {
+    void onWriteDescriptor(int connId, int status, int handle, byte[] data) throws RemoteException {
         String address = mClientMap.addressByConnId(connId);
 
         if (VDBG) {
@@ -1913,7 +1917,7 @@ public class GattService extends ProfileService {
 
         ClientMap.App app = mClientMap.getByConnId(connId);
         if (app != null) {
-            app.callback.onDescriptorWrite(address, status, handle);
+            app.callback.onDescriptorWrite(address, status, handle, data);
         }
     }
 
@@ -2337,7 +2341,7 @@ public class GattService extends ProfileService {
                     return;
                 }
                 app.callback.onCharacteristicWrite(callbackInfo.address, callbackInfo.status,
-                        callbackInfo.handle);
+                        callbackInfo.handle, callbackInfo.value);
             }
         }
     }
@@ -3144,7 +3148,7 @@ public class GattService extends ProfileService {
             byte[] value, AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService writeCharacteristic")) {
-            return BluetoothGatt.GATT_WRITE_REQUEST_FAIL;
+            return BluetoothStatusCodes.ERROR_UNKNOWN;
         }
 
         if (VDBG) {
@@ -3158,12 +3162,12 @@ public class GattService extends ProfileService {
         Integer connId = mClientMap.connIdByAddress(clientIf, address);
         if (connId == null) {
             Log.e(TAG, "writeCharacteristic() - No connection for " + address + "...");
-            return BluetoothGatt.GATT_WRITE_REQUEST_FAIL;
+            return BluetoothStatusCodes.ERROR_UNKNOWN;
         }
 
         if (!permissionCheck(connId, handle)) {
             Log.w(TAG, "writeCharacteristic() - permission check failed!");
-            return BluetoothGatt.GATT_WRITE_REQUEST_FAIL;
+            return BluetoothStatusCodes.ERROR_UNKNOWN;
         }
 
         Log.d(TAG, "writeCharacteristic() - trying to acquire permit.");
@@ -3172,19 +3176,19 @@ public class GattService extends ProfileService {
             AtomicBoolean atomicBoolean = mPermits.get(address);
             if (atomicBoolean == null) {
                 Log.d(TAG, "writeCharacteristic() -  atomicBoolean uninitialized!");
-                return BluetoothGatt.GATT_WRITE_REQUEST_FAIL;
+                return BluetoothStatusCodes.ERROR_UNKNOWN;
             }
 
             boolean success = atomicBoolean.get();
             if (!success) {
                  Log.d(TAG, "writeCharacteristic() - no permit available.");
-                 return BluetoothGatt.GATT_WRITE_REQUEST_BUSY;
+                 return BluetoothStatusCodes.ERROR_GATT_WRITE_REQUEST_BUSY;
             }
             atomicBoolean.set(false);
         }
 
         gattClientWriteCharacteristicNative(connId, handle, writeType, authReq, value);
-        return BluetoothGatt.GATT_WRITE_REQUEST_SUCCESS;
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -3214,11 +3218,11 @@ public class GattService extends ProfileService {
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    void writeDescriptor(int clientIf, String address, int handle, int authReq, byte[] value,
+    int writeDescriptor(int clientIf, String address, int handle, int authReq, byte[] value,
             AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService writeDescriptor")) {
-            return;
+            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
         if (VDBG) {
             Log.d(TAG, "writeDescriptor() - address=" + address);
@@ -3227,15 +3231,16 @@ public class GattService extends ProfileService {
         Integer connId = mClientMap.connIdByAddress(clientIf, address);
         if (connId == null) {
             Log.e(TAG, "writeDescriptor() - No connection for " + address + "...");
-            return;
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
         }
 
         if (!permissionCheck(connId, handle)) {
             Log.w(TAG, "writeDescriptor() - permission check failed!");
-            return;
+            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_PRIVILEGED_PERMISSION;
         }
 
         gattClientWriteDescriptorNative(connId, handle, authReq, value);
+        return BluetoothStatusCodes.SUCCESS;
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -3647,7 +3652,7 @@ public class GattService extends ProfileService {
             if (status == BluetoothGatt.GATT_CONNECTION_CONGESTED) {
                 status = BluetoothGatt.GATT_SUCCESS;
             }
-            app.queueCallback(new CallbackInfo(address, status));
+            app.queueCallback(new CallbackInfo.Builder(address, status).build());
         }
     }
 
