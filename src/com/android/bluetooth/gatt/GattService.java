@@ -50,6 +50,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.companion.AssociationInfo;
 import android.companion.ICompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -991,13 +992,14 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void sendNotification(int serverIf, String address, int handle, boolean confirm,
+        public int sendNotification(int serverIf, String address, int handle, boolean confirm,
                 byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
-                return;
+                return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
             }
             service.sendNotification(serverIf, address, handle, confirm, value, attributionSource);
+            return BluetoothStatusCodes.SUCCESS;
         }
 
         @Override
@@ -2444,10 +2446,15 @@ public class GattService extends ProfileService {
         if (mCompanionManager == null) {
             return new ArrayList<String>();
         }
-        long identity = Binder.clearCallingIdentity();
+
+        List<String> macAddresses = new ArrayList();
+
+        final long identity = Binder.clearCallingIdentity();
         try {
-            return mCompanionManager.getAssociations(
-                    callingPackage, userHandle.getIdentifier());
+            for (AssociationInfo info : mCompanionManager.getAssociations(
+                    callingPackage, userHandle.getIdentifier())) {
+                macAddresses.add(info.getDeviceMacAddress().toString());
+            }
         } catch (SecurityException se) {
             // Not an app with associated devices
         } catch (RemoteException re) {
@@ -2457,7 +2464,7 @@ public class GattService extends ProfileService {
         } finally {
             Binder.restoreCallingIdentity(identity);
         }
-        return new ArrayList<String>();
+        return macAddresses;
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
