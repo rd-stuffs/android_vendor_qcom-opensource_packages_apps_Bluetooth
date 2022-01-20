@@ -34,6 +34,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.media.AudioSystem;
 import android.os.HandlerThread;
 import android.util.Log;
 
@@ -260,7 +261,9 @@ public class A2dpService extends ProfileService {
         synchronized (mAudioManagerLock) {
             // Step 6: Initialize native interface
             List<BluetoothCodecConfig> mCodecConfigOffload;
-            mCodecConfigOffload = mAudioManager.getHwOffloadEncodingFormatsSupportedForA2DP();
+            mCodecConfigOffload = (List<BluetoothCodecConfig>)
+              mAudioManager.getHwOffloadFormatsSupportedForBluetoothMedia(
+                AudioSystem.DEVICE_OUT_BLUETOOTH_A2DP);
             OffloadCodecConfig  = new BluetoothCodecConfig[mCodecConfigOffload.size()];
             OffloadCodecConfig  = mCodecConfigOffload.toArray(OffloadCodecConfig);
         }
