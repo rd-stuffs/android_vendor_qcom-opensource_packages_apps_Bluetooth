@@ -29,6 +29,8 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import java.util.Arrays;
+
 import com.android.bluetooth.R;
 
 import org.junit.After;
@@ -699,8 +701,8 @@ public class A2dpCodecConfigTest {
                 };
             }
             BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                                        sCodecCapabilities,
-                                                                        optionalCodecsArray);
+                                                                        Arrays.asList(sCodecCapabilities),
+                                                                        Arrays.asList(optionalCodecsArray));
             mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                       codecStatus,
                                                       newCodecConfigsArray[0]);
@@ -724,7 +726,9 @@ public class A2dpCodecConfigTest {
 
         // 2. mandatory + old + new codecs only
         BluetoothCodecStatus codecStatus =
-                new BluetoothCodecStatus(oldCodecConfig, sCodecCapabilities, minimumCodecsArray);
+                new BluetoothCodecStatus(oldCodecConfig,
+                                         Arrays.asList(sCodecCapabilities),
+                                         Arrays.asList(minimumCodecsArray));
         mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                   codecStatus,
                                                   newCodecConfigsArray[0]);
@@ -733,8 +737,8 @@ public class A2dpCodecConfigTest {
 
         // 3. all codecs were selectable
         codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                               sCodecCapabilities,
-                                               sCodecCapabilities);
+                                               Arrays.asList(sCodecCapabilities),
+                                               Arrays.asList(sCodecCapabilities));
         mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                   codecStatus,
                                                   newCodecConfigsArray[0]);
@@ -763,8 +767,8 @@ public class A2dpCodecConfigTest {
                                          newCodecSpecific, 0, 0, 0)       // Codec-specific fields
         };
         BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                                    sCodecCapabilities,
-                                                                    sCodecCapabilities);
+                                                                    Arrays.asList(sCodecCapabilities),
+                                                                    Arrays.asList(sCodecCapabilities));
         mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                   codecStatus,
                                                   newCodecConfigsArray[0]);
@@ -792,8 +796,8 @@ public class A2dpCodecConfigTest {
                 BluetoothCodecConfig[] poorCodecsArray = new BluetoothCodecConfig[]
                         {getCodecCapabilitiesByType(oldCodecType)};
                 BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                                            sCodecCapabilities,
-                                                                            poorCodecsArray);
+                                                                            Arrays.asList(sCodecCapabilities),
+                                                                            Arrays.asList(poorCodecsArray));
                 mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                           codecStatus,
                                                           newCodecConfigsArray[0]);
@@ -813,8 +817,8 @@ public class A2dpCodecConfigTest {
                         getCodecCapabilitiesByType(newCodecType)
                 };
                 BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                                            sCodecCapabilities,
-                                                                            poorCodecsArray);
+                                                                            Arrays.asList(sCodecCapabilities),
+                                                                            Arrays.asList(poorCodecsArray));
                 mA2dpCodecConfig.setCodecConfigPreference(
                         mTestDevice, codecStatus, newCodecConfigsArray[0]);
                 verify(mA2dpNativeInterface, times(0))
@@ -826,8 +830,8 @@ public class A2dpCodecConfigTest {
                         getCodecCapabilitiesByType(oldCodecType)
                 };
                 codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                       sCodecCapabilities,
-                                                       poorCodecsArray);
+                                                       Arrays.asList(sCodecCapabilities),
+                                                       Arrays.asList(poorCodecsArray));
                 mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                           codecStatus,
                                                           newCodecConfigsArray[0]);
@@ -857,7 +861,9 @@ public class A2dpCodecConfigTest {
             BluetoothCodecConfig[] poorCodecsArray = new BluetoothCodecConfig[]
                     {getCodecCapabilitiesByType(oldCodecType)};
             BluetoothCodecStatus codecStatus =
-                    new BluetoothCodecStatus(oldCodecConfig, sCodecCapabilities, poorCodecsArray);
+                    new BluetoothCodecStatus(oldCodecConfig,
+                                             Arrays.asList(sCodecCapabilities),
+                                             Arrays.asList(poorCodecsArray));
             mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                       codecStatus,
                                                       newCodecConfigsArray[0]);
@@ -880,7 +886,9 @@ public class A2dpCodecConfigTest {
         // 3. mandatory + old + new codecs only
         int invokedCounter = (isMinimumCodecsArraySelectable ? 1 : 0);
         BluetoothCodecStatus codecStatus =
-                new BluetoothCodecStatus(oldCodecConfig, sCodecCapabilities, minimumCodecsArray);
+                new BluetoothCodecStatus(oldCodecConfig,
+                                         Arrays.asList(sCodecCapabilities),
+                                         Arrays.asList(minimumCodecsArray));
         mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                   codecStatus,
                                                   newCodecConfigsArray[0]);
@@ -890,8 +898,8 @@ public class A2dpCodecConfigTest {
         // 4. all codecs were selectable
         invokedCounter += (shouldApplyWhenAllSelectable ? 1 : 0);
         codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                               sCodecCapabilities,
-                                               sCodecCapabilities);
+                                               Arrays.asList(sCodecCapabilities),
+                                               Arrays.asList(sCodecCapabilities));
         mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
                                                   codecStatus,
                                                   newCodecConfigsArray[0]);

@@ -66,6 +66,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1483,7 +1484,7 @@ public class A2dpService extends ProfileService {
                         BluetoothCodecConfig.CHANNEL_MODE_STEREO,
                         0, 0, 0, 0);
         BluetoothCodecConfig[] mBACodecConfig = {mNewCodecConfig};
-        return (new BluetoothCodecStatus(mNewCodecConfig, mBACodecConfig, mBACodecConfig));
+        return (new BluetoothCodecStatus(mNewCodecConfig, Arrays.asList(mBACodecConfig), Arrays.asList(mBACodecConfig)));
     }
 
     /**
@@ -1905,7 +1906,7 @@ public class A2dpService extends ProfileService {
                     codecConfig.getBitsPerSample(), codecConfig.getChannelMode(),
                     codecConfig.getCodecSpecific1(), codecConfig.getCodecSpecific2(),
                     codecConfig.getCodecSpecific3(), codecConfig.getCodecSpecific4(), 0);
-                BluetoothCodecConfig[] codecCapabilities = codecStatus.getCodecsSelectableCapabilities();
+                List<BluetoothCodecConfig> codecCapabilities = codecStatus.getCodecsSelectableCapabilities();
                 for (BluetoothCodecConfig codecCapability : codecCapabilities) {
                     BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_A2DP_CODEC_CAPABILITY_CHANGED,
                         mAdapterService.obfuscateAddress(device), codecCapability.getCodecType(),

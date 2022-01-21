@@ -2798,7 +2798,7 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public int isCisCentralSupported() {
+        public int isLeAudioSupported() {
             return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
         }
 

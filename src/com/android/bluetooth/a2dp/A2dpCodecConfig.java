@@ -28,6 +28,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.btservice.AdapterService;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 /*
  * A2DP Codec Configuration setup.
@@ -64,8 +65,8 @@ class A2dpCodecConfig {
         Objects.requireNonNull(codecStatus);
 
         // Check whether the codecConfig is selectable for this Bluetooth device.
-        BluetoothCodecConfig[] selectableCodecs = codecStatus.getCodecsSelectableCapabilities();
-        if (!Arrays.asList(selectableCodecs).stream().anyMatch(codec ->
+        List<BluetoothCodecConfig> selectableCodecs = codecStatus.getCodecsSelectableCapabilities();
+        if (!selectableCodecs.stream().anyMatch(codec ->
                 codec.isMandatoryCodec())) {
             // Do not set codec preference to native if the selectableCodecs not contain mandatory
             // codec. The reason could be remote codec negotiation is not completed yet.
@@ -142,7 +143,7 @@ class A2dpCodecConfig {
 
     // Get the codec type of the highest priority of selectableCodecs and codecConfig.
     private int getPrioitizedCodecType(BluetoothCodecConfig codecConfig,
-            BluetoothCodecConfig[] selectableCodecs) {
+            List<BluetoothCodecConfig> selectableCodecs) {
         BluetoothCodecConfig prioritizedCodecConfig = codecConfig;
         for (BluetoothCodecConfig config : selectableCodecs) {
             if (prioritizedCodecConfig == null) {
@@ -341,4 +342,3 @@ class A2dpCodecConfig {
         return codecConfigArray;
     }
 }
-

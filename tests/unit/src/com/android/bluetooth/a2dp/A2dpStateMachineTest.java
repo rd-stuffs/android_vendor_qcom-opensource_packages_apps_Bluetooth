@@ -32,6 +32,8 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import java.util.Arrays;
+
 import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -318,11 +320,14 @@ public class A2dpStateMachineTest {
         codecsSelectableSbcAac[1] = mCodecConfigAac;
 
         BluetoothCodecStatus codecStatusSbcAndSbc = new BluetoothCodecStatus(mCodecConfigSbc,
-                codecsSelectableSbcAac, codecsSelectableSbc);
+                Arrays.asList(codecsSelectableSbcAac),
+                Arrays.asList(codecsSelectableSbc));
         BluetoothCodecStatus codecStatusSbcAndSbcAac = new BluetoothCodecStatus(mCodecConfigSbc,
-                codecsSelectableSbcAac, codecsSelectableSbcAac);
+                Arrays.asList(codecsSelectableSbcAac),
+                Arrays.asList(codecsSelectableSbcAac));
         BluetoothCodecStatus codecStatusAacAndSbcAac = new BluetoothCodecStatus(mCodecConfigAac,
-                codecsSelectableSbcAac, codecsSelectableSbcAac);
+                Arrays.asList(codecsSelectableSbcAac),
+                Arrays.asList(codecsSelectableSbcAac));
 
         // Set default codec status when device disconnected
         // Selected codec = SBC, selectable codec = SBC
