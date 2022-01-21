@@ -1027,7 +1027,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
   method_onReadCharacteristic =
       env->GetMethodID(clazz, "onReadCharacteristic", "(III[B)V");
   method_onWriteCharacteristic =
-      env->GetMethodID(clazz, "onWriteCharacteristic", "(III)V");
+      env->GetMethodID(clazz, "onWriteCharacteristic", "(III[B)V");
   method_onExecuteCompleted =
       env->GetMethodID(clazz, "onExecuteCompleted", "(II)V");
   method_onSearchCompleted =
@@ -1035,7 +1035,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
   method_onReadDescriptor =
       env->GetMethodID(clazz, "onReadDescriptor", "(III[B)V");
   method_onWriteDescriptor =
-      env->GetMethodID(clazz, "onWriteDescriptor", "(III)V");
+      env->GetMethodID(clazz, "onWriteDescriptor", "(III[B)V");
   method_onNotify =
       env->GetMethodID(clazz, "onNotify", "(ILjava/lang/String;IZ[B)V");
   method_onRegisterForNotifications =
