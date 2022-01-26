@@ -334,17 +334,17 @@ public class Config {
     protected static boolean isLC3CodecSupported(Context ctx) {
       boolean isLC3Supported = false;
       AudioManager mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-      List<BluetoothCodecConfig> mmSupportedCodecs = (List<BluetoothCodecConfig>)
-              mAudioManager.getHwOffloadFormatsSupportedForBluetoothMedia(
-                AudioSystem.DEVICE_OUT_BLUETOOTH_A2DP);
+    //   List<BluetoothCodecConfig> mmSupportedCodecs = (List<BluetoothCodecConfig>)
+    //           mAudioManager.getHwOffloadFormatsSupportedForBluetoothMedia(
+    //             AudioSystem.DEVICE_OUT_BLUETOOTH_A2DP);
 
-      for (BluetoothCodecConfig codecConfig: mmSupportedCodecs) {
-          if (codecConfig.getCodecType() == BluetoothCodecConfig.SOURCE_CODEC_TYPE_LC3) {
-              isLC3Supported = true;
-              Log.d(TAG, " LC3 codec supported : " + codecConfig);
-              break;
-          }
-      }
+    //   for (BluetoothCodecConfig codecConfig: mmSupportedCodecs) {
+    //       if (codecConfig.getCodecType() == BluetoothCodecConfig.SOURCE_CODEC_TYPE_LC3) {
+    //           isLC3Supported = true;
+    //           Log.d(TAG, " LC3 codec supported : " + codecConfig);
+    //           break;
+    //       }
+    //   }
 
       return isLC3Supported;
     }

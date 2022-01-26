@@ -32,6 +32,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -231,48 +232,69 @@ public class AvrcpControllerService extends ProfileService {
         }
 
         @Override
-        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+        public void getConnectedDevices(AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                AvrcpControllerService service = getService(source);
+                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
+                if (service != null) {
+                    defaultValue = service.getConnectedDevices();
+                }
+                receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.getConnectedDevices();
         }
 
         @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states, AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return new ArrayList<BluetoothDevice>(0);
+        public void getDevicesMatchingConnectionStates(int[] states,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                AvrcpControllerService service = getService(source);
+                List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>(0);
+                if (service != null) {
+                    defaultValue = service.getDevicesMatchingConnectionStates(states);
+                }
+                receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
+        public void getConnectionState(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                AvrcpControllerService service = getService(source);
+                int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
+                if (service != null) {
+                    defaultValue = service.getConnectionState(device);
+                }
+                receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.getConnectionState(device);
         }
 
         @Override
-        public void sendGroupNavigationCmd(BluetoothDevice device, int keyCode, int keyState, AttributionSource source) {
+        public void sendGroupNavigationCmd(BluetoothDevice device, int keyCode, int keyState,
+                AttributionSource source, SynchronousResultReceiver receiver) {
             Log.w(TAG, "sendGroupNavigationCmd not implemented");
             return;
         }
 
         @Override
-        public boolean setPlayerApplicationSetting(BluetoothAvrcpPlayerSettings settings, AttributionSource source) {
+        public void setPlayerApplicationSetting(BluetoothAvrcpPlayerSettings settings,
+                AttributionSource source, SynchronousResultReceiver receiver) {
             Log.w(TAG, "setPlayerApplicationSetting not implemented");
-            return false;
+            return;
         }
 
         @Override
-        public BluetoothAvrcpPlayerSettings getPlayerSettings(BluetoothDevice device, AttributionSource source) {
+        public void getPlayerSettings(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
             Log.w(TAG, "getPlayerSettings not implemented");
-            return null;
+            return;
         }
     }
 

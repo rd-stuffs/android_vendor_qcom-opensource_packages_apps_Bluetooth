@@ -410,6 +410,16 @@ public final class Utils {
         }
     }
 
+    public static AttributionSource getCallingAttributionSource(Context context) {
+        int callingUid = Binder.getCallingUid();
+        if (callingUid == android.os.Process.ROOT_UID) {
+            callingUid = android.os.Process.SYSTEM_UID;
+        }
+        return new AttributionSource.Builder(callingUid)
+            .setPackageName(context.getPackageManager().getPackagesForUid(callingUid)[0])
+            .build();
+    }
+
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private static boolean checkPermissionForPreflight(Context context, String permission) {
         final int result = PermissionChecker.checkCallingOrSelfPermissionForPreflight(

@@ -15,6 +15,8 @@
  */
 package com.android.bluetooth.mapclient;
 
+import android.os.Binder;
+
 import com.android.internal.annotations.VisibleForTesting;
 
 class MapUtils {
@@ -23,6 +25,10 @@ class MapUtils {
     @VisibleForTesting
     static void setMnsService(MnsService service) {
         sMnsService = service;
+    }
+
+    static boolean isSystemUser() {
+        return Binder.getCallingUserHandle().isSystem();
     }
 
     static MnsService newMnsServiceInstance(MapClientService mapClientService) {

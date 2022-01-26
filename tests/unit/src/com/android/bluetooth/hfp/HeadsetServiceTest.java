@@ -147,9 +147,6 @@ public class HeadsetServiceTest {
         Assert.assertNotNull(mHeadsetService);
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
         verify(mObjectsFactory).getNativeInterface();
-        mHeadsetServiceBinder = (IBluetoothHeadset.Stub) mHeadsetService.initBinder();
-        Assert.assertNotNull(mHeadsetServiceBinder);
-        mHeadsetServiceBinder.setForceScoAudio(true, mAdapter.getAttributionSource());
     }
 
     @After
