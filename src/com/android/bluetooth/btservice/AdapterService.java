@@ -106,7 +106,6 @@ import android.os.AsyncTask;
 import android.os.BatteryStats;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.BytesMatcher;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -166,6 +165,7 @@ import com.android.internal.os.BackgroundThread;
 import com.android.internal.os.BinderCallsStats;
 import com.android.internal.util.ArrayUtils;
 import android.media.MediaMetadata;
+import com.android.modules.utils.BytesMatcher;
 
 import java.lang.reflect.*;
 
@@ -174,6 +174,7 @@ import android.net.wifi.WifiManager;
 import android.net.NetworkInfo;
 import android.os.ParcelUuid;
 import android.net.wifi.SoftApConfiguration;
+import android.net.wifi.SupplicantState;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -319,8 +320,9 @@ public class AdapterService extends Service {
     private DatabaseManager mDatabaseManager;
     private SilenceDeviceManager mSilenceDeviceManager;
     private AppOpsManager mAppOps;
-    private VendorSocket mVendorSocket;
 
+    private VendorSocket mVendorSocket;
+    private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
     private BluetoothKeystoreService mBluetoothKeystoreService;
     private A2dpService mA2dpService;
     private A2dpSinkService mA2dpSinkService;
@@ -359,7 +361,6 @@ public class AdapterService extends Service {
 
     private volatile boolean mTestModeEnabled = false;
 
-    //_REF*/
     /**
      * Register a {@link ProfileService} with AdapterService.
      *
@@ -410,10 +411,11 @@ public class AdapterService extends Service {
         WifiManager wifiMgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         if ((wifiMgr != null) && (wifiMgr.isWifiEnabled())) {
             WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-            if((wifiInfo != null) && (wifiInfo.getNetworkId() != -1)) {
+            if((wifiInfo != null) && (wifiInfo.getSupplicantState() == SupplicantState.COMPLETED)) {
                 isWifiConnected = true;
             }
         }
+        Log.w(TAG,"fetchWifiState - isWifiConnected =" + isWifiConnected);
         mVendor.setWifiState(isWifiConnected);
     }
 
@@ -683,6 +685,8 @@ public class AdapterService extends Service {
                 Looper.getMainLooper());
         mSilenceDeviceManager.start();
 
+        mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
+
         setAdapterService(this);
 
         invalidateBluetoothCaches();
@@ -710,7 +714,6 @@ public class AdapterService extends Service {
                     "com.android.systemui", PackageManager.MATCH_SYSTEM_ONLY);
 
             Utils.setSystemUiUid(systemUiUid);
-            setSystemUiUidNative(systemUiUid);
         } catch (PackageManager.NameNotFoundException e) {
             // Some platforms, such as wearables do not have a system ui.
             Log.w(TAG, "Unable to resolve SystemUI's UID.", e);
@@ -720,7 +723,6 @@ public class AdapterService extends Service {
         getApplicationContext().registerReceiverForAllUsers(sUserSwitchedReceiver, filter, null, null);
         int fuid = ActivityManager.getCurrentUser();
         Utils.setForegroundUserId(fuid);
-        setForegroundUserIdNative(fuid);
 
         // Reset |mRemoteDevices| whenever BLE is turned off then on
         // This is to replace the fact that |mRemoteDevices| was
@@ -765,7 +767,6 @@ public class AdapterService extends Service {
             if (Intent.ACTION_USER_SWITCHED.equals(intent.getAction())) {
                 int fuid = intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
                 Utils.setForegroundUserId(fuid);
-                setForegroundUserIdNative(fuid);
             }
         }
     };
@@ -1092,6 +1093,11 @@ public class AdapterService extends Service {
 
         if (mProfileServicesState != null) {
             mProfileServicesState.clear();
+        }
+
+        if (mBluetoothSocketManagerBinder != null) {
+            mBluetoothSocketManagerBinder.cleanUp();
+            mBluetoothSocketManagerBinder = null;
         }
 
         if (mBinder != null) {
@@ -2567,7 +2573,8 @@ public class AdapterService extends Service {
             if (service == null) {
                 return null;
             }
-            return service.getSocketManager();
+
+            return IBluetoothSocketManager.Stub.asInterface(service.mBluetoothSocketManagerBinder);
         }
 
         @Override
@@ -2787,6 +2794,16 @@ public class AdapterService extends Service {
                 return false;
             }
             return service.isLePeriodicAdvertisingSupported();
+        }
+
+        @Override
+        public int isCisCentralSupported() {
+            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+        }
+
+        @Override
+        public int isLePeriodicAdvertisingSyncTransferSenderSupported() {
+            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
         }
 
         @Override
@@ -4027,14 +4044,14 @@ public class AdapterService extends Service {
 
     }
 
-    IBluetoothSocketManager getSocketManager() {
+    /*IBluetoothSocketManager getSocketManager() {
         android.os.IBinder obj = getSocketManagerNative();
         if (obj == null) {
             return null;
         }
 
         return IBluetoothSocketManager.Stub.asInterface(obj);
-    }
+    }*/
 
     public int getNumOfOffloadedIrkSupported() {
         return mAdapterProperties.getNumOfOffloadedIrkSupported();
@@ -4504,12 +4521,12 @@ public class AdapterService extends Service {
             }
 
             // Copy the traffic objects whose byte counts are > 0
-            final UidTraffic[] result = arrayLen > 0 ? new UidTraffic[arrayLen] : null;
+            final List<UidTraffic> result = new ArrayList<>();
             int putIdx = 0;
             for (int i = 0; i < mUidTraffic.size(); i++) {
                 final UidTraffic traffic = mUidTraffic.valueAt(i);
                 if (traffic.getTxBytes() != 0 || traffic.getRxBytes() != 0) {
-                    result[putIdx++] = traffic.clone();
+                    result.add(traffic.clone());
                 }
             }
 
@@ -5186,12 +5203,6 @@ public class AdapterService extends Service {
     native boolean getRemoteMasInstancesNative(byte[] address);
 
     private native int readEnergyInfo();
-
-    private native IBinder getSocketManagerNative();
-
-    private native void setSystemUiUidNative(int systemUiUid);
-
-    private static native void setForegroundUserIdNative(int foregroundUserId);
 
     /*package*/
     native boolean factoryResetNative();

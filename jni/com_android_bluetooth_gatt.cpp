@@ -18,7 +18,6 @@
 
 #define LOG_NDEBUG 0
 
-#include "android_runtime/AndroidRuntime.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_gatt.h"
 #include "utils/Log.h"
@@ -682,7 +681,8 @@ void btgatts_connection_cb(int conn_id, int server_if, int connected,
 }
 
 void btgatts_service_added_cb(int status, int server_if,
-                              const btgatt_db_element_t* service, size_t service_count) {
+                              const btgatt_db_element_t* service,
+                              size_t service_count) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
   if (!mCallbacksObj) {
@@ -697,8 +697,7 @@ void btgatts_service_added_cb(int status, int server_if,
           arrayListclazz,
           sCallbackEnv->GetMethodID(arrayListclazz, "<init>", "()V")));
   jobject arrayPtr = array.get();
-  fillGattDbElementArray(sCallbackEnv.get(), &arrayPtr, service,
-                         service_count);
+  fillGattDbElementArray(sCallbackEnv.get(), &arrayPtr, service, service_count);
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServiceAdded, status,
                                server_if, array.get());
@@ -765,7 +764,8 @@ void btgatts_request_write_characteristic_cb(int conn_id, int trans_id,
                                              const RawAddress& bda,
                                              int attr_handle, int offset,
                                              bool need_rsp, bool is_prep,
-                                             const uint8_t* value, size_t length) {
+                                             const uint8_t* value,
+                                             size_t length) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
   if (!mCallbacksObj) {
@@ -778,19 +778,17 @@ void btgatts_request_write_characteristic_cb(int conn_id, int trans_id,
   ScopedLocalRef<jbyteArray> val(sCallbackEnv.get(),
                                  sCallbackEnv->NewByteArray(length));
   if (val.get())
-    sCallbackEnv->SetByteArrayRegion(val.get(), 0, length,
-                                     (jbyte*)value);
+    sCallbackEnv->SetByteArrayRegion(val.get(), 0, length, (jbyte*)value);
   sCallbackEnv->CallVoidMethod(
       mCallbacksObj, method_onServerWriteCharacteristic, address.get(), conn_id,
-      trans_id, attr_handle, offset, length, need_rsp, is_prep,
-      val.get());
+      trans_id, attr_handle, offset, length, need_rsp, is_prep, val.get());
 }
 
 void btgatts_request_write_descriptor_cb(int conn_id, int trans_id,
                                          const RawAddress& bda, int attr_handle,
                                          int offset, bool need_rsp,
-                                         bool is_prep,
-                                         const uint8_t* value, size_t length) {
+                                         bool is_prep, const uint8_t* value,
+                                         size_t length) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
   if (!mCallbacksObj) {
@@ -803,12 +801,10 @@ void btgatts_request_write_descriptor_cb(int conn_id, int trans_id,
   ScopedLocalRef<jbyteArray> val(sCallbackEnv.get(),
                                  sCallbackEnv->NewByteArray(length));
   if (val.get())
-    sCallbackEnv->SetByteArrayRegion(val.get(), 0, length,
-                                     (jbyte*)value);
+    sCallbackEnv->SetByteArrayRegion(val.get(), 0, length, (jbyte*)value);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onServerWriteDescriptor,
                                address.get(), conn_id, trans_id, attr_handle,
-                               offset, length, need_rsp, is_prep,
-                               val.get());
+                               offset, length, need_rsp, is_prep, val.get());
 }
 
 void btgatts_request_exec_write_cb(int conn_id, int trans_id,
@@ -1031,7 +1027,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
   method_onReadCharacteristic =
       env->GetMethodID(clazz, "onReadCharacteristic", "(III[B)V");
   method_onWriteCharacteristic =
-      env->GetMethodID(clazz, "onWriteCharacteristic", "(III)V");
+      env->GetMethodID(clazz, "onWriteCharacteristic", "(III[B)V");
   method_onExecuteCompleted =
       env->GetMethodID(clazz, "onExecuteCompleted", "(II)V");
   method_onSearchCompleted =
@@ -1039,7 +1035,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
   method_onReadDescriptor =
       env->GetMethodID(clazz, "onReadDescriptor", "(III[B)V");
   method_onWriteDescriptor =
-      env->GetMethodID(clazz, "onWriteDescriptor", "(III)V");
+      env->GetMethodID(clazz, "onWriteDescriptor", "(III[B)V");
   method_onNotify =
       env->GetMethodID(clazz, "onNotify", "(ILjava/lang/String;IZ[B)V");
   method_onRegisterForNotifications =
@@ -1367,10 +1363,11 @@ static void gattClientWriteCharacteristicNative(JNIEnv* env, jobject object,
   jbyte* p_value = env->GetByteArrayElements(value, NULL);
   if (p_value == NULL) return;
 
-  env->ReleaseByteArrayElements(value, p_value, 0);
-
   sGattIf->client->write_characteristic(conn_id, handle, write_type, auth_req,
-                                        (uint8_t *)p_value, len);
+                                        reinterpret_cast<uint8_t*>(p_value),
+                                        len);
+
+  env->ReleaseByteArrayElements(value, p_value, 0);
 }
 
 static void gattClientExecuteWriteNative(JNIEnv* env, jobject object,
@@ -1393,10 +1390,10 @@ static void gattClientWriteDescriptorNative(JNIEnv* env, jobject object,
   jbyte* p_value = env->GetByteArrayElements(value, NULL);
   if (p_value == NULL) return;
 
-  env->ReleaseByteArrayElements(value, p_value, 0);
-
   sGattIf->client->write_descriptor(conn_id, handle, auth_req,
-                                    (uint8_t *)p_value, len);
+                                    reinterpret_cast<uint8_t*>(p_value), len);
+
+  env->ReleaseByteArrayElements(value, p_value, 0);
 }
 
 static void gattClientRegisterForNotificationsNative(
@@ -1940,10 +1937,10 @@ static void gattServerSendIndicationNative(JNIEnv* env, jobject object,
   jbyte* array = env->GetByteArrayElements(val, 0);
   int val_len = env->GetArrayLength(val);
 
-  env->ReleaseByteArrayElements(val, array, JNI_ABORT);
-
   sGattIf->server->send_indication(server_if, attr_handle, conn_id,
-                                   /*confirm*/ 1, (uint8_t *)array, val_len);
+                                   /*confirm*/ 1, (uint8_t*)array, val_len);
+
+  env->ReleaseByteArrayElements(val, array, JNI_ABORT);
 }
 
 static void gattServerSendNotificationNative(JNIEnv* env, jobject object,
@@ -1954,10 +1951,10 @@ static void gattServerSendNotificationNative(JNIEnv* env, jobject object,
   jbyte* array = env->GetByteArrayElements(val, 0);
   int val_len = env->GetArrayLength(val);
 
-  env->ReleaseByteArrayElements(val, array, JNI_ABORT);
-
   sGattIf->server->send_indication(server_if, attr_handle, conn_id,
-                                   /*confirm*/ 0, (uint8_t *)array, val_len);
+                                   /*confirm*/ 0, (uint8_t*)array, val_len);
+
+  env->ReleaseByteArrayElements(val, array, JNI_ABORT);
 }
 
 static void gattServerSendResponseNative(JNIEnv* env, jobject object,
@@ -2098,7 +2095,7 @@ static PeriodicAdvertisingParameters parsePeriodicParams(JNIEnv* env,
   methodId = env->GetMethodID(clazz, "getInterval", "()I");
   uint16_t interval = env->CallIntMethod(i, methodId);
 
-  p.enable = true;
+  p.enable = 0x03; // Set bit0 (enable) and bit1 (ADI)
   p.min_interval = interval;
   p.max_interval = interval + 16; /* 20ms difference betwen min and max */
   uint16_t props = 0;

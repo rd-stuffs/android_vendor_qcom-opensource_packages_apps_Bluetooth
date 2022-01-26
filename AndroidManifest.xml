@@ -20,7 +20,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_BLUETOOTH_SHARE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -350,7 +349,7 @@
         <service
             android:process="@string/process"
             android:name = ".acm.AcmService"
-            android:exported="true"
+            android:exported="false"
             android:enabled="@bool/profile_supported_ca">
             <intent-filter>
                 <action android:name="android.bluetooth.IBluetoothAcm" />
