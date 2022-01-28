@@ -727,8 +727,8 @@ final class A2dpStateMachine extends StateMachine {
                         != newCodecConfig.getCodecSpecific1())) {
                 update = true;
             } else if (prevCodecStatus != null &&
-                       newCodecStatus.getCodecsSelectableCapabilities().length !=
-                       prevCodecStatus.getCodecsSelectableCapabilities().length){
+                       newCodecStatus.getCodecsSelectableCapabilities().size() !=
+                       prevCodecStatus.getCodecsSelectableCapabilities().size()){
                 update = true;
             }
             if (update) {
