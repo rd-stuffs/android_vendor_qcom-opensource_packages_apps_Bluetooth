@@ -781,21 +781,6 @@ public class HeadsetService extends ProfileService {
         }
 
         @Override
-        public boolean setPriority(BluetoothDevice device, int connectionPolicy,
-                AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                 Log.d(TAG, "setPriority Adv Audio enabled");
-                CallAudioIntf mCallAudio = CallAudioIntf.get();
-                return mCallAudio.setConnectionPolicy(device, connectionPolicy);
-            }
-            HeadsetService service = getService();
-            if (service == null || !Utils.checkConnectPermissionForPreflight(service)) {
-                return false;
-            }
-            return service.setConnectionPolicy(device, connectionPolicy);
-        }
-
-        @Override
         public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
                 AttributionSource source) {
             if(ApmConstIntf.getLeAudioEnabled()) {
