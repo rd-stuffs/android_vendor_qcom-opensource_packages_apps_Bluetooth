@@ -1326,10 +1326,7 @@ public class GattService extends ProfileService {
 
             if (!hasPermission && client.callingPackage != null
                                && client.callingPackage.equals("com.android.bluetooth")) {
-                if (client.filters.size() == 1 &&
-                        client.filters.get(0).getGroupFilteringValue()) {
-                    hasPermission = true;
-                }
+                hasPermission = true;
             }
 
             if (!hasPermission || !matchesFilters(client, result)) {
