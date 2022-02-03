@@ -2799,12 +2799,12 @@ public class AdapterService extends Service {
 
         @Override
         public int isLeAudioSupported() {
-            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
         }
 
         @Override
         public int isLePeriodicAdvertisingSyncTransferSenderSupported() {
-            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
         }
 
         @Override
