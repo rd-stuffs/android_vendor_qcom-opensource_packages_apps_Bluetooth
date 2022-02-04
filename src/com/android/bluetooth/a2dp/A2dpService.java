@@ -191,7 +191,7 @@ public class A2dpService extends ProfileService {
             return true;
         }
 
-        // Step 1: Get AdapterService, A2dpNativeInterface, AudioManager.
+        // Step 1: Get AdapterService, A2dpNativeInterface, AudioManager
         // None of them can be null.
         synchronized (mVariableLock) {
             mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
@@ -263,13 +263,9 @@ public class A2dpService extends ProfileService {
 
         synchronized (mAudioManagerLock) {
             // Step 6: Initialize native interface
-            List<BluetoothCodecConfig> mCodecConfigOffload;
-            // mCodecConfigOffload = (List<BluetoothCodecConfig>)
-            //   mAudioManager.getHwOffloadFormatsSupportedForBluetoothMedia(
-            //     AudioSystem.DEVICE_OUT_BLUETOOTH_A2DP);
             OffloadCodecConfig  = new BluetoothCodecConfig[0];
-            // OffloadCodecConfig  = new BluetoothCodecConfig[mCodecConfigOffload.size()];
-            // OffloadCodecConfig  = mCodecConfigOffload.toArray(OffloadCodecConfig);
+            OffloadCodecConfig = mAudioManager.getHwOffloadFormatsSupportedForA2dp()
+                                            .toArray(OffloadCodecConfig);
         }
 
         try {

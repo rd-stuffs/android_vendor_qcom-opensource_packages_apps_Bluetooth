@@ -53,8 +53,6 @@ package com.android.bluetooth.hfp;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 
-import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
-
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothA2dp;
@@ -822,14 +820,13 @@ public class HeadsetService extends ProfileService {
             try {
                 boolean defaultValue = false;
                 if(ApmConstIntf.getLeAudioEnabled()) {
-                     Log.d(TAG, "setPriority Adv Audio enabled");
+                     Log.d(TAG, "setConnectionPolicy Adv Audio enabled");
                     CallAudioIntf mCallAudio = CallAudioIntf.get();
                     defaultValue =  mCallAudio.setConnectionPolicy(device, connectionPolicy);
                     receiver.send(defaultValue);
                 } else {
                     HeadsetService service = getService(source);
                     if (service != null) {
-                        enforceBluetoothPrivilegedPermission(service);
                         defaultValue = service.setConnectionPolicy(device, connectionPolicy);
                     }
                     receiver.send(defaultValue);
@@ -852,7 +849,6 @@ public class HeadsetService extends ProfileService {
                 } else {
                     HeadsetService service = getService(source);
                     if (service != null) {
-                        enforceBluetoothPrivilegedPermission(service);
                         defaultValue = service.getConnectionPolicy(device);
                     }
                     receiver.send(defaultValue);
@@ -984,7 +980,6 @@ public class HeadsetService extends ProfileService {
                 } else {
                     HeadsetService service = getService(source);
                     if (service != null) {
-                        enforceBluetoothPrivilegedPermission(service);
                         defaultValue = service.getAudioState(device);
                     }
                     receiver.send(defaultValue);
@@ -1009,7 +1004,6 @@ public class HeadsetService extends ProfileService {
                 } else {
                     HeadsetService service = getService(source);
                     if (service != null) {
-                        enforceBluetoothPrivilegedPermission(service);
                         if (service.connectAudio())
                             defaultValue = BluetoothStatusCodes.SUCCESS;
                         else
@@ -1037,7 +1031,6 @@ public class HeadsetService extends ProfileService {
                 } else {
                     HeadsetService service = getService(source);
                     if (service != null) {
-                        enforceBluetoothPrivilegedPermission(service);
                         if (service.disconnectAudio())
                             defaultValue = BluetoothStatusCodes.SUCCESS;
                         else
@@ -1056,7 +1049,6 @@ public class HeadsetService extends ProfileService {
             try {
                 HeadsetService service = getService(source);
                 if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
                     service.setAudioRouteAllowed(allowed);
                 }
                 receiver.send(null);
@@ -1072,7 +1064,6 @@ public class HeadsetService extends ProfileService {
                 HeadsetService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.getAudioRouteAllowed();
                 }
                 receiver.send(defaultValue);
@@ -1237,7 +1228,6 @@ public class HeadsetService extends ProfileService {
                 HeadsetService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
-                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.isInbandRingingEnabled();
                 }
                 receiver.send(defaultValue);
@@ -2631,7 +2621,6 @@ public class HeadsetService extends ProfileService {
 
     void phoneStateChanged(int numActive, int numHeld, int callState, String number,
             int type, String name, boolean isVirtualCall) {
-        enforceCallingOrSelfPermission(MODIFY_PHONE_STATE, "Need MODIFY_PHONE_STATE permission");
         synchronized (mStateMachines) {
             if (mStateMachinesThread == null) {
                 Log.w(TAG, "mStateMachinesThread is null, returning");
@@ -2734,7 +2723,6 @@ public class HeadsetService extends ProfileService {
     @RequiresPermission(android.Manifest.permission.MODIFY_PHONE_STATE)
     private void clccResponse(int index, int direction, int status, int mode, boolean mpty,
             String number, int type) {
-        enforceCallingOrSelfPermission(MODIFY_PHONE_STATE, "Need MODIFY_PHONE_STATE permission");
         synchronized (mStateMachines) {
            doForEachConnectedStateMachine(
                 stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.SEND_CCLC_RESPONSE,
