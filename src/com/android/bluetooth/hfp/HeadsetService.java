@@ -2759,7 +2759,10 @@ public class HeadsetService extends ProfileService {
     boolean isInbandRingingEnabled() {
         boolean returnVal;
 
-        returnVal = BluetoothHeadset.isInbandRingingSupported(this) && !SystemProperties.getBoolean(
+        boolean isInbandRingingSupported = getResources().getBoolean(
+                com.android.bluetooth.R.bool.config_bluetooth_hfp_inband_ringing_support);
+
+        returnVal = isInbandRingingSupported && !SystemProperties.getBoolean(
                 DISABLE_INBAND_RINGING_PROPERTY, true) && !mInbandRingingRuntimeDisable;
         Log.d(TAG, "isInbandRingingEnabled returning: " + returnVal);
         return returnVal;
@@ -2782,8 +2785,9 @@ public class HeadsetService extends ProfileService {
                                             getConnectedDevices();
             if (fromState != BluetoothProfile.STATE_CONNECTED
                     && toState == BluetoothProfile.STATE_CONNECTED) {
-                if (audioConnectableDevices.size() > 1 &&
-                     BluetoothHeadset.isInbandRingingSupported(this) &&
+                boolean isInbandRingingSupported = getResources().getBoolean(
+                        com.android.bluetooth.R.bool.config_bluetooth_hfp_inband_ringing_support);
+                if (audioConnectableDevices.size() > 1 && isInbandRingingSupported &&
                      !SystemProperties.getBoolean(DISABLE_INBAND_RINGING_PROPERTY, true) ) {
                     mInbandRingingRuntimeDisable = true;
                     doForEachConnectedStateMachine(
@@ -3130,8 +3134,10 @@ public class HeadsetService extends ProfileService {
                     + mAdapterService.getMaxConnectedAudioDevices());
             ProfileService.println(sb, "mActiveDevice: " + mActiveDevice);
             ProfileService.println(sb, "isInbandRingingEnabled: " + isInbandRingingEnabled());
+            boolean isInbandRingingSupported = getResources().getBoolean(
+                    com.android.bluetooth.R.bool.config_bluetooth_hfp_inband_ringing_support);
             ProfileService.println(sb,
-                    "isInbandRingingSupported: " + BluetoothHeadset.isInbandRingingSupported(this));
+                    "isInbandRingingSupported: " + isInbandRingingSupported);
             ProfileService.println(sb,
                     "mInbandRingingRuntimeDisable: " + mInbandRingingRuntimeDisable);
             ProfileService.println(sb, "mAudioRouteAllowed: " + mAudioRouteAllowed);

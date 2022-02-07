@@ -416,7 +416,7 @@ class PhonePolicy {
         if ((panService != null) && (ArrayUtils.contains(uuids, BluetoothUuid.PANU) && (
                 panService.getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_UNKNOWN)
                 && mAdapterService.getResources()
-                .getBoolean(R.bool.config_bluetooth_pan_enable_autoconnect))) {
+                .getBoolean(com.android.bluetooth.R.bool.config_bluetooth_pan_enable_autoconnect))) {
             mAdapterService.getDatabase().setProfileConnectionPolicy(device,
                     BluetoothProfile.PAN, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         }

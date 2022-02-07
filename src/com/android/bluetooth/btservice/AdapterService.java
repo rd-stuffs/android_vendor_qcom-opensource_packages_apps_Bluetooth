@@ -2803,7 +2803,12 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public int isLePeriodicAdvertisingSyncTransferSenderSupported() {
+        public int isLeAudioBroadcastAssistantSupported() {
+            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+        }
+
+        @Override
+        public int isLeAudioBroadcastSourceSupported() {
             return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
         }
 
@@ -3006,9 +3011,11 @@ public class AdapterService extends Service {
             return service.getDeviceType(device);
         }
 
-    }
-
-    ;
+        @Override
+        public boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
+            return false;
+        }
+    };
 
     public boolean isEnabled() {
         return mAdapterProperties.getState() == BluetoothAdapter.STATE_ON;

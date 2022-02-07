@@ -15,7 +15,6 @@
  */
 
 package com.android.bluetooth.btservice;
-
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothCodecConfig;
 import android.content.ContentResolver;
@@ -27,6 +26,7 @@ import android.provider.Settings;
 import android.util.FeatureFlagUtils;
 import android.util.Log;
 import android.os.SystemProperties;
+import android.sysprop.BluetoothProperties;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.a2dp.A2dpService;
@@ -133,7 +133,7 @@ public class Config {
             new ProfileConfig(BluetoothPbapService.class, R.bool.profile_supported_pbap,
                     (1 << BluetoothProfile.PBAP)),
             new ProfileConfig(HearingAidService.class,
-                    com.android.internal.R.bool.config_hearing_aid_profile_supported,
+                    -1,
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
@@ -197,7 +197,13 @@ public class Config {
         profiles.clear();
         getAudioProperties();
         for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
-            boolean supported = resources.getBoolean(config.mSupported);
+            boolean supported = false;
+            if (config.mClass == HearingAidService.class) {
+                supported =
+                        BluetoothProperties.audioStreamingForHearingAidSupported().orElse(false);
+            } else {
+                supported = resources.getBoolean(config.mSupported);
+            }
 
             if (!supported && (config.mClass == HearingAidService.class) && FeatureFlagUtils
                                 .isEnabled(ctx, FeatureFlagUtils.HEARING_AID_SETTINGS)) {
