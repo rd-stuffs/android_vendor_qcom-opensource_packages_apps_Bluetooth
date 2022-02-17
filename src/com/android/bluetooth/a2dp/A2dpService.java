@@ -34,6 +34,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.media.AudioSystem;
+import android.media.BtProfileConnectionInfo;
 import android.os.HandlerThread;
 import android.util.Log;
 
@@ -63,8 +65,10 @@ import com.android.bluetooth.gatt.GattService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.ArrayUtils;
+import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -187,7 +191,7 @@ public class A2dpService extends ProfileService {
             return true;
         }
 
-        // Step 1: Get AdapterService, A2dpNativeInterface, AudioManager.
+        // Step 1: Get AdapterService, A2dpNativeInterface, AudioManager
         // None of them can be null.
         synchronized (mVariableLock) {
             mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
@@ -259,10 +263,9 @@ public class A2dpService extends ProfileService {
 
         synchronized (mAudioManagerLock) {
             // Step 6: Initialize native interface
-            List<BluetoothCodecConfig> mCodecConfigOffload;
-            mCodecConfigOffload = mAudioManager.getHwOffloadEncodingFormatsSupportedForA2DP();
-            OffloadCodecConfig  = new BluetoothCodecConfig[mCodecConfigOffload.size()];
-            OffloadCodecConfig  = mCodecConfigOffload.toArray(OffloadCodecConfig);
+            OffloadCodecConfig  = new BluetoothCodecConfig[0];
+            OffloadCodecConfig = mAudioManager.getHwOffloadFormatsSupportedForA2dp()
+                                            .toArray(OffloadCodecConfig);
         }
 
         try {
@@ -313,7 +316,7 @@ public class A2dpService extends ProfileService {
         removeActiveDevice(true);
         if (ApmConstIntf.getLeAudioEnabled()) {
            synchronized (mBtA2dpLock) {
-	    updateAndBroadcastActiveDevice(null);
+        updateAndBroadcastActiveDevice(null);
         }
        }
         // Step 8: Mark service as stopped
@@ -861,7 +864,7 @@ public class A2dpService extends ProfileService {
 
     private void removeActiveDevice(boolean forceStopPlayingAudio) {
         BluetoothDevice previousActiveDevice = mActiveDevice;
-        boolean suppressNoisyIntent = false;
+        boolean stopAudio = false;
         boolean isBAActive = false;
         Log.d(TAG," removeActiveDevice(): forceStopPlayingAudio:  " + forceStopPlayingAudio);
 
@@ -892,10 +895,9 @@ public class A2dpService extends ProfileService {
                 // device, the user has explicitly switched the output to the local device and music
                 // should continue playing. Otherwise, remote device has been indeed disconnected
                 // and audio should be suspended before switching the output to the local device.
-                suppressNoisyIntent = !forceStopPlayingAudio
-                        && (getConnectionState(previousActiveDevice)
-                        == BluetoothProfile.STATE_CONNECTED);
-                Log.i(TAG, "removeActiveDevice: suppressNoisyIntent = " + suppressNoisyIntent);
+                stopAudio = forceStopPlayingAudio || (getConnectionState(previousActiveDevice)
+                         != BluetoothProfile.STATE_CONNECTED);
+                Log.i(TAG, "removeActiveDevice: stopAudio = " + stopAudio);
 
                 BATService mBatService = BATService.getBATService();
                 isBAActive = (mBatService != null) && (mBatService.isBATActive());
@@ -905,9 +907,8 @@ public class A2dpService extends ProfileService {
 
             synchronized (mAudioManagerLock) {
                 if (!isBAActive && mAudioManager != null) {
-                    mAudioManager.handleBluetoothA2dpActiveDeviceChange(
-                            previousActiveDevice, BluetoothProfile.STATE_DISCONNECTED,
-                            BluetoothProfile.A2DP, suppressNoisyIntent, -1);
+                    mAudioManager.handleBluetoothActiveDeviceChanged(null, previousActiveDevice,
+                       BtProfileConnectionInfo.a2dpInfo(!stopAudio, -1));
                 }
             }
         }
@@ -1132,9 +1133,8 @@ public class A2dpService extends ProfileService {
             // new active device so that Audio Service
             // can reset accordingly the audio feeding parameters
             // in the Audio HAL to the Bluetooth stack.
-                mAudioManager.handleBluetoothA2dpActiveDeviceChange(
-                        mActiveDevice, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.A2DP,
-                          true, rememberedVolume);
+               mAudioManager.handleBluetoothActiveDeviceChanged(device,
+                  previousActiveDevice, BtProfileConnectionInfo.a2dpInfo(true, rememberedVolume));
             }
         }
 
@@ -1480,7 +1480,7 @@ public class A2dpService extends ProfileService {
                         BluetoothCodecConfig.CHANNEL_MODE_STEREO,
                         0, 0, 0, 0);
         BluetoothCodecConfig[] mBACodecConfig = {mNewCodecConfig};
-        return (new BluetoothCodecStatus(mNewCodecConfig, mBACodecConfig, mBACodecConfig));
+        return (new BluetoothCodecStatus(mNewCodecConfig, Arrays.asList(mBACodecConfig), Arrays.asList(mBACodecConfig)));
     }
 
     /**
@@ -1902,7 +1902,7 @@ public class A2dpService extends ProfileService {
                     codecConfig.getBitsPerSample(), codecConfig.getChannelMode(),
                     codecConfig.getCodecSpecific1(), codecConfig.getCodecSpecific2(),
                     codecConfig.getCodecSpecific3(), codecConfig.getCodecSpecific4(), 0);
-                BluetoothCodecConfig[] codecCapabilities = codecStatus.getCodecsSelectableCapabilities();
+                List<BluetoothCodecConfig> codecCapabilities = codecStatus.getCodecsSelectableCapabilities();
                 for (BluetoothCodecConfig codecCapability : codecCapabilities) {
                     BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_A2DP_CODEC_CAPABILITY_CHANGED,
                         mAdapterService.obfuscateAddress(device), codecCapability.getCodecType(),
@@ -1927,9 +1927,8 @@ public class A2dpService extends ProfileService {
             }
             synchronized (mAudioManagerLock) {
                 if (mAudioManager != null) {
-                    mAudioManager.handleBluetoothA2dpActiveDeviceChange(device,
-                            BluetoothProfile.STATE_CONNECTED, BluetoothProfile.A2DP,
-                            true, rememberedVolume);
+                    mAudioManager.handleBluetoothActiveDeviceChanged(device, device,
+                        BtProfileConnectionInfo.a2dpInfo(false, -1));
                 }
             }
         }
@@ -2281,11 +2280,18 @@ public class A2dpService extends ProfileService {
             implements IProfileServiceBinder {
         private A2dpService mService;
 
-        @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private A2dpService getService(AttributionSource source) {
             if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
                     || !Utils.checkServiceAvailable(mService, TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
+                return null;
+            }
+            return mService;
+        }
+
+        private A2dpService getService() {
+            if (!Utils.checkCaller()) {
+                Log.w(TAG, "A2DP call not allowed for non-active user");
                 return null;
             }
 
@@ -2305,139 +2311,228 @@ public class A2dpService extends ProfileService {
         }
 
         @Override
-        public boolean connect(BluetoothDevice device) {
-            return connectWithAttribution(device, Utils.getCallingAttributionSource());
+        public void connect(BluetoothDevice device, SynchronousResultReceiver receiver) {
+            try {
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    boolean defaultValue = false;
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    defaultValue = mMediaAudio.connect(device);
+                    receiver.send(defaultValue);
+                } else {
+                    Log.w(TAG, "LE Audio not enabled");
+                    connectWithAttribution(device, Utils.getCallingAttributionSource(mService), receiver);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
-        public boolean connectWithAttribution(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.connect(device);
+        public void connectWithAttribution(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                boolean result = false;
+                if (service != null) {
+                    result = service.connect(device);
+                }
+                receiver.send(result);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            Log.w(TAG, "LE Audio not enabled");
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.connect(device);
         }
 
         @Override
-        public boolean disconnect(BluetoothDevice device) {
-                     return disconnectWithAttribution(device, Utils.getCallingAttributionSource());
+        public void disconnect(BluetoothDevice device, SynchronousResultReceiver receiver) {
+            try {
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    boolean defaultValue = false;
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    defaultValue = mMediaAudio.disconnect(device);
+                    receiver.send(defaultValue);
+                } else {
+                    Log.w(TAG, "LE Audio not enabled");
+                    disconnectWithAttribution(device, Utils.getCallingAttributionSource(mService), receiver);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
-        public boolean disconnectWithAttribution(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.disconnect(device);
+        public void disconnectWithAttribution(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                boolean result = false;
+                if (service != null) {
+                    result = service.disconnect(device);
+                }
+                receiver.send(result);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.disconnect(device);
         }
 
         @Override
-        public List<BluetoothDevice> getConnectedDevices() {
-             return getConnectedDevicesWithAttribution(Utils.getCallingAttributionSource());
-
+        public void getConnectedDevices(SynchronousResultReceiver receiver) {
+            try {
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    List<BluetoothDevice> defaultValue = new ArrayList<>(0);
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    defaultValue = mMediaAudio.getConnectedDevices(); 
+                    receiver.send(defaultValue);
+                } else {
+                    getConnectedDevicesWithAttribution(Utils.getCallingAttributionSource(mService),
+                        receiver);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
-        public List<BluetoothDevice> getConnectedDevicesWithAttribution(AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getConnectedDevices();
+        public void getConnectedDevicesWithAttribution(AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                List<BluetoothDevice> connectedDevices = new ArrayList<>(0);
+                if (service != null) {
+                    connectedDevices = service.getConnectedDevices();
+                }
+                receiver.send(connectedDevices);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return new ArrayList<>(0);
-            }
-            return service.getConnectedDevices();
         }
 
         @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-            return getDevicesMatchingConnectionStatesWithAttribution(states,
-                                 Utils.getCallingAttributionSource());
+        public void getDevicesMatchingConnectionStates(int[] states,
+                SynchronousResultReceiver receiver) {
+            try {
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    List<BluetoothDevice> defaultValue = new ArrayList<>(0);
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    defaultValue = mMediaAudio.getDevicesMatchingConnectionStates(states); 
+                    receiver.send(defaultValue);
+                } else {
+                    getDevicesMatchingConnectionStatesWithAttribution(states,
+                          Utils.getCallingAttributionSource(mService), receiver);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStatesWithAttribution(
-            int[] states, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getDevicesMatchingConnectionStates(states);
+        public void getDevicesMatchingConnectionStatesWithAttribution(int[] states,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                List<BluetoothDevice> connectedDevices = new ArrayList<>(0);
+                if (service != null) {
+                    connectedDevices = service.getDevicesMatchingConnectionStates(states);
+                }
+                receiver.send(connectedDevices);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return new ArrayList<>(0);
-            }
-            return service.getDevicesMatchingConnectionStates(states);
         }
 
         @Override
-        public int getConnectionState(BluetoothDevice device) {
-            return getConnectionStateWithAttribution(device, Utils.getCallingAttributionSource());
+        public void getConnectionState(BluetoothDevice device, SynchronousResultReceiver receiver) {
+            try {
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    defaultValue = mMediaAudio.getConnectionState(device);
+                    receiver.send(defaultValue);
+                } else {
+                    getConnectionStateWithAttribution(device, Utils.getCallingAttributionSource(mService),
+                        receiver);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
-        public int getConnectionStateWithAttribution(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getConnectionState(device);
+        public void getConnectionStateWithAttribution(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                int state = BluetoothProfile.STATE_DISCONNECTED;
+                if (service != null) {
+                    state = service.getConnectionState(device);
+                }
+                receiver.send(state);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
-            }
-            return service.getConnectionState(device);
         }
 
         @Override
-        public boolean setActiveDevice(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
-                return activeDeviceManager.setActiveDevice(device, ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
+        public void setActiveDevice(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                boolean result = false;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
+                    result = activeDeviceManager.setActiveDevice(device, ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
+                    receiver.send(result);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        result = service.setActiveDevice(device);
+                    }
+                    receiver.send(result);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.setActiveDevice(device);
         }
 
         @Override
-        public BluetoothDevice getActiveDevice(AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
-                return activeDeviceManager.getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+        public void getActiveDevice(AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                BluetoothDevice activeDevice = null;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
+                    activeDevice = activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+                    receiver.send(activeDevice);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        activeDevice = service.getActiveDevice();
+                    }
+                    receiver.send(activeDevice);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return null;
-            }
-            return service.getActiveDevice();
         }
 
         @Override
-        public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.setConnectionPolicy(device, connectionPolicy);
+        public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                boolean result = false;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    result = mMediaAudio.setConnectionPolicy(device, connectionPolicy);
+                    receiver.send(result);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        result = service.setConnectionPolicy(device, connectionPolicy);
+                    }
+                    receiver.send(result);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.setConnectionPolicy(device, connectionPolicy);
         }
 
-        @Override
         public int getPriority(BluetoothDevice device, AttributionSource source) {
             if(ApmConstIntf.getLeAudioEnabled()) {
                 MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
@@ -2450,27 +2545,31 @@ public class A2dpService extends ProfileService {
             return service.getConnectionPolicy(device);
         }
 
-        @Override
-        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getConnectionPolicy(device);
+        public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                int result = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    result = mMediaAudio.getConnectionPolicy(device);
+                    receiver.send(result);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        enforceBluetoothPrivilegedPermission(service);
+                        result = service.getConnectionPolicy(device);
+                    }
+                    receiver.send(result);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-            }
-            enforceBluetoothPrivilegedPermission(service);
-            return service.getConnectionPolicy(device);
         }
 
         @Override
-        public boolean isAvrcpAbsoluteVolumeSupported() {
-            A2dpService service = getService(Utils.getCallingAttributionSource());
-            if (service == null) {
-                return false;
-            }
-            return service.isAvrcpAbsoluteVolumeSupported();
+        public void isAvrcpAbsoluteVolumeSupported(SynchronousResultReceiver receiver) {
+            // TODO (apanicke): Add a hook here for the AvrcpTargetService.
+            receiver.send(false);
         }
 
         @Override
@@ -2483,29 +2582,45 @@ public class A2dpService extends ProfileService {
         }
 
         @Override
-        public boolean isA2dpPlaying(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.isA2dpPlaying(device);
+        public void isA2dpPlaying(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                boolean result = false;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    result = mMediaAudio.isA2dpPlaying(device);
+                    receiver.send(result);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        result = service.isA2dpPlaying(device);
+                    }
+                    receiver.send(result);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.isA2dpPlaying(device);
         }
 
         @Override
-        public BluetoothCodecStatus getCodecStatus(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getCodecStatus(device);
+        public void getCodecStatus(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                BluetoothCodecStatus codecStatus = null;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    codecStatus = mMediaAudio.getCodecStatus(device);
+                    receiver.send(codecStatus);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        codecStatus = service.getCodecStatus(device);
+                    }
+                    receiver.send(codecStatus);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return null;
-            }
-            return service.getCodecStatus(device);
         }
 
         @Override
@@ -2539,12 +2654,12 @@ public class A2dpService extends ProfileService {
                 return;
             }
 
-            BluetoothCodecStatus codecStatus = getCodecStatus(device, source);
+            BluetoothCodecStatus codecStatus = service.getCodecStatus(device);
             if (codecStatus == null || codecStatus.getCodecConfig() == null) {
                 Log.e(TAG, "enableOptionalCodecs: Codec status is null");
                 return;
             }
-            int enabled = getOptionalCodecsEnabled(device, source);
+            int enabled = service.getOptionalCodecsEnabled(device);
             if (enabled == BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED
                 && codecStatus.getCodecConfig().isMandatoryCodec()) {
                 Log.e(TAG, "enableOptionalCodecs: failed, setOptionalCodecsEnabled to false");
@@ -2568,12 +2683,12 @@ public class A2dpService extends ProfileService {
                 return;
             }
 
-            BluetoothCodecStatus codecStatus = getCodecStatus(device, source);
+            BluetoothCodecStatus codecStatus = service.getCodecStatus(device);
             if (codecStatus == null || codecStatus.getCodecConfig() == null) {
                 Log.e(TAG, "disableOptionalCodecs: Codec status is null");
                 return;
             }
-            int enabled = getOptionalCodecsEnabled(device, source);
+            int enabled = service.getOptionalCodecsEnabled(device);
             if (enabled == BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
                 && !codecStatus.getCodecConfig().isMandatoryCodec()) {
                 Log.e(TAG, "disableOptionalCodecs: failed, setOptionalCodecsEnabled to true");
@@ -2581,35 +2696,49 @@ public class A2dpService extends ProfileService {
             }
         }
 
-        public int supportsOptionalCodecs(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getService(source);
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.supportsOptionalCodecs(device);
+        @Override
+        public void supportsOptionalCodecs(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                int codecSupport = BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    codecSupport = mMediaAudio.supportsOptionalCodecs(device);
+                    receiver.send(codecSupport);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        codecSupport = service.getSupportsOptionalCodecs(device);
+                    }
+                    receiver.send(codecSupport);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            if (service == null) {
-                return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
-            }
-            AdapterService adService = AdapterService.getAdapterService();
-            if(adService.isTwsPlusDevice(device)) {
-                 Log.w(TAG, "Disable optional codec support for TWS+ device");
-                 return BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED;
-            }
-            return service.getSupportsOptionalCodecs(device);
         }
 
-        public int getOptionalCodecsEnabled(BluetoothDevice device, AttributionSource source) {
-            if(ApmConstIntf.getLeAudioEnabled()) {
-                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
-                return mMediaAudio.getOptionalCodecsEnabled(device);
+        @Override
+        public void getOptionalCodecsEnabled(BluetoothDevice device, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                int optionalCodecEnabled = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
+                if(ApmConstIntf.getLeAudioEnabled()) {
+                    MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                    optionalCodecEnabled = mMediaAudio.getOptionalCodecsEnabled(device);
+                    receiver.send(optionalCodecEnabled);
+                } else {
+                    A2dpService service = getService(source);
+                    if (service != null) {
+                        optionalCodecEnabled = service.getOptionalCodecsEnabled(device);
+                    }
+                    receiver.send(optionalCodecEnabled);
+                }
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            A2dpService service = getService(source);
-            if (service == null) {
-                return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-            }
-            return service.getOptionalCodecsEnabled(device);
         }
 
+        @Override
         public void setOptionalCodecsEnabled(BluetoothDevice device, int value,
                 AttributionSource source) {
             if(ApmConstIntf.getLeAudioEnabled()) {
@@ -2624,28 +2753,49 @@ public class A2dpService extends ProfileService {
             service.setOptionalCodecsEnabled(device, value);
         }
 
-        public int getDynamicBufferSupport(AttributionSource source) {
-            A2dpService service = getService(source);
-            if (service == null) {
-                return BluetoothA2dp.DYNAMIC_BUFFER_SUPPORT_NONE;
+        @Override
+        public void getDynamicBufferSupport(AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                int bufferSupport = BluetoothA2dp.DYNAMIC_BUFFER_SUPPORT_NONE;
+                if (service != null) {
+                    bufferSupport = service.getDynamicBufferSupport();
+                }
+                receiver.send(bufferSupport);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.getDynamicBufferSupport();
         }
 
-        public BufferConstraints getBufferConstraints(AttributionSource source) {
-            A2dpService service = getService(source);
-            if (service == null) {
-                return null;
+        @Override
+        public void getBufferConstraints(AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                BufferConstraints bufferConstraints = null;
+                if (service != null) {
+                    bufferConstraints = service.getBufferConstraints();
+                }
+                receiver.send(bufferConstraints);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.getBufferConstraints();
         }
 
-        public boolean setBufferLengthMillis(int codec, int value, AttributionSource source) {
-            A2dpService service = getService(source);
-            if (service == null) {
-                return false;
+        @Override
+        public void setBufferLengthMillis(int codec, int value, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                A2dpService service = getService(source);
+                boolean result = false;
+                if (service != null) {
+                    result = service.setBufferLengthMillis(codec, value);
+                }
+                receiver.send(result);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
             }
-            return service.setBufferLengthMillis(codec, value);
         }
     }
 

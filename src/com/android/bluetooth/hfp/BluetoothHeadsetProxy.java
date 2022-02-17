@@ -18,6 +18,7 @@ package com.android.bluetooth.hfp;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothStatusCodes;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class BluetoothHeadsetProxy {
     }
 
     public boolean connectAudio() {
-        return mBluetoothHeadset.connectAudio();
+        return mBluetoothHeadset.connectAudio() == BluetoothStatusCodes.SUCCESS;
     }
 
     public boolean setActiveDevice(BluetoothDevice device) {
@@ -74,11 +75,13 @@ public class BluetoothHeadsetProxy {
     }
 
     public boolean isAudioOn() {
-        return mBluetoothHeadset.isAudioOn();
+        int scoConnectionRequest = mBluetoothHeadset.connectAudio();
+        return scoConnectionRequest == BluetoothStatusCodes.SUCCESS ||
+            scoConnectionRequest == BluetoothStatusCodes.ERROR_AUDIO_DEVICE_ALREADY_CONNECTED;
     }
 
     public boolean disconnectAudio() {
-        return mBluetoothHeadset.disconnectAudio();
+        return mBluetoothHeadset.disconnectAudio() == BluetoothStatusCodes.SUCCESS;
     }
 
     public boolean isInbandRingingEnabled() {

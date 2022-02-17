@@ -689,7 +689,7 @@ public class AdapterService extends Service {
 
         setAdapterService(this);
 
-        invalidateBluetoothCaches();
+        //invalidateBluetoothCaches();
 
         // First call to getSharedPreferences will result in a file read into
         // memory cache. Call it here asynchronously to avoid potential ANR
@@ -946,13 +946,13 @@ public class AdapterService extends Service {
       }
     }
 
-    private void invalidateBluetoothGetStateCache() {
+    /*private void invalidateBluetoothGetStateCache() {
         BluetoothAdapter.invalidateBluetoothGetStateCache();
-    }
+    }*/
 
     void updateAdapterState(int prevState, int newState) {
         mAdapterProperties.setState(newState);
-        invalidateBluetoothGetStateCache();
+        //invalidateBluetoothGetStateCache();
         if (mCallbacks != null) {
             int n = mCallbacks.beginBroadcast();
             debugLog("updateAdapterState() - Broadcasting state " + BluetoothAdapter.nameForState(
@@ -1005,13 +1005,13 @@ public class AdapterService extends Service {
             mAdapter = null;
         }
 
-        BluetoothAdapter.invalidateGetProfileConnectionStateCache();
-        BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
+        //BluetoothAdapter.invalidateGetProfileConnectionStateCache();
+        //BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
 
         clearAdapterService(this);
 
         mCleaningUp = true;
-        invalidateBluetoothCaches();
+        //invalidateBluetoothCaches();
 
         unregisterReceiver(mAlarmBroadcastReceiver);
         unregisterReceiver(mWifiStateBroadcastReceiver);
@@ -1110,12 +1110,12 @@ public class AdapterService extends Service {
         }
     }
 
-    private void invalidateBluetoothCaches() {
+    /*private void invalidateBluetoothCaches() {
         BluetoothAdapter.invalidateGetProfileConnectionStateCache();
         BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
         BluetoothDevice.invalidateBluetoothGetBondStateCache();
         BluetoothAdapter.invalidateBluetoothGetStateCache();
-    }
+    }*/
 
     private void setProfileServiceState(Class service, int state) {
         Intent intent = new Intent(this, service);
@@ -1696,8 +1696,8 @@ public class AdapterService extends Service {
 
         AdapterServiceBinder(AdapterService svc) {
             mService = svc;
-            mService.invalidateBluetoothGetStateCache();
-            BluetoothAdapter.getDefaultAdapter().disableBluetoothGetStateCache();
+            //mService.invalidateBluetoothGetStateCache();
+            //BluetoothAdapter.getDefaultAdapter().disableBluetoothGetStateCache();
         }
 
         public void cleanup() {
@@ -1916,38 +1916,39 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public boolean setScanMode(int mode, int duration, AttributionSource attributionSource) {
+        public int setScanMode(int mode, AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null || !callerIsSystemOrActiveUser(TAG, "setScanMode")
                     || !Utils.checkScanPermissionForDataDelivery(
                             service, attributionSource, "AdapterService setScanMode")) {
-                return false;
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
             }
 
-            service.mAdapterProperties.setDiscoverableTimeout(duration);
-            return service.mAdapterProperties.setScanMode(convertScanModeToHal(mode));
+            return service.mAdapterProperties.setScanMode(convertScanModeToHal(mode))
+                    ? BluetoothStatusCodes.SUCCESS : BluetoothStatusCodes.ERROR_UNKNOWN;
         }
 
         @Override
-        public int getDiscoverableTimeout(AttributionSource attributionSource) {
+        public long getDiscoverableTimeout(AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null || !callerIsSystemOrActiveUser(TAG, "getDiscoverableTimeout")
                     || !Utils.checkScanPermissionForDataDelivery(
                             service, attributionSource, "AdapterService getDiscoverableTimeout")) {
-                return 0;
+                return -1;
             }
             return service.mAdapterProperties.getDiscoverableTimeout();
         }
 
         @Override
-        public boolean setDiscoverableTimeout(int timeout, AttributionSource attributionSource) {
+        public int setDiscoverableTimeout(long timeout, AttributionSource attributionSource) {
             AdapterService service = getService();
             if (service == null || !callerIsSystemOrActiveUser(TAG, "setDiscoverableTimeout")
                     || !Utils.checkScanPermissionForDataDelivery(
                             service, attributionSource, "AdapterService setDiscoverableTimeout")) {
-                return false;
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
             }
-            return service.mAdapterProperties.setDiscoverableTimeout(timeout);
+            return service.mAdapterProperties.setDiscoverableTimeout((int) timeout)
+                    ? BluetoothStatusCodes.SUCCESS : BluetoothStatusCodes.ERROR_UNKNOWN;
         }
 
         @Override
@@ -2797,13 +2798,13 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public int isCisCentralSupported() {
-            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+        public int isLeAudioSupported() {
+            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
         }
 
         @Override
         public int isLePeriodicAdvertisingSyncTransferSenderSupported() {
-            return BluetoothStatusCodes.ERROR_FEATURE_NOT_SUPPORTED;
+            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
         }
 
         @Override

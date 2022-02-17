@@ -22,6 +22,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.AudioManager;
+import android.media.AudioSystem;
 import android.provider.Settings;
 import android.util.FeatureFlagUtils;
 import android.util.Log;
@@ -333,8 +334,8 @@ public class Config {
     protected static boolean isLC3CodecSupported(Context ctx) {
       boolean isLC3Supported = false;
       AudioManager mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-      List<BluetoothCodecConfig> mmSupportedCodecs =
-              mAudioManager.getHwOffloadEncodingFormatsSupportedForA2DP();
+
+      List<BluetoothCodecConfig> mmSupportedCodecs = mAudioManager.getHwOffloadFormatsSupportedForA2dp();
 
       for (BluetoothCodecConfig codecConfig: mmSupportedCodecs) {
           if (codecConfig.getCodecType() == BluetoothCodecConfig.SOURCE_CODEC_TYPE_LC3) {

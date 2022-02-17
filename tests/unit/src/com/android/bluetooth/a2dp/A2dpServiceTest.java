@@ -54,6 +54,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -587,8 +588,8 @@ public class A2dpServiceTest {
         codecsLocalCapabilities[0] = codecConfigSbc;
         codecsSelectableCapabilities[0] = codecConfigSbc;
         BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(codecConfig,
-                                                                    codecsLocalCapabilities,
-                                                                    codecsSelectableCapabilities);
+                                                                    Arrays.asList(codecsLocalCapabilities),
+                                                                    Arrays.asList(codecsSelectableCapabilities));
 
         // Update the device priority so okToConnect() returns true
         when(mDatabaseManager.getProfileConnectionPolicy(mTestDevice, BluetoothProfile.A2DP))
@@ -1099,9 +1100,11 @@ public class A2dpServiceTest {
         badCodecsSelectableCapabilities[0] = codecConfigAac;
 
         BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(codecConfigSbc,
-                codecsLocalCapabilities, codecsSelectableCapabilities);
+                Arrays.asList(codecsLocalCapabilities),
+                Arrays.asList(codecsSelectableCapabilities));
         BluetoothCodecStatus badCodecStatus = new BluetoothCodecStatus(codecConfigAac,
-                codecsLocalCapabilities, badCodecsSelectableCapabilities);
+                Arrays.asList(codecsLocalCapabilities),
+                Arrays.asList(badCodecsSelectableCapabilities));
 
         when(mDatabaseManager.getA2dpSupportsOptionalCodecs(mTestDevice))
                 .thenReturn(previousSupport);
