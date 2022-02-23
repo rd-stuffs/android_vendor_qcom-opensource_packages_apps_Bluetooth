@@ -1989,8 +1989,9 @@ public class HeadsetService extends ProfileService {
                     ActiveDeviceManagerServiceIntf.get();
             /*Precautionary Change: Force Active Device Manager
              * to always return true*/
-            return mActiveDeviceManager.setActiveDevice(device,
-                    ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
+            mActiveDeviceManager.setActiveDevice(device,
+                    ApmConstIntf.AudioFeatures.CALL_AUDIO, false);
+            return true;
         } else {
             int ret = setActiveDeviceHF(device);
             if (ret == ActiveDeviceManagerServiceIntf.SHO_FAILED) {
