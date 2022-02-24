@@ -2182,6 +2182,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public String getIdentityAddress(String address) {
+            return "";
+        }
+
+        @Override
         public int getConnectionState(BluetoothDevice device) {
             return getConnectionStateWithAttribution(device, Utils.getCallingAttributionSource());
         }
