@@ -1182,22 +1182,23 @@ public class GattService extends ProfileService {
 
         @Override
         public void transferSync(BluetoothDevice bda, int service_data , int sync_handle,
-            SynchronousResultReceiver receiver) {
+            AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
-            service.transferSync(bda, service_data , sync_handle);
+            service.transferSync(bda, service_data , sync_handle, attributionSource);
         }
 
         @Override
         public void transferSetInfo(BluetoothDevice bda, int service_data , int adv_handle,
-                IPeriodicAdvertisingCallback callback, SynchronousResultReceiver receiver) {
+                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
-            service.transferSetInfo(bda, service_data , adv_handle, callback);
+            service.transferSetInfo(bda, service_data , adv_handle, callback, attributionSource);
         }
 
         @Override
@@ -2853,16 +2854,17 @@ public class GattService extends ProfileService {
         mPeriodicScanManager.stopSync(callback);
     }
 
-    void transferSync(BluetoothDevice bda, int service_data, int sync_handle) {
-        if (!Utils.checkScanPermissionForPreflight(this)) {
+    void transferSync(BluetoothDevice bda, int service_data, int sync_handle, AttributionSource attributionSource) {
+        if (!Utils.checkScanPermissionForDataDelivery(this, attributionSource, "GattService transferSync")) {
             return;
         }
         mPeriodicScanManager.transferSync(bda, service_data, sync_handle);
     }
 
     void transferSetInfo(BluetoothDevice bda, int service_data,
-                  int adv_handle, IPeriodicAdvertisingCallback callback) {
-        if (!Utils.checkScanPermissionForPreflight(this)) {
+                  int adv_handle, IPeriodicAdvertisingCallback callback,
+                  AttributionSource attributionSource) {
+        if (!Utils.checkScanPermissionForDataDelivery(this,attributionSource, "GattService transferSetInfo")) {
             return;
         }
         mPeriodicScanManager.transferSetInfo(bda, service_data, adv_handle, callback);
