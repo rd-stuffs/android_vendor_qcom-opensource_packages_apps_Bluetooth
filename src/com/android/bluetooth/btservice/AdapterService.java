@@ -92,6 +92,7 @@ import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.bluetooth.IBluetoothSocketManager;
+import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.bluetooth.UidTraffic;
 import android.companion.CompanionDeviceManager;
@@ -2158,6 +2159,26 @@ public class AdapterService extends Service {
             }
             enforceBluetoothPrivilegedPermission(service);
             return service.getSupportedProfiles();
+        }
+
+        @Override
+        public IncomingRfcommSocketInfo retrievePendingSocketForServiceRecord(
+                ParcelUuid uuid, AttributionSource attributionSource) {
+            return null;
+        }
+
+        @Override
+        public int startRfcommListener(
+            String name,
+            ParcelUuid uuid,
+            PendingIntent pendingIntent,
+            AttributionSource attributionSource) {
+            return -1;
+        }
+
+        @Override
+        public int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
+            return -1;
         }
 
         @Override
