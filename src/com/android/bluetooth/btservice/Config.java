@@ -51,6 +51,7 @@ import com.android.bluetooth.ReflectionUtils;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.ba.BATService;
+import com.android.bluetooth.le_audio.LeAudioService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,6 +138,8 @@ public class Config {
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
+            new ProfileConfig(LeAudioService.class, R.bool.profile_supported_le_audio,
+                    (1 << BluetoothProfile.LE_AUDIO)),
     };
 
     /* List of Unicast Advance Audio Profiles */

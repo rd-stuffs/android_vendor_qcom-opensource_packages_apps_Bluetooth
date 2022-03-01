@@ -458,11 +458,11 @@ public class HeadsetStateMachine extends StateMachine {
                 Log.e(TAG, "HeadsetService is null");
                 return;
             }
-            if(ApmConstIntf.getLeAudioEnabled()) {
+            if(ApmConstIntf.getQtiLeAudioEnabled()) {
                 mHeadsetService.updateConnState(device, toState);
             }
             mHeadsetService.onConnectionStateChangedFromStateMachine(device, fromState, toState);
-            if(!ApmConstIntf.getLeAudioEnabled()) {
+            if(!ApmConstIntf.getQtiLeAudioEnabled()) {
                 Intent intent = new Intent(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
                 intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
                 intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
@@ -480,7 +480,7 @@ public class HeadsetStateMachine extends StateMachine {
                 Log.e(TAG, "HeadsetService is null");
                 return;
             }
-            if(ApmConstIntf.getLeAudioEnabled()) {
+            if(ApmConstIntf.getQtiLeAudioEnabled()) {
                 mHeadsetService.updateAudioState(device, toState);
             }
             BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_SCO_CONNECTION_STATE_CHANGED,
@@ -490,7 +490,7 @@ public class HeadsetStateMachine extends StateMachine {
                             ? BluetoothHfpProtoEnums.SCO_CODEC_MSBC
                             : BluetoothHfpProtoEnums.SCO_CODEC_CVSD);
             mHeadsetService.onAudioStateChangedFromStateMachine(device, fromState, toState);
-            if(!ApmConstIntf.getLeAudioEnabled()) {
+            if(!ApmConstIntf.getQtiLeAudioEnabled()) {
                 Intent intent = new Intent(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
                 intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
                 intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
