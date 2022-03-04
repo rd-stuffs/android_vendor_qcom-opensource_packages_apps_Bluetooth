@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothPan.LocalPanRole;
 import android.bluetooth.BluetoothPan.RemotePanRole;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothPan;
+import android.bluetooth.IBluetoothPanCallback;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.content.Intent;
@@ -131,7 +132,7 @@ public class PanService extends ProfileService {
         mBluetoothIfaceAddresses = new ArrayList<String>();
         try {
             mMaxPanDevices = getResources().getInteger(
-                    com.android.internal.R.integer.config_max_pan_devices);
+                    com.android.bluetooth.R.integer.config_max_pan_devices);
         } catch (NotFoundException e) {
             mMaxPanDevices = BLUETOOTH_MAX_PAN_CONNECTIONS;
         }
@@ -332,7 +333,8 @@ public class PanService extends ProfileService {
         }
 
         @Override
-        public void setBluetoothTethering(boolean value, AttributionSource source,
+        public void setBluetoothTethering(IBluetoothPanCallback callback, int id,
+                boolean value, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
                 PanService service = getService(source);
