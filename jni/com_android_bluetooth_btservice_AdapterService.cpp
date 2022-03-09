@@ -621,8 +621,7 @@ static void link_quality_report_callback(
     int negative_acknowledgement_count) {
 }
 
-static void switch_buffer_size_callback(RawAddress* remote_addr,
-                                        bool is_low_latency_buffer_size) {
+static void switch_buffer_size_callback(bool is_low_latency_buffer_size) {
 }
 
 static bt_callbacks_t sBluetoothCallbacks = {
