@@ -99,7 +99,7 @@ class A2dpCodecConfig {
     boolean enableOptionalCodecs(BluetoothDevice device, BluetoothCodecConfig currentCodecConfig) {
         if (currentCodecConfig != null && !currentCodecConfig.isMandatoryCodec()) {
             Log.i(TAG, "enableOptionalCodecs: already using optional codec "
-                    + currentCodecConfig.getCodecName());
+                + BluetoothCodecConfig.getCodecName( currentCodecConfig.getCodecType()));
             return true;
         }
 
