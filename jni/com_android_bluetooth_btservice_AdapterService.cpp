@@ -1900,6 +1900,12 @@ jint JNI_OnLoad(JavaVM *jvm, void *reserved) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_csip_client(e);
+  if (status < 0) {
+    ALOGE("jni csip registration failure: %d", status);
+    return JNI_ERR;
+  }
+
 #ifdef ADV_AUDIO_FEATURE
   status = android::register_com_android_bluetooth_adv_audio_profiles(e);
   if (status < 0) {

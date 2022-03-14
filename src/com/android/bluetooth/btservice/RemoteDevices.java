@@ -75,6 +75,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.ReflectionUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
@@ -102,6 +103,7 @@ final class RemoteDevices {
 
     private static BluetoothAdapter sAdapter;
     private static AdapterService sAdapterService;
+    private static GroupService sGroupService;
     private static ArrayList<BluetoothDevice> sSdpTracker;
     private final Object mObject = new Object();
 
@@ -187,6 +189,7 @@ final class RemoteDevices {
         mDevices = new HashMap<String, DeviceProperties>();
         mDeviceQueue = new LinkedList<String>();
         mHandler = new RemoteDevicesHandler(looper);
+        sGroupService = new ServiceFactory().getGroupService();
     }
 
     /**
@@ -774,12 +777,13 @@ final class RemoteDevices {
                             device.mBluetoothClass = Utils.byteArrayToInt(val);
                             if (tmpBluetoothClass
                                 != BluetoothClass.Device.Major.UNCATEGORIZED) {
-                              if ((tmpBluetoothClass & (BluetoothClass.Service.GROUP))
-                                  == BluetoothClass.Service.GROUP) {
-                                debugLog("Remote after adv audio class is:"
-                                    + device.mBluetoothClass + device);
-                                device.mBluetoothClass |= BluetoothClass.Service.GROUP;
-                                  }
+                                if ( (sGroupService != null) && (tmpBluetoothClass
+                                      & (BluetoothClass.Service.GROUP))
+                                      == BluetoothClass.Service.GROUP) {
+                                    debugLog("Remote after adv audio class is:"
+                                        + device.mBluetoothClass + device);
+                                    device.mBluetoothClass |= BluetoothClass.Service.GROUP;
+                                }
                             }
                             intent = new Intent(BluetoothDevice.ACTION_CLASS_CHANGED);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bdDevice);
@@ -876,30 +880,14 @@ final class RemoteDevices {
                             device.mRssi = val[0];
                             break;
                         case AbstractionLayer.BT_PROPERTY_REMOTE_DEVICE_GROUP:
-                            try {
-                                Method mLoadGroups = null;
-                                Class<?> grpSvcCls = Class.forName(
-                                    "com.android.bluetooth.groupclient.GroupService");
-                                if (grpSvcCls != null) {
-                                    mLoadGroups = grpSvcCls.getMethod(
-                                        "loadDeviceGroupFromBondedDevice",
-                                        BluetoothDevice.class, String.class);
-                                    if (mLoadGroups != null) {
-                                        mLoadGroups.invoke(null, bdDevice, new String(val));
-                                    }
-                                }
-                            } catch (NoSuchMethodException|IllegalAccessException|
-                                     InvocationTargetException|ClassNotFoundException e) {
-                                 Log.e(TAG, "Exception in reading groups: " + e);
+                            if (sGroupService != null) {
+                                sGroupService.loadDeviceGroupFromBondedDevice(bdDevice,
+                                        new String(val));
                             }
                             break;
                         case AbstractionLayer.BT_PROPERTY_GROUP_EIR_DATA:
-                            Object mGroupService = new ServiceFactory().getGroupService();
-                            if (mGroupService != null) {
-                                ArrayList<Object> args = new ArrayList<Object>(
-                                        Arrays.asList(bdDevice, new String(val)));
-                                new ReflectionUtils().invokeMethod(
-                                        mGroupService, "handleEIRGroupData", args);
+                            if (sGroupService != null) {
+                                sGroupService.handleEIRGroupData(bdDevice, new String(val));
                             }
                             break;
                         case AbstractionLayer.BT_PROPERTY_ADV_AUDIO_UUID_BY_TRANSPORT:

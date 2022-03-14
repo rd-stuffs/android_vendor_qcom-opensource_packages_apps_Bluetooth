@@ -144,6 +144,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.btservice.AdapterState;
 import com.android.bluetooth.gatt.GattService;
+import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -338,7 +339,7 @@ public class AdapterService extends Service {
     private BluetoothPbapService mPbapService;
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
-    private Object mGroupService;
+    private GroupService mGroupService;
     private SapService mSapService;
     private GattService mGattService;
 
@@ -1485,7 +1486,7 @@ public class AdapterService extends Service {
         mPbapService = BluetoothPbapService.getBluetoothPbapService();
         mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
-        mGroupService = new ServiceFactory().getGroupService();
+        mGroupService = new GroupService().getGroupService();
         mSapService = SapService.getSapService();
         mGattService = GattService.getGattService();
         if (isAdvBCAAudioFeatEnabled()) {
@@ -5890,10 +5891,7 @@ public class AdapterService extends Service {
         } else if (isIgnoreDevice(device)) {
             type  = TYPE_PRIVATE_ADDRESS;
         } else if (isGroupDevice(device)) {
-            ArrayList<Object> args = new ArrayList<Object>(
-                    Arrays.asList(device, new ParcelUuid(EMPTY_UUID)));
-            type = (Integer)(new ReflectionUtils().invokeMethod(
-                    mGroupService, "getRemoteDeviceGroupId", args));
+            type = getGroupId(device);
             if (type > GROUP_ID_END ) {
                 Log.e(TAG, "getDeviceType set id invalid " + type);
             }
@@ -6045,15 +6043,10 @@ public class AdapterService extends Service {
         int groupSupport = deviceProp.getBluetoothClass()
                             & BluetoothClass.Service.GROUP;
 
-        Log.i(TAG," Group SUPPORT VALUE " +groupSupport + " device " +device);
         if (groupSupport == BluetoothClass.Service.GROUP) {
             if (mGroupService == null) return false;
             // Add check for valid groupId- TODO replace null with uuid
-            ArrayList<Object> args = new ArrayList<Object>(
-                    Arrays.asList(device, new ParcelUuid(EMPTY_UUID)));
-            int groupId = (Integer)(new ReflectionUtils().invokeMethod(
-                    mGroupService, "getRemoteDeviceGroupId", args));
-            Log.i(TAG," group id  " + groupId + " device " + device);
+            int groupId = getGroupId(device);
             if (groupId != INVALID_GROUP_ID) {
                 status = true;
             }
@@ -6063,18 +6056,15 @@ public class AdapterService extends Service {
                 status = false;
             }
         }
-        Log.i(TAG," isGroupDevice " + status + "  device name " + device.getName()
+        debugLog("isGroupDevice " + status + "  device name " + device.getName()
                 + " addr " + device.getAddress());
         return status;
     }
 
     public int getGroupId(BluetoothDevice device) {
         if (mGroupService == null) return INVALID_GROUP_ID;
-        ArrayList<Object> args = new ArrayList<Object>(
-                Arrays.asList(device, new ParcelUuid(EMPTY_UUID)));
-        int groupId = (Integer)(new ReflectionUtils().invokeMethod(
-                mGroupService, "getRemoteDeviceGroupId", args));
-        Log.i(TAG," Group ID " + groupId);
+        int groupId = mGroupService.getRemoteDeviceGroupId(device, new ParcelUuid(EMPTY_UUID));
+        debugLog("getGroupId " + groupId);
         return groupId;
     }
 
@@ -6086,8 +6076,8 @@ public class AdapterService extends Service {
         if (deviceProp.getValidBDAddr() == 0) {
                 status = true;
         }
-        Log.i(TAG," isIgnoreDevice " +status +" device name "+device.getName()+" addr "+device.getAddress());
-
+        if (DBG && status)
+            debugLog("isIgnoreDevice name " + device.getName() + " addr " + device.getAddress());
         return status;
     }
 
@@ -6151,25 +6141,8 @@ public class AdapterService extends Service {
     }
 
     public static void setAdvanceAudioSupport() {
-        if (DBG) {
-            Log.d(TAG, " setAdvanceAudioSupport ");
-        }
-        Method mSetAdvanceAudioSupport = null;
-
-        try {
-            Class<?> grpSvcCls = Class.forName(
-                    "com.android.bluetooth.groupclient.GroupService");
-            if (grpSvcCls != null) {
-                mSetAdvanceAudioSupport = grpSvcCls.getMethod(
-                    "setAdvanceAudioSupport");
-                if (mSetAdvanceAudioSupport != null) {
-                    mSetAdvanceAudioSupport.invoke(null);
-                }
-            }
-        } catch (NoSuchMethodException|IllegalAccessException|
-                 InvocationTargetException|ClassNotFoundException e) {
-             Log.e(TAG, "Exception setAdvanceAudioSupport: " + e);
-        }
+        if (DBG) Log.d(TAG, "setAdvanceAudioSupport ");
+        GroupService.setAdvanceAudioSupport();
     }
 
     int getRemoteClass(BluetoothDevice device) {

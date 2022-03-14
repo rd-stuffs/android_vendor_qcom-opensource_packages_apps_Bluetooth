@@ -34,6 +34,7 @@ import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.gatt.GattService;
+import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -66,9 +67,8 @@ public class Config {
     private static Class mBroadcastClass = null;
     private static Class mPCServiceClass = null;
     private static Class mCcServiceClass = null;
-    private static Class mGroupServiceClass = null;
     private static ArrayList<Class> profiles = new ArrayList<>();
-    private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled;
+    private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled, mIsGroupSerEnabled;
 
     static {
         mBCServiceClass = ReflectionUtils.getRequiredClass(
@@ -79,8 +79,6 @@ public class Config {
                 "com.android.bluetooth.pc.PCService");
         mCcServiceClass = ReflectionUtils.getRequiredClass(
                 "com.android.bluetooth.cc.CCService");
-        mGroupServiceClass = ReflectionUtils.getRequiredClass(
-                "com.android.bluetooth.groupclient.GroupService");
     }
 
     private static class ProfileConfig {
@@ -137,6 +135,9 @@ public class Config {
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
+            new ProfileConfig(GroupService.class,
+                    R.bool.profile_supported_group_client,
+                    (1 << BluetoothProfile.CSIP_SET_COORDINATOR)),
     };
 
     /* List of Unicast Advance Audio Profiles */
@@ -167,9 +168,6 @@ public class Config {
     private static ArrayList<ProfileConfig> commonAdvAudioProfiles =
             new ArrayList<ProfileConfig>(
                 Arrays.asList(
-                    new ProfileConfig(mGroupServiceClass,
-                            R.bool.profile_supported_group_client,
-                            (1 << BluetoothProfile.GROUP_CLIENT)),
                     new ProfileConfig(ApmConstIntf.CoordinatedAudioService,
                             R.bool.profile_supported_ca,
                             (1 << ApmConstIntf.COORDINATED_AUDIO_UNICAST)),
@@ -251,8 +249,7 @@ public class Config {
                 if (config.mClass == null) continue;
                 boolean supported = resources.getBoolean(config.mSupported);
                 if (supported) {
-                    if ((config.mClass == mGroupServiceClass ||
-                            config.mClass == ApmConstIntf.CoordinatedAudioService) &&
+                    if ((config.mClass == ApmConstIntf.CoordinatedAudioService) &&
                         (((adv_audio_feature_mask & ADV_AUDIO_UNICAST_FEAT_MASK) == 0) &&
                          ((adv_audio_feature_mask & ADV_AUDIO_BCA_FEAT_MASK) == 0))) {
                         continue;
@@ -385,7 +382,7 @@ public class Config {
 
     /* Returns true if advance audio project is available */
     public static boolean isAdvAudioAvailable() {
-        return (mGroupServiceClass != null ? true : false);
+        return true; // fix me, shoud be dynamic ?
     }
 
     static Class[] getSupportedProfiles() {
@@ -441,6 +438,8 @@ public class Config {
             return false;
         if (serviceName.equals("BATService")) {
             return mIsBAEnabled && mIsSplitA2dpEnabled;
+        } if (serviceName.equals("GroupService")) {
+            return mIsGroupSerEnabled;
         }
 
         // always return true for other profiles
@@ -450,6 +449,7 @@ public class Config {
     private static void getAudioProperties() {
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
         mIsBAEnabled = SystemProperties.getBoolean("persist.vendor.service.bt.bca", false);
+        mIsGroupSerEnabled = true; // Fix me, Later enable based on condition
         // Split A2dp will be enabled by default
         mIsSplitA2dpEnabled = true;
         AdapterService adapterService = AdapterService.getAdapterService();
