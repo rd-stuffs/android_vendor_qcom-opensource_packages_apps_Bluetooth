@@ -35,7 +35,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.AudioSystem;
-import android.media.BtProfileConnectionInfo;
+import android.media.BluetoothProfileConnectionInfo;
 import android.os.HandlerThread;
 import android.util.Log;
 
@@ -908,7 +908,7 @@ public class A2dpService extends ProfileService {
             synchronized (mAudioManagerLock) {
                 if (!isBAActive && mAudioManager != null) {
                     mAudioManager.handleBluetoothActiveDeviceChanged(null, previousActiveDevice,
-                       BtProfileConnectionInfo.a2dpInfo(!stopAudio, -1));
+                       BluetoothProfileConnectionInfo.createA2dpInfo(!stopAudio, -1));
                 }
             }
         }
@@ -1134,7 +1134,7 @@ public class A2dpService extends ProfileService {
             // can reset accordingly the audio feeding parameters
             // in the Audio HAL to the Bluetooth stack.
                mAudioManager.handleBluetoothActiveDeviceChanged(device,
-                  previousActiveDevice, BtProfileConnectionInfo.a2dpInfo(true, rememberedVolume));
+                  previousActiveDevice, BluetoothProfileConnectionInfo.createA2dpInfo(true, rememberedVolume));
             }
         }
 
@@ -1926,7 +1926,7 @@ public class A2dpService extends ProfileService {
             synchronized (mAudioManagerLock) {
                 if (mAudioManager != null) {
                     mAudioManager.handleBluetoothActiveDeviceChanged(device, device,
-                        BtProfileConnectionInfo.a2dpInfo(false, -1));
+                        BluetoothProfileConnectionInfo.createA2dpInfo(false, -1));
                 }
             }
         }
