@@ -323,14 +323,14 @@ class PeriodicScanManager {
         }
     }
 
-    void onSyncTransferedCallback(int pa_source, int status, String bda) {
-        Log.d(TAG, "onSyncTransferedCallback()");
+    void onSyncTransferredCallback(int pa_source, int status, String bda) {
+        Log.d(TAG, "onSyncTransferredCallback()");
         Map.Entry<IBinder, SyncTransferInfo>entry = findSyncTransfer(bda);
         if (entry != null) {
             mSyncTransfers.remove(entry);
             IPeriodicAdvertisingCallback callback = entry.getValue().callback;
             try {
-                callback.onSyncTransfered(mAdapter.getRemoteDevice(bda), status);
+                callback.onSyncTransferred(mAdapter.getRemoteDevice(bda), status);
             } catch (RemoteException e) {
                 throw new IllegalArgumentException("Can't find callback for sync transfer");
             }
