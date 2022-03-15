@@ -84,6 +84,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.HexDump;
+import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -594,7 +595,15 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
+        public void getDevicesMatchingConnectionStates(int[] states,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getDevicesMatchingConnectionStates(states, attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private List<BluetoothDevice> getDevicesMatchingConnectionStates(
                 int[] states, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -605,7 +614,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void registerClient(ParcelUuid uuid, IBluetoothGattCallback callback,
-                boolean eatt_support, AttributionSource attributionSource) {
+                boolean eatt_support, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -614,7 +624,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void unregisterClient(int clientIf, AttributionSource attributionSource) {
+        public void unregisterClient(int clientIf, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -624,7 +634,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void registerScanner(IScannerCallback callback, WorkSource workSource,
-                AttributionSource attributionSource) throws RemoteException {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) throws RemoteException {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -633,7 +643,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void unregisterScanner(int scannerId, AttributionSource attributionSource) {
+        public void unregisterScanner(int scannerId, AttributionSource attributionSource,
+            SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -643,7 +654,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void startScan(int scannerId, ScanSettings settings, List<ScanFilter> filters,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -653,7 +664,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void startScanForIntent(PendingIntent intent, ScanSettings settings,
-                List<ScanFilter> filters, AttributionSource attributionSource)
+                List<ScanFilter> filters, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver)
                 throws RemoteException {
             GattService service = getService();
             if (service == null) {
@@ -663,7 +675,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void stopScanForIntent(PendingIntent intent, AttributionSource attributionSource)
+        public void stopScanForIntent(PendingIntent intent, AttributionSource attributionSource,
+            SynchronousResultReceiver receiver)
                 throws RemoteException {
             GattService service = getService();
             if (service == null) {
@@ -673,7 +686,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void stopScan(int scannerId, AttributionSource attributionSource) {
+        public void stopScan(int scannerId, AttributionSource attributionSource,
+            SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -682,7 +696,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void flushPendingBatchResults(int scannerId, AttributionSource attributionSource) {
+        public void flushPendingBatchResults(int scannerId, AttributionSource attributionSource,
+            SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -692,7 +707,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void clientConnect(int clientIf, String address, boolean isDirect, int transport,
-                boolean opportunistic, int phy, AttributionSource attributionSource) {
+                boolean opportunistic, int phy, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -703,7 +719,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void clientDisconnect(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -713,7 +730,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void clientSetPreferredPhy(int clientIf, String address, int txPhy, int rxPhy,
-                int phyOptions, AttributionSource attributionSource) {
+                int phyOptions, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -724,7 +742,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void clientReadPhy(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -734,7 +753,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void refreshDevice(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -744,7 +764,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void discoverServices(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -754,7 +775,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void discoverServiceByUuid(int clientIf, String address, ParcelUuid uuid,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -764,7 +785,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void readCharacteristic(int clientIf, String address, int handle, int authReq,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -774,7 +795,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void readUsingCharacteristicUuid(int clientIf, String address, ParcelUuid uuid,
-                int startHandle, int endHandle, int authReq, AttributionSource attributionSource) {
+                int startHandle, int endHandle, int authReq, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -784,7 +806,18 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public int writeCharacteristic(int clientIf, String address, int handle, int writeType,
+        public void writeCharacteristic(int clientIf, String address, int handle, int writeType,
+                int authReq, byte[] value, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(writeCharacteristic(clientIf, address, handle, writeType, authReq,
+                            value, attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int writeCharacteristic(int clientIf, String address, int handle, int writeType,
                 int authReq, byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -796,7 +829,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void readDescriptor(int clientIf, String address, int handle, int authReq,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -805,7 +838,18 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public int writeDescriptor(int clientIf, String address, int handle, int authReq,
+        public void writeDescriptor(int clientIf, String address, int handle, int authReq,
+                byte[] value, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(writeDescriptor(clientIf, address, handle, authReq, value,
+                            attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int writeDescriptor(int clientIf, String address, int handle, int authReq,
                 byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -816,7 +860,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void beginReliableWrite(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -826,7 +870,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void endReliableWrite(int clientIf, String address, boolean execute,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -836,7 +880,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void registerForNotification(int clientIf, String address, int handle,
-                boolean enable, AttributionSource attributionSource) {
+                boolean enable, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -846,7 +890,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void readRemoteRssi(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -856,7 +900,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void configureMTU(
-                int clientIf, String address, int mtu, AttributionSource attributionSource) {
+                int clientIf, String address, int mtu, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -866,7 +910,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void connectionParameterUpdate(int clientIf, String address,
-                int connectionPriority, AttributionSource attributionSource) {
+                int connectionPriority, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -880,7 +924,7 @@ public class GattService extends ProfileService {
                 int minConnectionInterval, int maxConnectionInterval,
                 int peripheralLatency, int supervisionTimeout,
                 int minConnectionEventLen, int maxConnectionEventLen,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -893,7 +937,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void registerServer(ParcelUuid uuid, IBluetoothGattServerCallback callback,
-                boolean eatt_support, AttributionSource attributionSource) {
+                boolean eatt_support, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -902,7 +946,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void unregisterServer(int serverIf, AttributionSource attributionSource) {
+        public void unregisterServer(int serverIf, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -912,7 +956,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void serverConnect(int serverIf, String address, boolean isDirect, int transport,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -922,7 +966,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void serverDisconnect(
-                int serverIf, String address, AttributionSource attributionSource) {
+                int serverIf, String address, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -932,7 +976,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void serverSetPreferredPhy(int serverIf, String address, int txPhy, int rxPhy,
-                int phyOptions, AttributionSource attributionSource) {
+                int phyOptions, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -943,7 +987,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void serverReadPhy(
-                int clientIf, String address, AttributionSource attributionSource) {
+                int clientIf, String address, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -953,7 +997,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void addService(
-                int serverIf, BluetoothGattService svc, AttributionSource attributionSource) {
+                int serverIf, BluetoothGattService svc, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -963,7 +1007,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void removeService(int serverIf, int handle, AttributionSource attributionSource) {
+        public void removeService(int serverIf, int handle, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -972,7 +1016,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void clearServices(int serverIf, AttributionSource attributionSource) {
+        public void clearServices(int serverIf, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -982,7 +1026,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void sendResponse(int serverIf, String address, int requestId, int status,
-                int offset, byte[] value, AttributionSource attributionSource) {
+                int offset, byte[] value, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -992,7 +1036,18 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public int sendNotification(int serverIf, String address, int handle, boolean confirm,
+        public void sendNotification(int serverIf, String address, int handle, boolean confirm,
+                byte[] value, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(sendNotification(serverIf, address, handle, confirm, value,
+                            attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int sendNotification(int serverIf, String address, int handle, boolean confirm,
                 byte[] value, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -1007,7 +1062,7 @@ public class GattService extends ProfileService {
                 AdvertiseData advertiseData, AdvertiseData scanResponse,
                 PeriodicAdvertisingParameters periodicParameters, AdvertiseData periodicData,
                 int duration, int maxExtAdvEvents, IAdvertisingSetCallback callback,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1018,7 +1073,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void stopAdvertisingSet(
-                IAdvertisingSetCallback callback, AttributionSource attributionSource) {
+                IAdvertisingSetCallback callback, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1027,7 +1083,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void getOwnAddress(int advertiserId, AttributionSource attributionSource) {
+        public void getOwnAddress(int advertiserId, AttributionSource attributionSource,
+            SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1037,7 +1094,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void enableAdvertisingSet(int advertiserId, boolean enable, int duration,
-                int maxExtAdvEvents, AttributionSource attributionSource) {
+                int maxExtAdvEvents, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1048,7 +1106,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void setAdvertisingData(
-                int advertiserId, AdvertiseData data, AttributionSource attributionSource) {
+                int advertiserId, AdvertiseData data, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1058,7 +1117,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void setScanResponseData(
-                int advertiserId, AdvertiseData data, AttributionSource attributionSource) {
+                int advertiserId, AdvertiseData data, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1068,7 +1128,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void setAdvertisingParameters(int advertiserId,
-                AdvertisingSetParameters parameters, AttributionSource attributionSource) {
+                AdvertisingSetParameters parameters, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1078,7 +1139,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void setPeriodicAdvertisingParameters(int advertiserId,
-                PeriodicAdvertisingParameters parameters, AttributionSource attributionSource) {
+                PeriodicAdvertisingParameters parameters, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1088,7 +1150,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void setPeriodicAdvertisingData(int advertiserId, AdvertiseData data,
-                AttributionSource attributionSource) {
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1098,7 +1160,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void setPeriodicAdvertisingEnable(
-                int advertiserId, boolean enable, AttributionSource attributionSource) {
+                int advertiserId, boolean enable, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1108,7 +1171,8 @@ public class GattService extends ProfileService {
 
         @Override
         public void registerSync(ScanResult scanResult, int skip, int timeout,
-                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource) {
+                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1117,7 +1181,8 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void transferSync(BluetoothDevice bda, int service_data , int sync_handle) {
+        public void transferSync(BluetoothDevice bda, int service_data , int sync_handle,
+            SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1127,7 +1192,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void transferSetInfo(BluetoothDevice bda, int service_data , int adv_handle,
-                IPeriodicAdvertisingCallback callback) {
+                IPeriodicAdvertisingCallback callback, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1137,7 +1202,7 @@ public class GattService extends ProfileService {
 
         @Override
         public void unregisterSync(
-                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource) {
+                IPeriodicAdvertisingCallback callback, AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1146,7 +1211,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void disconnectAll(AttributionSource attributionSource) {
+        public void disconnectAll(AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1155,7 +1220,7 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void unregAll(AttributionSource attributionSource) {
+        public void unregAll(AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             GattService service = getService();
             if (service == null) {
                 return;
@@ -1164,6 +1229,15 @@ public class GattService extends ProfileService {
         }
 
         @Override
+        public void numHwTrackFiltersAvailable(AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(numHwTrackFiltersAvailable(attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
         public int numHwTrackFiltersAvailable(AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
