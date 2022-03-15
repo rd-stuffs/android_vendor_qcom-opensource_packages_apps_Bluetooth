@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
+import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -69,6 +70,10 @@ public class ServiceFactory {
 
     public GroupService getGroupService() {
         return GroupService.getGroupService();
+    }
+
+    public CsipSetCoordinatorService getCsipSetCoordinatorService() {
+        return CsipSetCoordinatorService.getCsipSetCoordinatorService();
     }
 
 }

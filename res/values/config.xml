@@ -39,6 +39,7 @@
     <bool name="profile_supported_le_audio">true</bool>
     <bool name="profile_supported_ba">false</bool>
     <bool name="profile_supported_group_client">true</bool>
+    <bool name="profile_supported_csip_set_coordinator">true</bool>
     <bool name="profile_supported_music_player_service">true</bool>
     <bool name="profile_supported_cc_server">true</bool>
     <bool name="avrcp_target_enable_bip">true</bool>

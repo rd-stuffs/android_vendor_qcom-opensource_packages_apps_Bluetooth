@@ -27,7 +27,7 @@
  *  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#define LOG_TAG "BluetoothCsipClientJni"
+#define LOG_TAG "CsipSetCoordinatorJni"
 
 #define LOG_NDEBUG 0
 
@@ -410,9 +410,9 @@ static JNINativeMethod sMethods[] = {
     {"setLockValueNative", "(III[Ljava/lang/String;)V", (void*)setLockValueNative},
 };
 
-int register_com_android_bluetooth_csip_client(JNIEnv* env) {
+int register_com_android_bluetooth_csip_setcoordinator(JNIEnv* env) {
   return jniRegisterNativeMethods(
-      env, "com/android/bluetooth/groupclient/GroupClientNativeInterface",
+      env, "com/android/bluetooth/csip/CsipSetCoordinatorNativeInterface",
       sMethods, NELEM(sMethods));
 }
 }

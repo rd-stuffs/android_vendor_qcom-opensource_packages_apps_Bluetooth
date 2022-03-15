@@ -145,6 +145,7 @@ import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.btservice.AdapterState;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.groupclient.GroupService;
+import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -340,6 +341,7 @@ public class AdapterService extends Service {
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
     private GroupService mGroupService;
+    private CsipSetCoordinatorService mCsipSetCoordinatorService;
     private SapService mSapService;
     private GattService mGattService;
 
@@ -1241,7 +1243,10 @@ public class AdapterService extends Service {
         if (profile == BluetoothProfile.BC_PROFILE) {
             return mBCId != null && ArrayUtils.contains(remoteDeviceUuids, ParcelUuid.fromString (mBCId));
         }
-
+        if (mCsipSetCoordinatorService != null
+                && profile == BluetoothProfile.CSIP_SET_COORDINATOR) {
+            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.COORDINATED_SET);
+        }
         Log.e(TAG, "isSupported: Unexpected profile passed in to function: " + profile);
         return false;
     }
@@ -1316,7 +1321,11 @@ public class AdapterService extends Service {
                 return true;
         }
         //_REF*/
-
+        if (mCsipSetCoordinatorService != null
+                && mCsipSetCoordinatorService.getConnectionPolicy(device)
+                        > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            return true;
+        }
         return false;
     }
 
@@ -1451,6 +1460,14 @@ public class AdapterService extends Service {
                  }
         }
         //_REF*/
+        if (mCsipSetCoordinatorService != null
+                && isSupported(localDeviceUuids, remoteDeviceUuids,
+                        BluetoothProfile.CSIP_SET_COORDINATOR, device)
+                && mCsipSetCoordinatorService.getConnectionPolicy(device)
+                        > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "connectEnabledProfiles: Connecting Coordinated Set Profile");
+            mCsipSetCoordinatorService.connect(mCsipSetCoordinatorService.getAppId(), device);
+        }
         return true;
     }
 
@@ -1486,7 +1503,8 @@ public class AdapterService extends Service {
         mPbapService = BluetoothPbapService.getBluetoothPbapService();
         mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
-        mGroupService = new GroupService().getGroupService();
+        mGroupService = new ServiceFactory().getGroupService();
+        mCsipSetCoordinatorService = new ServiceFactory().getCsipSetCoordinatorService();
         mSapService = SapService.getSapService();
         mGattService = GattService.getGattService();
         if (isAdvBCAAudioFeatEnabled()) {
@@ -4395,6 +4413,14 @@ public class AdapterService extends Service {
         }
         //_REF*/
 
+        if (mCsipSetCoordinatorService != null
+                && isSupported(localDeviceUuids, remoteDeviceUuids,
+                        BluetoothProfile.CSIP_SET_COORDINATOR, device)) {
+            Log.i(TAG, "connectAllEnabledProfiles: Connecting Coordinated Set Profile");
+            mCsipSetCoordinatorService.setConnectionPolicy(
+                    device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            numProfilesConnected++;
+        }
         Log.i(TAG, "connectAllEnabledProfiles: Number of Profiles Connected: "
                 + numProfilesConnected);
 
@@ -4517,7 +4543,12 @@ public class AdapterService extends Service {
             }
         }
         //_REF*/
-
+        if (mCsipSetCoordinatorService != null
+                && mCsipSetCoordinatorService.getConnectionState(device)
+                        == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Coordinater Set Profile");
+            mCsipSetCoordinatorService.disconnect(mCsipSetCoordinatorService.getAppId(), device);
+        }
         return BluetoothStatusCodes.SUCCESS;
     }
 
@@ -6010,15 +6041,22 @@ public class AdapterService extends Service {
     }
 
     public void processGroupMember(int groupId, BluetoothDevice device) {
-      Log.i(TAG," Processing Group Member " + device +
-          " BondState " + device.getBondState());
+        if (mGroupService == null) {
+            if (VERBOSE) Log.v(TAG, "processGroupMember GroupService not enabled");
+            return;
+        }
+
+        if (DBG) {
+            Log.d(TAG," processGroupMember " + device +
+                    " BondState " + device.getBondState());
+        }
       DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
       if (deviceProp == null) {
         byte[] addrByte = Utils.getByteAddress(device);
         deviceProp = mRemoteDevices.addDeviceProperties(addrByte);
       }
       if (deviceProp != null) {
-          int tempBluetoothClass = BluetoothClass.Service.GROUP |
+          int tempBluetoothClass = BluetoothClass.Service.LE_AUDIO |
             deviceProp.getBluetoothClass();
           deviceProp.setBluetoothClass(tempBluetoothClass);
           deviceProp.setBondingInitiatedLocally(true);
@@ -6036,15 +6074,19 @@ public class AdapterService extends Service {
     }
 
     public boolean isGroupDevice(BluetoothDevice device) {
+        if (mGroupService == null) {
+            if (VERBOSE) Log.v(TAG, "isGroupDevice GroupService not enabled");
+            return false;
+        }
+
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         boolean status = false;
 
         if (deviceProp == null) return false;
         int groupSupport = deviceProp.getBluetoothClass()
-                            & BluetoothClass.Service.GROUP;
+                            & BluetoothClass.Service.LE_AUDIO;
 
-        if (groupSupport == BluetoothClass.Service.GROUP) {
-            if (mGroupService == null) return false;
+        if (groupSupport == BluetoothClass.Service.LE_AUDIO) {
             // Add check for valid groupId- TODO replace null with uuid
             int groupId = getGroupId(device);
             if (groupId != INVALID_GROUP_ID) {
@@ -6069,6 +6111,10 @@ public class AdapterService extends Service {
     }
 
     public boolean isIgnoreDevice(BluetoothDevice device) {
+        if (mGroupService == null) {
+            if (VERBOSE) Log.v(TAG, "isIgnoreDevice GroupService not enabled");
+            return false;
+        }
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         boolean status = false;
         if (deviceProp == null) return false;
@@ -6097,9 +6143,9 @@ public class AdapterService extends Service {
             + deviceProp.getBluetoothClass());
 
         int leAudioSupport = (deviceProp.getBluetoothClass())
-                               & (BluetoothClass.Service.GROUP);
+                               & (BluetoothClass.Service.LE_AUDIO);
 
-        if ((leAudioSupport == BluetoothClass.Service.GROUP)
+        if ((leAudioSupport == BluetoothClass.Service.LE_AUDIO)
             && (deviceProp.getValidBDAddr() != 0)) {
             status = true;
         }
@@ -6142,7 +6188,11 @@ public class AdapterService extends Service {
 
     public static void setAdvanceAudioSupport() {
         if (DBG) Log.d(TAG, "setAdvanceAudioSupport ");
-        GroupService.setAdvanceAudioSupport();
+        if (SystemProperties.get("persist.vendor.service.bt.adv_audio_mask").isEmpty()) {
+            SystemProperties.set("persist.vendor.service.bt.adv_audio_mask",
+                    String.valueOf(Config.ADV_AUDIO_UNICAST_FEAT_MASK |
+                    Config.ADV_AUDIO_BCA_FEAT_MASK | Config.ADV_AUDIO_BCS_FEAT_MASK));
+        }
     }
 
     int getRemoteClass(BluetoothDevice device) {

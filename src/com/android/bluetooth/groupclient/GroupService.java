@@ -74,7 +74,7 @@ import java.util.UUID;
 public class GroupService extends ProfileService {
     private static final boolean DBG = true;
     private static final String TAG = "BluetoothGroupService";
-    protected static final boolean VDBG = true;//Log.isLoggable(TAG, Log.VERBOSE);
+    protected static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
 
     private GroupScanner mGroupScanner;
 
@@ -244,12 +244,12 @@ public class GroupService extends ProfileService {
      */
     public static synchronized GroupService getGroupService() {
         if (sGroupService == null) {
-            Log.w(TAG, "getGroupService(): service is NULL");
+            if (DBG) Log.w(TAG, "getGroupService(): service is NULL");
             return null;
         }
 
         if (!sGroupService.isAvailable()) {
-            Log.w(TAG, "getGroupService(): service is not available");
+            if (DBG) Log.w(TAG, "getGroupService(): service is not available");
             return null;
         }
 
@@ -257,7 +257,7 @@ public class GroupService extends ProfileService {
     }
 
     /* API to load coordinated set from bonded device on BT ON */
-    public static void loadDeviceGroupFromBondedDevice (
+    public void loadDeviceGroupFromBondedDevice (
             BluetoothDevice device, String setDetails) {
         String[] csets = setDetails.split(" ");
         if (VDBG) Log.v(TAG, " Device is part of " + csets.length + " device groups");
@@ -304,17 +304,6 @@ public class GroupService extends ProfileService {
    /* API to accept PSRI data from EIR packet */
     public void handleEIRGroupData(BluetoothDevice device, String data) {
         mGroupScanner.handleEIRGroupData(device, data.getBytes());
-    }
-
-    public static void setAdvanceAudioSupport() {
-        Log.d(TAG, "setAdvanceAudioSupport: Setting support from LEA Module");
-
-        if (SystemProperties.get("persist.vendor.service.bt.adv_audio_mask").isEmpty()) {
-          SystemProperties.set("persist.vendor.service.bt.adv_audio_mask",
-                  String.valueOf(Config.ADV_AUDIO_UNICAST_FEAT_MASK |
-                                 Config.ADV_AUDIO_BCA_FEAT_MASK |
-                                 Config.ADV_AUDIO_BCS_FEAT_MASK));
-        }
     }
 
     private static class GroupBinder

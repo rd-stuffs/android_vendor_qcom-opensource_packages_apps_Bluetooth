@@ -167,6 +167,8 @@ int register_com_android_bluetooth_hfp_vendorhfservice(JNIEnv* env);
 int register_com_android_bluetooth_btservice_BluetoothKeystore(JNIEnv* env);
 
 int register_com_android_bluetooth_csip_client(JNIEnv* env);
+
+int register_com_android_bluetooth_csip_setcoordinator(JNIEnv* env);
 }
 
 #endif /* COM_ANDROID_BLUETOOTH_H */

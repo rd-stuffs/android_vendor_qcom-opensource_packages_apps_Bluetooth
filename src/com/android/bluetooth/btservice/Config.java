@@ -33,6 +33,7 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
+import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.hearingaid.HearingAidService;
@@ -68,7 +69,8 @@ public class Config {
     private static Class mPCServiceClass = null;
     private static Class mCcServiceClass = null;
     private static ArrayList<Class> profiles = new ArrayList<>();
-    private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled, mIsGroupSerEnabled;
+    private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled,
+            mIsGroupSerEnabled, mIsCsipServiceEnabled;
 
     static {
         mBCServiceClass = ReflectionUtils.getRequiredClass(
@@ -135,9 +137,6 @@ public class Config {
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
-            new ProfileConfig(GroupService.class,
-                    R.bool.profile_supported_group_client,
-                    (1 << BluetoothProfile.CSIP_SET_COORDINATOR)),
     };
 
     /* List of Unicast Advance Audio Profiles */
@@ -168,6 +167,12 @@ public class Config {
     private static ArrayList<ProfileConfig> commonAdvAudioProfiles =
             new ArrayList<ProfileConfig>(
                 Arrays.asList(
+                    new ProfileConfig(GroupService.class,
+                            R.bool.profile_supported_group_client,
+                            (1 << BluetoothProfile.GROUP_CLIENT)),
+                    new ProfileConfig(CsipSetCoordinatorService.class,
+                            R.bool.profile_supported_csip_set_coordinator,
+                            (1 << BluetoothProfile.CSIP_SET_COORDINATOR)),
                     new ProfileConfig(ApmConstIntf.CoordinatedAudioService,
                             R.bool.profile_supported_ca,
                             (1 << ApmConstIntf.COORDINATED_AUDIO_UNICAST)),
@@ -211,10 +216,10 @@ public class Config {
 
             if (supported && !isProfileDisabled(ctx, config.mMask)) {
                 if (!addAudioProfiles(config.mClass.getSimpleName())) {
-                    Log.i(TAG, " Profile " + config.mClass.getSimpleName() + " Not added ");
+                    if (DBG) Log.d(TAG, "Profile " + config.mClass.getSimpleName() + " Not added");
                     continue;
                 }
-                Log.v(TAG, "Adding " + config.mClass.getSimpleName());
+                if (DBG) Log.d(TAG, "Adding " + config.mClass.getSimpleName());
                 profiles.add(config.mClass);
             }
         }
@@ -254,8 +259,13 @@ public class Config {
                          ((adv_audio_feature_mask & ADV_AUDIO_BCA_FEAT_MASK) == 0))) {
                         continue;
                     }
-                    Log.d(TAG, "Adding " + config.mClass.getSimpleName());
-                    advAudioProfiles.add(config.mClass);
+                    String serviceName = config.mClass.getSimpleName();
+                    if (addAudioProfiles(serviceName)) {
+                       if (DBG) Log.d(TAG, "Adding " + serviceName);
+                        advAudioProfiles.add(config.mClass);
+                    } else {
+                        if(DBG) Log.d(TAG, "Not added " + serviceName);
+                    }
                 }
             }
         }
@@ -382,7 +392,7 @@ public class Config {
 
     /* Returns true if advance audio project is available */
     public static boolean isAdvAudioAvailable() {
-        return true; // fix me, shoud be dynamic ?
+        return (mCcServiceClass != null ? true : false);
     }
 
     static Class[] getSupportedProfiles() {
@@ -440,6 +450,8 @@ public class Config {
             return mIsBAEnabled && mIsSplitA2dpEnabled;
         } if (serviceName.equals("GroupService")) {
             return mIsGroupSerEnabled;
+        } if (serviceName.equals("CsipSetCoordinatorService")) {
+            return mIsCsipServiceEnabled;
         }
 
         // always return true for other profiles
@@ -449,7 +461,12 @@ public class Config {
     private static void getAudioProperties() {
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
         mIsBAEnabled = SystemProperties.getBoolean("persist.vendor.service.bt.bca", false);
-        mIsGroupSerEnabled = true; // Fix me, Later enable based on condition
+        boolean isCsipQti = SystemProperties.getBoolean("ro.vendor.bluetooth.csip_qti", false);
+        if (isCsipQti) {
+            mIsGroupSerEnabled = true;
+        } else {
+            mIsCsipServiceEnabled = true;
+        }
         // Split A2dp will be enabled by default
         mIsSplitA2dpEnabled = true;
         AdapterService adapterService = AdapterService.getAdapterService();
@@ -460,7 +477,8 @@ public class Config {
         }
         if (DBG) {
             Log.d(TAG, "getAudioProperties mIsA2dpSink " + mIsA2dpSink + " mIsBAEnabled "
-                + mIsBAEnabled + " mIsSplitA2dpEnabled " + mIsSplitA2dpEnabled);
+                + mIsBAEnabled + " mIsSplitA2dpEnabled " + mIsSplitA2dpEnabled
+                + " isCsipQti " + isCsipQti);
         }
     }
 }
