@@ -24,10 +24,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
-import javax.obex.HeaderSet;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
+import com.android.obex.HeaderSet;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerRequestHandler;
 
 class MnsObexServer extends ServerRequestHandler {
 

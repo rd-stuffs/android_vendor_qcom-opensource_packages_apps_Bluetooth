@@ -60,13 +60,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import javax.obex.Authenticator;
-import javax.obex.HeaderSet;
-import javax.obex.ObexTransport;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
-import javax.obex.ServerSession;
+import com.android.obex.Authenticator;
+import com.android.obex.HeaderSet;
+import com.android.obex.ObexTransport;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerRequestHandler;
+import com.android.obex.ServerSession;
 
 public class TestActivity extends Activity {
 
@@ -530,7 +530,7 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
             java.io.InputStream is = op.openInputStream();
 
             updateStatus("Got data bytes " + is.available() + " name " + op.getReceivedHeader()
-                    .getHeader(HeaderSet.NAME) + " type " + op.getType());
+                    .getHeader(HeaderSet.NAME));
 
             File f = new File((String) op.getReceivedHeader().getHeader(HeaderSet.NAME));
             fos = new FileOutputStream(f);

@@ -21,9 +21,9 @@ import com.android.bluetooth.mapclient.MasClient.CharsetType;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
-import javax.obex.ResponseCodes;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
+import com.android.obex.ResponseCodes;
 
 /* Place a message into current directory on MSE. */
 final class RequestPushMessage extends Request {

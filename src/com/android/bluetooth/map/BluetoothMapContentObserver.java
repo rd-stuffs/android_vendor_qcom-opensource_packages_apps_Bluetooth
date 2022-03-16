@@ -80,7 +80,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.obex.ResponseCodes;
+import com.android.obex.ResponseCodes;
 
 @TargetApi(19)
 public class BluetoothMapContentObserver {

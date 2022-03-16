@@ -31,9 +31,9 @@ import com.android.internal.util.StateMachine;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
-import javax.obex.ResponseCodes;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
+import com.android.obex.ResponseCodes;
 
 /* MasClient is a one time use connection to a server defined by the SDP record passed in at
  * construction.  After use shutdown() must be called to properly clean up.

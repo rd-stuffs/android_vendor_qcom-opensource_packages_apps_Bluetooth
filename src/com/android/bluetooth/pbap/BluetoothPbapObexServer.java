@@ -52,11 +52,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import javax.obex.ApplicationParameter;
-import javax.obex.HeaderSet;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
+import com.android.obex.ApplicationParameter;
+import com.android.obex.HeaderSet;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerRequestHandler;
 
 import com.android.bluetooth.pbap.BluetoothPbapSimVcardManager.SimPaths;
 
@@ -980,7 +980,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
 
             pbsize[0] = (byte) ((size / 256) & 0xff); // HIGH VALUE
             pbsize[1] = (byte) ((size % 256) & 0xff); // LOW VALUE
-            ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.PHONEBOOKSIZE_TAGID,
+            ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.PHONEBOOKSIZE_TAGID,
                     ApplicationParameter.TRIPLET_LENGTH.PHONEBOOKSIZE_LENGTH, pbsize);
 
             if (mNeedNewMissedCallsNum) {
@@ -1001,7 +1001,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
 
                 nmnum = nmnum > 0 ? nmnum : 0;
                 misnum[0] = (byte) nmnum;
-                ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.NEWMISSEDCALLS_TAGID,
+                ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.NEWMISSEDCALLS_TAGID,
                         ApplicationParameter.TRIPLET_LENGTH.NEWMISSEDCALLS_LENGTH, misnum);
                 if (D) {
                     Log.d(TAG, "handleAppParaForResponse(): mNeedNewMissedCallsNum=true,  num= "
@@ -1018,7 +1018,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
             if (needSendCallHistoryVersionCounters) {
                 setCallversionCounters(ap, appParamValue);
             }
-            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getAPPparam());
+            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getHeader());
 
             if (D) {
                 Log.d(TAG, "Send back Phonebook size only, without body info! Size= " + size);
@@ -1056,9 +1056,9 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
                         "handleAppParaForResponse(): mNeedNewMissedCallsNum=true,  num= " + nmnum);
             }
 
-            ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.NEWMISSEDCALLS_TAGID,
+            ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.NEWMISSEDCALLS_TAGID,
                     ApplicationParameter.TRIPLET_LENGTH.NEWMISSEDCALLS_LENGTH, misnum);
-            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getAPPparam());
+            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getHeader());
             if (D) {
                 Log.d(TAG,
                         "handleAppParaForResponse(): mNeedNewMissedCallsNum=true,  num= " + nmnum);
@@ -1077,7 +1077,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
         if (BluetoothPbapFixes.isSupportedPbap12
                && checkPbapFeatureSupport(mDatabaseIdentifierBitMask)) {
             setDbCounters(ap);
-            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getAPPparam());
+            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getHeader());
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
@@ -1088,7 +1088,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
 
         if (BluetoothPbapFixes.isSupportedPbap12 && needSendPhonebookVersionCounters) {
             setFolderVersionCounters(ap);
-            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getAPPparam());
+            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getHeader());
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
@@ -1099,7 +1099,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
 
         if (needSendCallHistoryVersionCounters) {
             setCallversionCounters(ap, appParamValue);
-            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getAPPparam());
+            reply.setHeader(HeaderSet.APPLICATION_PARAMETER, ap.getHeader());
             try {
                 op.sendHeaders(reply);
             } catch (IOException e) {
@@ -1445,26 +1445,26 @@ public class BluetoothPbapObexServer extends ServerRequestHandler implements Sim
     }
 
     private void setDbCounters(ApplicationParameter ap) {
-        ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.DATABASEIDENTIFIER_TAGID,
+        ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.DATABASEIDENTIFIER_TAGID,
                 ApplicationParameter.TRIPLET_LENGTH.DATABASEIDENTIFIER_LENGTH,
                 getDatabaseIdentifier());
     }
 
     private void setFolderVersionCounters(ApplicationParameter ap) {
-        ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.PRIMARYVERSIONCOUNTER_TAGID,
+        ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.PRIMARYVERSIONCOUNTER_TAGID,
                 ApplicationParameter.TRIPLET_LENGTH.PRIMARYVERSIONCOUNTER_LENGTH,
                 getPBPrimaryFolderVersion());
-        ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.SECONDARYVERSIONCOUNTER_TAGID,
+        ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.SECONDARYVERSIONCOUNTER_TAGID,
                 ApplicationParameter.TRIPLET_LENGTH.SECONDARYVERSIONCOUNTER_LENGTH,
                 getPBSecondaryFolderVersion());
     }
 
     private void setCallversionCounters(ApplicationParameter ap, AppParamValue appParamValue) {
-        ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.PRIMARYVERSIONCOUNTER_TAGID,
+        ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.PRIMARYVERSIONCOUNTER_TAGID,
                 ApplicationParameter.TRIPLET_LENGTH.PRIMARYVERSIONCOUNTER_LENGTH,
                 appParamValue.callHistoryVersionCounter);
 
-        ap.addAPPHeader(ApplicationParameter.TRIPLET_TAGID.SECONDARYVERSIONCOUNTER_TAGID,
+        ap.addTriplet(ApplicationParameter.TRIPLET_TAGID.SECONDARYVERSIONCOUNTER_TAGID,
                 ApplicationParameter.TRIPLET_LENGTH.SECONDARYVERSIONCOUNTER_LENGTH,
                 appParamValue.callHistoryVersionCounter);
     }

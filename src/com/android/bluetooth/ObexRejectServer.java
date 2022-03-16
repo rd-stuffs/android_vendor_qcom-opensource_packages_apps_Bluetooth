@@ -25,8 +25,8 @@ import android.util.Log;
 
 import java.io.IOException;
 
-import javax.obex.HeaderSet;
-import javax.obex.ServerRequestHandler;
+import com.android.obex.HeaderSet;
+import com.android.obex.ServerRequestHandler;
 
 /**
  * A simple ObexServer used to handle connection rejection in two cases:

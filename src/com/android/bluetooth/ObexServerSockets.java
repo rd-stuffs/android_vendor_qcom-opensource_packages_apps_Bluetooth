@@ -22,8 +22,8 @@ import android.util.Log;
 
 import java.io.IOException;
 
-import javax.obex.ResponseCodes;
-import javax.obex.ServerSession;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerSession;
 
 /**
  * Wraps multiple BluetoothServerSocket objects to make it possible to accept connections on

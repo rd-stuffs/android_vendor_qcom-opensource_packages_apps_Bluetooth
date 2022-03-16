@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.obex.HeaderSet;
+import com.android.obex.HeaderSet;
 
 public final class ObexAppParameters {
 
