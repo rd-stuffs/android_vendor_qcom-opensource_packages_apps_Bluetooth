@@ -444,6 +444,15 @@
         </service>
         <service
             android:process="@string/process"
+            android:name = "com.android.bluetooth.bc.BassClientService"
+            android:exported = "true"
+            android:enabled="@bool/profile_supported_bass_client">
+            <intent-filter>
+                <action android:name="android.bluetooth.IBluetoothLeBroadcastAssistant" />
+            </intent-filter>
+        </service>
+        <service
+            android:process="@string/process"
             android:name = "com.android.bluetooth.ba.BATService"
             android:exported="true"
             android:enabled="@bool/profile_supported_ba">
