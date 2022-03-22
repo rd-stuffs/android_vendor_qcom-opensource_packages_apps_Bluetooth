@@ -3314,10 +3314,8 @@ public class GattService extends ProfileService {
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
         }
 
-        if (!permissionCheck(connId, handle)) {
-            Log.w(TAG, "writeDescriptor() - permission check failed!");
-            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_PRIVILEGED_PERMISSION;
-        }
+        //(xxx,b/226044120)
+        permissionCheck(connId, handle);
 
         gattClientWriteDescriptorNative(connId, handle, authReq, value);
         return BluetoothStatusCodes.SUCCESS;
