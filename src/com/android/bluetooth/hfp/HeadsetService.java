@@ -1988,7 +1988,7 @@ public class HeadsetService extends ProfileService {
             ActiveDeviceManagerServiceIntf mActiveDeviceManager =
                     ActiveDeviceManagerServiceIntf.get();
             /*Precautionary Change: Force Active Device Manager
-             * to always return true*/
+             * to always return false as same as Media Audio*/
             mActiveDeviceManager.setActiveDevice(device,
                     ApmConstIntf.AudioFeatures.CALL_AUDIO, false);
             return true;
@@ -2686,7 +2686,8 @@ public class HeadsetService extends ProfileService {
                     doForEachConnectedConnectingStateMachine(
                    stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.CALL_STATE_CHANGED,
                         new HeadsetCallState(numActive, numHeld, callState, number, type, name)));
-                    if (!(mSystemInterface.isInCall() || mSystemInterface.isRinging())) {
+                    if (!(mSystemInterface.isInCall() || mSystemInterface.isRinging()
+                       || isAudioOn())) {
                         Log.i(TAG, "no call, sending resume A2DP message to state machines");
                         for (BluetoothDevice device : availableDevices) {
                             HeadsetStateMachine stateMachine = mStateMachines.get(device);

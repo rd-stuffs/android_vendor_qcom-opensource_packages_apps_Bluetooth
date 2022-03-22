@@ -184,7 +184,7 @@ static jmethodID method_onPeriodicAdvertisingEnabled;
 static jmethodID method_onSyncLost;
 static jmethodID method_onSyncReport;
 static jmethodID method_onSyncStarted;
-static jmethodID method_onSyncTransferedCallback;
+static jmethodID method_onSyncTransferredCallback;
 /**
  * Static variables
  */
@@ -2345,8 +2345,8 @@ static void periodicScanClassInitNative(JNIEnv* env, jclass clazz) {
       env->GetMethodID(clazz, "onSyncStarted", "(IIIILjava/lang/String;III)V");
   method_onSyncReport = env->GetMethodID(clazz, "onSyncReport", "(IIII[B)V");
   method_onSyncLost = env->GetMethodID(clazz, "onSyncLost", "(I)V");
-  method_onSyncTransferedCallback =
-      env->GetMethodID(clazz, "onSyncTransferedCallback", "(IILjava/lang/String;)V");
+  method_onSyncTransferredCallback =
+      env->GetMethodID(clazz, "onSyncTransferredCallback", "(IILjava/lang/String;)V");
 }
 
 static void periodicScanInitializeNative(JNIEnv* env, jobject object) {
@@ -2433,7 +2433,7 @@ static void cancelSyncNative(JNIEnv* env, jobject object, jint sid, jstring addr
   if (!sGattIf) return;
   sGattIf->scanner->CancelCreateSync(sid, str2addr(env, address));
 }
-static void onSyncTransferedCb(int pa_source,uint8_t status, RawAddress address) {
+static void onSyncTransferredCb(int pa_source,uint8_t status, RawAddress address) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
   if (!mPeriodicScanCallbacksObj) {
@@ -2443,7 +2443,7 @@ static void onSyncTransferedCb(int pa_source,uint8_t status, RawAddress address)
   ScopedLocalRef<jstring> addr(sCallbackEnv.get(),
                                  bdaddr2newjstr(sCallbackEnv.get(), &address));
 
-  sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncTransferedCallback, pa_source,
+  sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncTransferredCallback, pa_source,
                               status, addr.get());
 
 }
@@ -2452,14 +2452,14 @@ static void syncTransferNative(JNIEnv* env, jobject object, jint pa_source,
                                        jstring addr,jint service_data, jint sync_handle) {
   if (!sGattIf) return;
   sGattIf->scanner->TransferSync(str2addr(env,addr), service_data, sync_handle,
-                                 base::Bind(&onSyncTransferedCb, pa_source));
+                                 base::Bind(&onSyncTransferredCb, pa_source));
 }
 
 static void TransferSetInfoNative(JNIEnv* env, jobject object, jint pa_source,
                                        jstring addr,jint service_data, jint adv_handle) {
   if (!sGattIf) return;
   sGattIf->scanner->TransferSetInfo(str2addr(env,addr), service_data, adv_handle,
-                                 base::Bind(&onSyncTransferedCb, pa_source));
+                                 base::Bind(&onSyncTransferredCb, pa_source));
 }
 
 static void gattTestNative(JNIEnv* env, jobject object, jint command,
