@@ -3613,9 +3613,9 @@ public class AdapterService extends Service {
                     AttributionSource source) {
             BluetoothActivityEnergyInfo info = reportActivityInfo(source);
             try {
-                listener.onBluetoothActivityEnergyInfo(info);
+                listener.onBluetoothActivityEnergyInfoAvailable(info);
             } catch (RemoteException e) {
-                Log.e(TAG, "onBluetoothActivityEnergyInfo: RemoteException", e);
+                Log.e(TAG, "onBluetoothActivityEnergyInfoAvailable: RemoteException", e);
             }
         }
 
