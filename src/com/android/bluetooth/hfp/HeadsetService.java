@@ -3129,6 +3129,7 @@ public class HeadsetService extends ProfileService {
 
     @Override
     public void dump(StringBuilder sb) {
+        boolean isScoOn = mSystemInterface.getAudioManager().isBluetoothScoOn();
         synchronized (mStateMachines) {
             super.dump(sb);
             ProfileService.println(sb, "mMaxHeadsetConnections: " + mMaxHeadsetConnections);
@@ -3151,9 +3152,7 @@ public class HeadsetService extends ProfileService {
             ProfileService.println(sb, "mForceScoAudio: " + mForceScoAudio);
             ProfileService.println(sb, "mCreated: " + mCreated);
             ProfileService.println(sb, "mStarted: " + mStarted);
-            ProfileService.println(sb,
-                    "AudioManager.isBluetoothScoOn(): " + mSystemInterface.getAudioManager()
-                            .isBluetoothScoOn());
+            ProfileService.println(sb, "AudioManager.isBluetoothScoOn(): " + isScoOn);
             ProfileService.println(sb, "Telecom.isInCall(): " + mSystemInterface.isInCall());
             ProfileService.println(sb, "Telecom.isRinging(): " + mSystemInterface.isRinging());
             for (HeadsetStateMachine stateMachine : mStateMachines.values()) {
