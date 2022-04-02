@@ -2704,7 +2704,7 @@ public class A2dpService extends ProfileService {
         }
 
         @Override
-        public void supportsOptionalCodecs(BluetoothDevice device, AttributionSource source,
+        public void isOptionalCodecsSupported(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
                 int codecSupport = BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
@@ -2725,7 +2725,7 @@ public class A2dpService extends ProfileService {
         }
 
         @Override
-        public void getOptionalCodecsEnabled(BluetoothDevice device, AttributionSource source,
+        public void isOptionalCodecsEnabled(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
                 int optionalCodecEnabled = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
