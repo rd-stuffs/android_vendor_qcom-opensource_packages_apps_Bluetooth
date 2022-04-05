@@ -63,9 +63,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerOperation;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerOperation;
 
 public class BluetoothPbapVcardManager {
     private static final String TAG = "BluetoothPbapVcardManager";
@@ -762,7 +762,7 @@ public class BluetoothPbapVcardManager {
 
             while (!composer.isAfterLast()) {
                 if (BluetoothPbapObexServer.sIsAborted) {
-                    ((ServerOperation) op).isAborted = true;
+                    ((ServerOperation) op).setAborted(true);
                     BluetoothPbapObexServer.sIsAborted = false;
                     break;
                 }
@@ -861,7 +861,7 @@ public class BluetoothPbapVcardManager {
 
             while (!composer.isAfterLast()) {
                 if (BluetoothPbapObexServer.sIsAborted) {
-                    ((ServerOperation) op).isAborted = true;
+                    ((ServerOperation) op).setAborted(true);
                     BluetoothPbapObexServer.sIsAborted = false;
                     break;
                 }
@@ -946,7 +946,7 @@ public class BluetoothPbapVcardManager {
 
             while (!composer.isAfterLast()) {
                 if (BluetoothPbapObexServer.sIsAborted) {
-                    ((ServerOperation) op).isAborted = true;
+                    ((ServerOperation) op).setAborted(true);
                     BluetoothPbapObexServer.sIsAborted = false;
                     break;
                 }

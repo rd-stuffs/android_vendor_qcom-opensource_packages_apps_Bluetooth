@@ -42,10 +42,10 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 
-import javax.obex.HeaderSet;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
+import com.android.obex.HeaderSet;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerRequestHandler;
 
 
 public class BluetoothMapObexServer extends ServerRequestHandler {

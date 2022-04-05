@@ -47,8 +47,8 @@ import com.android.internal.util.StateMachine;
 
 import java.io.IOException;
 
-import javax.obex.ResponseCodes;
-import javax.obex.ServerSession;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerSession;
 
 /**
  * Bluetooth PBAP StateMachine

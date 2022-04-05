@@ -30,9 +30,9 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
-import javax.obex.ResponseCodes;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
+import com.android.obex.ResponseCodes;
 
 final class RequestGetMessage extends Request {
 

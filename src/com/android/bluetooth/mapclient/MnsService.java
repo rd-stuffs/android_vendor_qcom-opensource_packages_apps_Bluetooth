@@ -29,7 +29,7 @@ import com.android.bluetooth.sdp.SdpManager;
 
 import java.io.IOException;
 
-import javax.obex.ServerSession;
+import com.android.obex.ServerSession;
 
 /**
  * Message Notification Server implementation

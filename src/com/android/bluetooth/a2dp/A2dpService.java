@@ -1449,7 +1449,8 @@ public class A2dpService extends ProfileService {
     private BluetoothCodecStatus getTwsPlusCodecStatus(BluetoothCodecStatus mCodecStatus) {
         BluetoothCodecConfig mCodecConfig = mCodecStatus.getCodecConfig();
         BluetoothCodecConfig mNewCodecConfig;
-        Log.d(TAG, "Return TWS codec status with " + mCodecConfig.getCodecName() + " codec");
+        Log.d(TAG, "Return TWS codec status with " + BluetoothCodecConfig.getCodecName(
+            mCodecConfig.getCodecType()) + " codec");
         if(mCodecConfig.getCodecType() == BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_ADAPTIVE) {
             mNewCodecConfig = new BluetoothCodecConfig(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_ADAPTIVE,

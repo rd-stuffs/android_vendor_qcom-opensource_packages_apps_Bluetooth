@@ -55,12 +55,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import javax.obex.HeaderSet;
-import javax.obex.ObexTransport;
-import javax.obex.Operation;
-import javax.obex.ResponseCodes;
-import javax.obex.ServerRequestHandler;
-import javax.obex.ServerSession;
+import com.android.obex.HeaderSet;
+import com.android.obex.ObexTransport;
+import com.android.obex.Operation;
+import com.android.obex.ResponseCodes;
+import com.android.obex.ServerRequestHandler;
+import com.android.obex.ServerSession;
 
 /**
  * This class runs as an OBEX server
@@ -135,7 +135,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             }
             mSession = new ServerSession(mTransport, this, null);
             if(BTOppUtils.isA2DPPlaying) {
-                mSession.reduceMTU(true);
+                // mSession.reduceMTU(true); Fixme : Add similar method in obex library
             }
         } catch (IOException e) {
             Log.e(TAG, "Create server session error" + e);

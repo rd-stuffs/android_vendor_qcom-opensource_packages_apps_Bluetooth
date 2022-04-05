@@ -67,7 +67,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import javax.obex.ObexTransport;
+import com.android.obex.ObexTransport;
 
 /**
  * Performs the background Bluetooth OPP transfer. It also starts thread to

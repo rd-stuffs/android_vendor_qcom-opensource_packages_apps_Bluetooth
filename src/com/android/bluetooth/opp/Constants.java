@@ -41,7 +41,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import javax.obex.HeaderSet;
+import com.android.obex.HeaderSet;
 
 /**
  * Bluetooth OPP internal constant definitions

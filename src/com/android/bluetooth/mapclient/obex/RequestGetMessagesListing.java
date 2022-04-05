@@ -21,8 +21,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
 
 /* Get a listing of messages in directory. */
 final class RequestGetMessagesListing extends Request {

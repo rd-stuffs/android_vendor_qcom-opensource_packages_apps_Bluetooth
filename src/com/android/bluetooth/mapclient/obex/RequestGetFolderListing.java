@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
 
 /* Get a listing of subdirectories. */
 final class RequestGetFolderListing extends Request {

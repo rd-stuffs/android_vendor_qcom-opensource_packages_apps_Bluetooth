@@ -20,8 +20,8 @@ import android.util.Log;
 
 import java.io.IOException;
 
-import javax.obex.ClientSession;
-import javax.obex.HeaderSet;
+import com.android.obex.ClientSession;
+import com.android.obex.HeaderSet;
 
 final class RequestSetMessageStatus extends Request {
     public enum StatusIndicator { READ, DELETED }

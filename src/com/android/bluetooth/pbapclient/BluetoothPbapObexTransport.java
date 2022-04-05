@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import javax.obex.ObexTransport;
+import com.android.obex.ObexTransport;
 
 class BluetoothPbapObexTransport implements ObexTransport {
 

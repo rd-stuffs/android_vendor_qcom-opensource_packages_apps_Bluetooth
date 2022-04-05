@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.obex.ServerSession;
+import com.android.obex.ServerSession;
 
 public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private final String mTag;
