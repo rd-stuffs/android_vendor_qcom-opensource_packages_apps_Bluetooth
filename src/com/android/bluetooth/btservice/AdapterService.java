@@ -1919,6 +1919,7 @@ public class AdapterService extends Service {
                             service, attributionSource, "AdapterService setScanMode")) {
                 return false;
             }
+            enforceBluetoothPrivilegedPermission(service);
 
             service.mAdapterProperties.setDiscoverableTimeout(duration);
             return service.mAdapterProperties.setScanMode(convertScanModeToHal(mode));
