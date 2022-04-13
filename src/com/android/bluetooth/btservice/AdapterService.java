@@ -3775,7 +3775,7 @@ public class AdapterService extends Service {
             AdapterService service = getService();
             if (service == null || !Utils.checkConnectPermissionForDataDelivery(
                     service, attributionSource, "AdapterService getMaxConnectedAudioDevices")) {
-                return AdapterProperties.MAX_CONNECTED_AUDIO_DEVICES_LOWER_BOND;
+                return AdapterProperties.MAX_CONNECTED_AUDIO_DEVICES_LOWER_BOUND;
             }
             return service.getMaxConnectedAudioDevices();
         }
