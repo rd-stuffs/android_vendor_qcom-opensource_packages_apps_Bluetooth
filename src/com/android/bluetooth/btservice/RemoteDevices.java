@@ -276,6 +276,13 @@ final class RemoteDevices {
                             return prop;
                         }
                     }
+
+                    BluetoothDevice newdevice = getDevice(Utils.addressToBytes(deleteKey));
+                    DeviceProperties deviceProperties = getDeviceProperties(newdevice);
+                    if (deviceProperties != null && deviceProperties.isBonding()) {
+                        debugLog("Bonding device " + deleteKey + " Don't remove from property map");
+                        return prop;
+                    }
                     debugLog("Removing device " + deleteKey + " from property map");
                     mDevices.remove(deleteKey);
                 }
