@@ -3830,6 +3830,19 @@ public class AdapterService extends Service {
                 ParcelUuid uuid, AttributionSource attributionSource) {
             return null;
         }
+
+        @Override
+        public void setForegroundUserId(int userId, AttributionSource attributionSource) {
+            AdapterService service = getService();
+            if (service == null || !callerIsSystemOrActiveUser(TAG, "setForegroundUserId")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                    service, Utils.getCallingAttributionSource(mService),
+                    "AdapterService setForegroundUserId")) {
+                return;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            Utils.setForegroundUserId(userId);
+        }
     };
 
     public boolean isEnabled() {
