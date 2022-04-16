@@ -87,6 +87,7 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BufferConstraints;
 import android.bluetooth.IBluetooth;
+import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -116,7 +117,6 @@ import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
-import android.os.ResultReceiver;
 import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
@@ -3609,10 +3609,14 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public void requestActivityInfo(ResultReceiver result, AttributionSource source) {
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(BatteryStats.RESULT_RECEIVER_CONTROLLER_KEY, reportActivityInfo(source));
-            result.send(0, bundle);
+        public void requestActivityInfo(IBluetoothActivityEnergyInfoListener listener,
+                    AttributionSource source) {
+            BluetoothActivityEnergyInfo info = reportActivityInfo(source);
+            try {
+                listener.onBluetoothActivityEnergyInfoAvailable(info);
+            } catch (RemoteException e) {
+                Log.e(TAG, "onBluetoothActivityEnergyInfoAvailable: RemoteException", e);
+            }
         }
 
         @Override
