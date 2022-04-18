@@ -1871,6 +1871,14 @@ public class AdapterService extends Service {
             }
         }
         public String getIdentityAddress(String address) {
+            AdapterService service = getService();
+            if (service == null || !callerIsSystemOrActiveUser(TAG, "getIdentityAddress")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, Utils.getCallingAttributionSource(mService),
+                            "AdapterService getIdentityAddress")) {
+                return null;
+            }
+            enforceBluetoothPrivilegedPermission(service);
             return null;
         }
 
@@ -2251,7 +2259,7 @@ public class AdapterService extends Service {
                     service, attributionSource, "AdapterService getMostRecentlyConnectedDevices")) {
                 return new ArrayList<>();
             }
-
+            enforceBluetoothPrivilegedPermission(service);
             return service.mDatabaseManager.getMostRecentlyConnectedDevices();
         }
 
