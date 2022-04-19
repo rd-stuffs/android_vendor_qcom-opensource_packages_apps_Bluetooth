@@ -510,7 +510,7 @@ public class CsipSetCoordinatorService extends ProfileService {
         }
 
         @Override
-        public void groupLock(
+        public void lockGroup(
                 int groupId, @NonNull IBluetoothCsipSetCoordinatorLockCallback callback,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
@@ -527,7 +527,7 @@ public class CsipSetCoordinatorService extends ProfileService {
         }
 
         @Override
-        public void groupUnlock(@NonNull ParcelUuid lockUuid, AttributionSource source,
+        public void unlockGroup(@NonNull ParcelUuid lockUuid, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
                 CsipSetCoordinatorService service = getService(source);
