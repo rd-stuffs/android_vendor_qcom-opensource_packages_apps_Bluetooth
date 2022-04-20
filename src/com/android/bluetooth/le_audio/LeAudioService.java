@@ -1589,16 +1589,8 @@ public class LeAudioService extends ProfileService {
             Log.d(TAG, "SetVolume " + volume);
         }
 
-        /*int currentlyActiveGroupId = getActiveGroupId();
-        if (currentlyActiveGroupId == LE_AUDIO_GROUP_ID_INVALID) {
-            Log.e(TAG, "There is no active group ");
-            return;
-        }
-
-        VolumeControlService service = mServiceFactory.getVolumeControlService();
-        if (service != null) {
-            service.setVolumeGroup(currentlyActiveGroupId, volume);
-        }*/
+        VolumeManagerIntf mVolumeManager = VolumeManagerIntf.get();
+        mVolumeManager.setLeAudioVolume(volume);
     }
 
     private void notifyGroupNodeAdded(BluetoothDevice device, int groupId) {
