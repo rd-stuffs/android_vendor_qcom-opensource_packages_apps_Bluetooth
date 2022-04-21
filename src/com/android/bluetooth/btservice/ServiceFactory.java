@@ -26,6 +26,7 @@ import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.pan.PanService;
+import com.android.bluetooth.le_audio.LeAudioService;
 
 import android.util.Log;
 
@@ -76,4 +77,7 @@ public class ServiceFactory {
         return CsipSetCoordinatorService.getCsipSetCoordinatorService();
     }
 
+    public LeAudioService getLeAudioService() {
+        return LeAudioService.getLeAudioService();
+    }
 }
