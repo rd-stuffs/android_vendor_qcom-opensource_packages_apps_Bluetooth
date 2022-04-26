@@ -53,7 +53,6 @@ cc_library_shared {
         "packages/modules/Bluetooth/system/types",
         "vendor/qcom/opensource/commonsys/bluetooth_ext/vhal/include",
         "vendor/qcom/opensource/commonsys/system/bt/utils/include",
-        "vendor/qcom/proprietary/commonsys/bt/bt_adv_audio/vhal/include",
     ],
     shared_libs: [
         "libbase",
