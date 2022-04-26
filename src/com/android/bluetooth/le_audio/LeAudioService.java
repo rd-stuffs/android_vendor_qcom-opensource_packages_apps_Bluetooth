@@ -935,7 +935,7 @@ public class LeAudioService extends ProfileService {
         }
 
         return mActiveAudioOutDevice != null;*/
-		return false;
+        return false;
     }
 
     /**
@@ -1021,6 +1021,20 @@ public class LeAudioService extends ProfileService {
                 activeDevices.add(0, mActiveAudioOutDevice);
                 activeDevices.add(1, mActiveAudioInDevice);
         }*/
+
+        ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                            ActiveDeviceManagerServiceIntf.get();
+        mActiveAudioOutDevice =
+            activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+        mActiveAudioInDevice =
+            activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+
+        activeDevices.add(0, mActiveAudioOutDevice);
+        activeDevices.add(1, mActiveAudioInDevice);
+
+        Log.d(TAG, "getActiveDevices: LeAudio devices: Out[" + activeDevices.get(0) +
+                                              "] - In[" + activeDevices.get(1) + "]");
+
         return activeDevices;
     }
 
@@ -1547,7 +1561,8 @@ public class LeAudioService extends ProfileService {
             return LE_AUDIO_GROUP_ID_INVALID;
         }
         return mDeviceGroupIdMap.getOrDefault(device, LE_AUDIO_GROUP_ID_INVALID);*/
-        return -1;
+        //Below 1 is for testing purpose for ALS
+        return 1;
     }
 
     /**
@@ -1772,7 +1787,11 @@ public class LeAudioService extends ProfileService {
         if (descriptor != null) {
             return descriptor.mCodecStatus;
         }*/
-        return null;
+
+        BluetoothLeAudioCodecStatus leAudioCodecStatus = null;
+        MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+        leAudioCodecStatus = mMediaAudio.getLeAudioCodecStatus(groupId);
+        return leAudioCodecStatus;
     }
 
     /**
@@ -1818,6 +1837,11 @@ public class LeAudioService extends ProfileService {
 
         mLeAudioNativeInterface.setCodecConfigPreference(groupId,
                                 inputCodecConfig, outputCodecConfig);*/
+
+        MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+        mMediaAudio.setLeAudioCodecConfigPreference(groupId,
+                                                    inputCodecConfig,
+                                                    outputCodecConfig);
     }
 
 

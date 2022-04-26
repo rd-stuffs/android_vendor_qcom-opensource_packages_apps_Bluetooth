@@ -4409,8 +4409,8 @@ public class AdapterService extends Service {
                     Log.e(TAG, "getActiveDevices: LeAudioService is null");
                 } else {
                     activeDevices = mLeAudioService.getActiveDevices();
-                    //Log.i(TAG, "getActiveDevices: LeAudio devices: Out["
-                    //        + activeDevices.get(0) + "] - In[" + activeDevices.get(1) + "]");
+                    Log.i(TAG, "getActiveDevices: LeAudio devices: Out["
+                            + activeDevices.get(0) + "] - In[" + activeDevices.get(1) + "]");
                 }
                 break;
             default:

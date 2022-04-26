@@ -138,8 +138,6 @@ public class Config {
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
-            new ProfileConfig(LeAudioService.class, R.bool.profile_supported_le_audio,
-                    (1 << BluetoothProfile.LE_AUDIO)),
     };
 
     /* List of Unicast Advance Audio Profiles */
@@ -181,7 +179,10 @@ public class Config {
                             (1 << ApmConstIntf.COORDINATED_AUDIO_UNICAST)),
                     new ProfileConfig(ApmConstIntf.StreamAudioService,
                             R.bool.profile_supported_le_audio,
-                            (1 << ApmConstIntf.LE_AUDIO_UNICAST))
+                            (1 << ApmConstIntf.LE_AUDIO_UNICAST)),
+                    new ProfileConfig(LeAudioService.class,
+                            R.bool.profile_supported_le_audio,
+                            (1 << BluetoothProfile.LE_AUDIO))
             ));
 
     private static Class[] sSupportedProfiles = new Class[0];
