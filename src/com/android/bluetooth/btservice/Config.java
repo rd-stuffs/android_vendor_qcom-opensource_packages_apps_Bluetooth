@@ -484,4 +484,8 @@ public class Config {
                 + " isCsipQti " + isCsipQti);
         }
     }
+
+    public static boolean getIsCsipQti() {
+        return mIsGroupSerEnabled;
+    }
 }

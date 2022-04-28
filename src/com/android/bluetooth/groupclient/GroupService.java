@@ -257,7 +257,7 @@ public class GroupService extends ProfileService {
     }
 
     /* API to load coordinated set from bonded device on BT ON */
-    public void loadDeviceGroupFromBondedDevice (
+    public static void loadDeviceGroupFromBondedDevice (
             BluetoothDevice device, String setDetails) {
         String[] csets = setDetails.split(" ");
         if (VDBG) Log.v(TAG, " Device is part of " + csets.length + " device groups");
@@ -283,7 +283,6 @@ public class GroupService extends ProfileService {
                     lockSupport = Boolean.parseBoolean(propSplit[1]);
                 }
             }
-
             DeviceGroup set = getCoordinatedSet(setId, false);
             if (set == null) {
                 List<BluetoothDevice> members = new ArrayList<BluetoothDevice>();

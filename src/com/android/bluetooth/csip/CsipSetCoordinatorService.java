@@ -111,19 +111,19 @@ public class CsipSetCoordinatorService extends ProfileService {
     private static HashMap<Integer, byte[]> setSirkMap = new HashMap<Integer, byte[]>();
 
     private final int INVALID_APP_ID = 0x10;
-    private final int INVALID_SET_ID = 0x10;
-    private final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+    private static final int INVALID_SET_ID = 0x10;
+    private static final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     /* parameters to hold details for ongoing set discovery and pending set discovery */
     private SetDiscoveryRequest mCurrentSetDisc = null;
     private SetDiscoveryRequest mPendingSetDisc = null;
 
     /* Constants for Coordinated set properties */
-    private final String SET_ID = "SET_ID";
-    private final String INCLUDING_SRVC = "INCLUDING_SRVC";
-    private final String SIZE = "SIZE";
-    private final String SIRK = "SIRK";
-    private final String LOCK_SUPPORT = "LOCK_SUPPORT";
+    private static final String SET_ID = "SET_ID";
+    private static final String INCLUDING_SRVC = "INCLUDING_SRVC";
+    private static final String SIZE = "SIZE";
+    private static final String SIRK = "SIRK";
+    private static final String LOCK_SUPPORT = "LOCK_SUPPORT";
 
     private static int mLocalAppId = -1;
 
@@ -237,6 +237,7 @@ public class CsipSetCoordinatorService extends ProfileService {
         mConnectionStateChangedReceiver = new ConnectionStateChangedReceiver();
         registerReceiver(mConnectionStateChangedReceiver, filter);
         registerGroupClientModule(mBluetoothGroupCallback);
+        updateBondedDevices();
         return true;
     }
 
@@ -332,7 +333,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     /* API to load coordinated set from bonded device on BT ON */
-    public void loadDeviceGroupFromBondedDevice (
+    public static void loadDeviceGroupFromBondedDevice (
             BluetoothDevice device, String setDetails) {
         String[] csets = setDetails.split(" ");
         if (VDBG) Log.v(TAG, " Device is part of " + csets.length + " device groups");
@@ -809,8 +810,9 @@ public class CsipSetCoordinatorService extends ProfileService {
      * when set member is unpaired. Removing the set member from list gives option
      * to user to rediscover it */
     public void removeSetMemberFromCSet(int setId, BluetoothDevice device) {
-        Log.d(TAG, "removeDeviceFromDeviceGroup: setId = " + setId + ", Device: " + device);
-
+        if (DBG) Log.d(TAG, "removeDeviceFromDeviceGroup: setId = " + setId
+                + ", Device: " + device);
+        removeDevice(device, setId);
         DeviceGroup cSet = getCoordinatedSet(setId, false);
         if (cSet != null) {
             cSet.getDeviceGroupMembers().remove(device);
@@ -950,19 +952,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
         // Store sirk in hashmap of setId, sirk
         setSirkMap.put(setId, sirk);
-
-        ParcelUuid parcel_uuid = new ParcelUuid(pSrvcUuid);
-        if (!getAllGroupIds(parcel_uuid).contains(setId)) {
-            mGroupIdToUuidMap.put(setId, parcel_uuid);
-        }
-
-        if (!mDeviceGroupIdMap.containsKey(device)) {
-            mDeviceGroupIdMap.put(device, new HashSet<Integer>());
-        }
-
-        Set<Integer> all_device_groups = mDeviceGroupIdMap.get(device);
-        all_device_groups.add(setId);
-
+       addDevice(device, setId, new ParcelUuid(pSrvcUuid));
         // Discover remaining set members
         startSetDiscovery(mLocalAppId, setId);
     }
@@ -972,7 +962,8 @@ public class CsipSetCoordinatorService extends ProfileService {
         if (DBG) {
             Log.d(TAG, "onNewSetMemberFound: setId = " + setId + ", Device = " + device);
         }
-
+        // Required to group set members in UI
+        addDevice(device, setId, new ParcelUuid(EMPTY_UUID));
         if (mAdapterService == null) {
             Log.e(TAG, "AdapterService instance is NULL. Return.");
             return;
@@ -1487,5 +1478,45 @@ public class CsipSetCoordinatorService extends ProfileService {
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                 | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         sendBroadcast(intent, BLUETOOTH_PRIVILEGED);
+    }
+
+    private void updateBondedDevices() {
+        for (DeviceGroup group : mCoordinatedSets) {
+            ParcelUuid parcel_uuid = group.getIncludingServiceUUID();
+            int setid = group.getDeviceGroupId();
+            List<BluetoothDevice> devicelist = group.getDeviceGroupMembers();
+            for (BluetoothDevice dev : devicelist) {
+                addDevice(dev, setid, parcel_uuid);
+            }
+        }
+        if (DBG) Log.d(TAG, " updateBondedDevices " + mDeviceGroupIdMap);
+    }
+
+    private void addDevice(BluetoothDevice device, int setid, ParcelUuid parcel_uuid) {
+        if (!getAllGroupIds(parcel_uuid).contains(setid)) {
+            mGroupIdToUuidMap.put(setid, parcel_uuid);
+        }
+        if (!mDeviceGroupIdMap.containsKey(device)) {
+            mDeviceGroupIdMap.put(device, new HashSet<Integer>());
+        }
+        Set<Integer> all_device_groups = mDeviceGroupIdMap.get(device);
+        all_device_groups.add(setid);
+    }
+
+    // Remove set Device from Map when set member is unpaired
+    private void removeDevice(BluetoothDevice device, int setid) {
+        if (mDeviceGroupIdMap.containsKey(device)) {
+            Set<Integer> deviceGroups = mDeviceGroupIdMap.get(device);
+            if (deviceGroups.size() == 1) {
+                mDeviceGroupIdMap.remove(device);
+                mGroupIdToUuidMap.remove(setid);
+            } else {
+                Set<Integer> all_device_groups = mDeviceGroupIdMap.get(device);
+                all_device_groups.remove(setid);
+            }
+            if (DBG)
+                Log.d(TAG, "removeDeviceFromDeviceGroup After remove setId = " + setid
+                        + ", Device: " + device + " mDeviceGroupIdMap " + mDeviceGroupIdMap);
+         }
     }
 }
