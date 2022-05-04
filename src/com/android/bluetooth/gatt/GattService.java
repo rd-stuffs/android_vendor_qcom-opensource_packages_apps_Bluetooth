@@ -534,6 +534,11 @@ public class GattService extends ProfileService {
                     return client;
                 }
             }
+            for (ScanClient client : mScanManager.getPendingScanQueue()) {
+                if (client.scannerId == clientIf) {
+                    return client;
+                }
+            }
             return null;
         }
     }
@@ -3080,6 +3085,7 @@ public class GattService extends ProfileService {
             app.recordScanStart(settings, filters, isFilteredScan, isCallbackScan, scannerId);
         }
 
+        mScanManager.addPendingScanToQueue(scanClient);
         mScanManager.startScan(scanClient);
     }
 
