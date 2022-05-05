@@ -301,7 +301,7 @@ class A2dpCodecConfig {
             mA2dpSourceCodecPriorityLc3 = value;
             if (a2dp_offload_cap != null && !a2dp_offload_cap.isEmpty() &&
                 !a2dp_offload_cap.contains("lc3")) {
-                mA2dpSourceCodecPrioritySbc = BluetoothCodecConfig.CODEC_PRIORITY_DISABLED;
+                mA2dpSourceCodecPriorityLc3 = BluetoothCodecConfig.CODEC_PRIORITY_DISABLED;
             }
         }
 
