@@ -441,11 +441,14 @@ public class HeadsetService extends ProfileService {
     }
 
     void onDeviceStateChanged(HeadsetDeviceState deviceState) {
-        if (ApmConstIntf.getQtiLeAudioEnabled()) {
-            Log.d(TAG, "Adv Audio enabled: signalStateChanged");
-            CallControlIntf mCallControl = CallControlIntf.get();
-            mCallControl.updateSignalStatus(deviceState.mSignal);
-        }
+
+        Log.d(TAG, "onDeviceStateChanged");
+        CallControlIntf mCallControl = CallControlIntf.get();
+        if (mCallControl != null)
+           mCallControl.updateSignalStatus(deviceState.mSignal);
+        else
+            Log.w(TAG, "mCallControl is null");
+
         synchronized (mStateMachines) {
             doForEachConnectedStateMachine(
                 stateMachine -> stateMachine.sendMessage(HeadsetStateMachine.DEVICE_STATE_CHANGED,
@@ -1133,11 +1136,14 @@ public class HeadsetService extends ProfileService {
         @Override
         public void phoneStateChanged(int numActive, int numHeld, int callState, String number,
             int type, String name, AttributionSource source) {
-            if (ApmConstIntf.getQtiLeAudioEnabled()) {
-                Log.d(TAG, "Adv Audio enabled: phoneStateChanged");
-                CallControlIntf mCallControl = CallControlIntf.get();
+
+            Log.d(TAG, "phoneStateChanged");
+            CallControlIntf mCallControl = CallControlIntf.get();
+            if (mCallControl != null)
                 mCallControl.phoneStateChanged(numActive, numHeld, callState, number, type, name, false);
-            }
+            else
+                Log.w(TAG, "mCallControl is null");
+
             HeadsetService service = getService(source);
             if (service != null) {
                 service.phoneStateChanged(numActive, numHeld, callState, number, type, name, false);
@@ -1148,11 +1154,13 @@ public class HeadsetService extends ProfileService {
         public void clccResponse(int index, int direction, int status, int mode, boolean mpty,
                 String number, int type, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if (ApmConstIntf.getQtiLeAudioEnabled()) {
-               Log.d(TAG, "Adv Audio enabled: clccResponse");
-               CallControlIntf mCallControl = CallControlIntf.get();
+            Log.d(TAG, "clccResponse");
+            CallControlIntf mCallControl = CallControlIntf.get();
+            if (mCallControl != null)
                mCallControl.clccResponse(index, direction, status, mode, mpty, number, type);
-            }
+            else
+                Log.w(TAG, "mCallControl is null");
+
             try {
                 HeadsetService service = getService(source);
                 if (service != null) {
