@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import android.text.TextUtils;
 public class Config {
     private static final String TAG = "AdapterServiceConfig";
     private static final boolean DBG = true;
@@ -210,6 +211,14 @@ public class Config {
                         BluetoothProperties.isProfileAshaCentralEnabled().orElse(false);
             } else {
                 supported = resources.getBoolean(config.mSupported);
+            }
+            if (!supported && (config.mClass == HearingAidService.class)) {
+                String value = SystemProperties.get
+                    ("persist.sys.fflag.override.settings_bluetooth_hearing_aid");
+                if (!TextUtils.isEmpty(value)) {
+                   supported = Boolean.parseBoolean(value);
+                }
+                if (DBG) Log.d(TAG, "enables support for HearingAidService" + supported);
             }
 
             if (!supported && (config.mClass == HearingAidService.class) && FeatureFlagUtils
