@@ -401,6 +401,15 @@
             </intent-filter>
         </service>
         <service
+             android:process="@string/process"
+             android:name = ".le_audio.LeAudioService"
+             android:enabled="@bool/profile_supported_le_audio"
+             android:exported = "true">
+             <intent-filter>
+                 <action android:name="android.bluetooth.IBluetoothLeAudio" />
+             </intent-filter>
+        </service>
+        <service
             android:process="@string/process"
             android:name = ".ba.BATService"
             android:exported="true"
@@ -494,9 +503,19 @@
         <service
             android:process="@string/process"
             android:name = ".groupclient.GroupService"
+            android:enabled="@bool/profile_supported_group_client"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.bluetooth.IBluetoothDeviceGroup" />
+            </intent-filter>
+        </service>
+        <service
+            android:process="@string/process"
+            android:name = ".csip.CsipSetCoordinatorService"
+            android:enabled="@bool/profile_supported_csip_set_coordinator"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.bluetooth.IBluetoothCsipSetCoordinator" />
             </intent-filter>
         </service>
         <!-- Authenticator for PBAP account. -->

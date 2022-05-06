@@ -119,6 +119,12 @@ class Metadata {
             case BluetoothProfile.BC_PROFILE:
                 profileConnectionPolicies.bc_profile_priority = connectionPolicy;
                 break;
+            case BluetoothProfile.CSIP_SET_COORDINATOR:
+                profileConnectionPolicies.csip_set_coordinator_connection_policy = connectionPolicy;
+                break;
+            case BluetoothProfile.LE_AUDIO:
+                profileConnectionPolicies.le_audio_connection_policy = connectionPolicy;
+                break;
             default:
                 throw new IllegalArgumentException("invalid profile " + profile);
         }
@@ -152,6 +158,10 @@ class Metadata {
                 return profileConnectionPolicies.hearing_aid_connection_policy;
             case BluetoothProfile.BC_PROFILE:
                 return profileConnectionPolicies.bc_profile_priority;
+            case BluetoothProfile.CSIP_SET_COORDINATOR:
+                return profileConnectionPolicies.csip_set_coordinator_connection_policy;
+            case BluetoothProfile.LE_AUDIO:
+                return profileConnectionPolicies.le_audio_connection_policy;
         }
         return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
     }
