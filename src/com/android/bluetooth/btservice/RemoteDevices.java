@@ -74,9 +74,8 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.CsipWrapper;
 import com.android.bluetooth.R;
-import com.android.bluetooth.groupclient.GroupService;
-import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.ReflectionUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
@@ -104,8 +103,6 @@ final class RemoteDevices {
 
     private static BluetoothAdapter sAdapter;
     private static AdapterService sAdapterService;
-    private static GroupService sGroupService;
-    private static CsipSetCoordinatorService sCsipSetCoordinatorService;
     private static boolean isServiceInit = false;
     private static ArrayList<BluetoothDevice> sSdpTracker;
     private final Object mObject = new Object();
@@ -115,7 +112,7 @@ final class RemoteDevices {
 
     private final HashMap<String, DeviceProperties> mDevices;
     private Queue<String> mDeviceQueue;
-
+    private CsipWrapper mCsipWrapper;
     private final Handler mHandler;
     private class RemoteDevicesHandler extends Handler {
 
@@ -192,6 +189,7 @@ final class RemoteDevices {
         mDevices = new HashMap<String, DeviceProperties>();
         mDeviceQueue = new LinkedList<String>();
         mHandler = new RemoteDevicesHandler(looper);
+        mCsipWrapper = CsipWrapper.getInstance();
     }
 
     /**
@@ -741,11 +739,6 @@ final class RemoteDevices {
             errorLog("No properties to update");
             return;
         }
-        if (!isServiceInit) {
-            sGroupService = new ServiceFactory().getGroupService();
-            sCsipSetCoordinatorService = new ServiceFactory().getCsipSetCoordinatorService();
-            isServiceInit = true;
-        }
         for (int j = 0; j < types.length; j++) {
             type = types[j];
             val = values[j];
@@ -793,7 +786,7 @@ final class RemoteDevices {
                             device.mBluetoothClass = newClass;
                             if (tmpBluetoothClass
                                         != BluetoothClass.Device.Major.UNCATEGORIZED
-                                        && (sGroupService != null) ) {
+                                        && mCsipWrapper.isCsipEnabled() ) {
                                 if ((tmpBluetoothClass & BluetoothClass.Service.LE_AUDIO)
                                         == BluetoothClass.Service.LE_AUDIO) {
                                     debugLog("Updated Adv class is:"
@@ -896,21 +889,10 @@ final class RemoteDevices {
                             device.mRssi = val[0];
                             break;
                         case AbstractionLayer.BT_PROPERTY_REMOTE_DEVICE_GROUP:
-                            if (sGroupService != null) {
-                                sGroupService.loadDeviceGroupFromBondedDevice(bdDevice,
-                                        new String(val));
-                            } else if (sCsipSetCoordinatorService != null) {
-                                sCsipSetCoordinatorService.loadDeviceGroupFromBondedDevice(
-                                    bdDevice, new String(val));
-                            }
+                            mCsipWrapper.loadDeviceGroupFromBondedDevice(bdDevice, new String(val));
                             break;
                         case AbstractionLayer.BT_PROPERTY_GROUP_EIR_DATA:
-                            if (sGroupService != null) {
-                                sGroupService.handleEIRGroupData(bdDevice, new String(val));
-                            } else if (sCsipSetCoordinatorService != null) {
-                                sCsipSetCoordinatorService.handleEIRGroupData(bdDevice,
-                                    new String(val));
-                            }
+                            mCsipWrapper.handleEIRGroupData(bdDevice, new String(val));
                             break;
                         case AbstractionLayer.BT_PROPERTY_ADV_AUDIO_UUID_BY_TRANSPORT:
                         {
