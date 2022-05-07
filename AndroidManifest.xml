@@ -132,7 +132,6 @@
         android:usesCleartextTraffic="false"
         android:directBootAware="true"
         android:defaultToDeviceProtectedStorage="true">
-        <uses-library android:name="javax.obex" />
         <provider android:name="com.android.bluetooth.opp.BluetoothOppProvider"
             android:authorities="com.android.bluetooth.opp"
             android:exported="true"
