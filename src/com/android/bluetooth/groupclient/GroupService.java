@@ -848,6 +848,7 @@ public class GroupService extends ProfileService {
             if (cSet.getDeviceGroupMembers().size() == 0) {
                 Log.i(TAG, "Last device unpaired. Removing Device Group from database");
                 mCoordinatedSets.remove(cSet);
+                setSirkMap.remove(setId);
             }
         }
     }
