@@ -56,11 +56,11 @@ import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.groupclient.GroupService;
-import com.android.bluetooth.bc.BassClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.lebroadcast.BassClientService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.le_audio.LeAudioService;
 

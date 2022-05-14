@@ -41,9 +41,6 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanFilter;
 import android.util.Log;
 
-import com.android.bluetooth.bc.BCService;
-import com.android.bluetooth.bc.BassClientService;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
