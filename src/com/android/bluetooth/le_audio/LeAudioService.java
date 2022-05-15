@@ -473,8 +473,13 @@ public class LeAudioService extends ProfileService {
     }
 
     public BluetoothDevice getConnectedGroupLeadDevice(int groupId) {
+        ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                            ActiveDeviceManagerServiceIntf.get();
+        BluetoothDevice lead_device =
+            activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
          //return getFirstDeviceFromGroup(groupId);
-         return null;
+         Log.w(TAG, "returning group lead device as currently active one" + lead_device);
+         return lead_device;
    }
 
     public List<BluetoothDevice> getConnectedGroupLeadDevices() {
@@ -1081,6 +1086,13 @@ public class LeAudioService extends ProfileService {
         return activeDevices;
     }
 
+    public void onLeCodecConfigChange(BluetoothDevice device,
+            BluetoothLeAudioCodecStatus codecStatus, int audioType) {
+        Log.d(TAG, "onLeCodecConfigChange");
+        notifyUnicastCodecConfigChanged(1 /*group id*/, codecStatus);
+
+    }
+
     /*void connectSet(BluetoothDevice device) {
         int groupId = getGroupId(device);
         if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
@@ -1684,9 +1696,10 @@ public class LeAudioService extends ProfileService {
 
     private void notifyUnicastCodecConfigChanged(int groupId,
                                                  BluetoothLeAudioCodecStatus status) {
-        /*if (mLeAudioCallbacks != null) {
+        if (mLeAudioCallbacks != null) {
             int n = mLeAudioCallbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {
+                Log.d(TAG, "notifyUnicastCodecConfigChanged ");
                 try {
                     mLeAudioCallbacks.getBroadcastItem(i).onCodecConfigChanged(groupId, status);
                 } catch (RemoteException e) {
@@ -1694,7 +1707,7 @@ public class LeAudioService extends ProfileService {
                 }
             }
             mLeAudioCallbacks.finishBroadcast();
-        }*/
+        }
     }
 
     private void notifyBroadcastStarted(Integer broadcastId, int reason) {
