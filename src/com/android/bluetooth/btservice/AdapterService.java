@@ -49,6 +49,41 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the
+ * disclaimer below) provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *
+ *     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package com.android.bluetooth.btservice;
 
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
@@ -153,6 +188,7 @@ import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.lebroadcast.BassClientService;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.pan.PanService;
@@ -347,6 +383,7 @@ public class AdapterService extends Service {
     private SapService mSapService;
     private GattService mGattService;
     private LeAudioService mLeAudioService;
+    private BassClientService mBassClientService;
 
     ///*_REF
     Object mBCService = null;
@@ -1255,6 +1292,9 @@ public class AdapterService extends Service {
             Log.e(TAG, "isSupported: profile: " + profile);
             return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO);
         }
+        if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
+            return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.BASS);
+        }
 
         Log.e(TAG, "isSupported: Unexpected profile passed in to function: " + profile);
         return false;
@@ -1320,6 +1360,10 @@ public class AdapterService extends Service {
             mLeAudioService != null && mLeAudioService.getConnectionPolicy(device)
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.i(TAG, "isAnyProfileEnabled: LE_AUDIO profile enabled");
+            return true;
+        }
+        if (mBassClientService != null && mBassClientService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             return true;
         }
         ///*_REF
@@ -1457,6 +1501,13 @@ public class AdapterService extends Service {
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.i(TAG, "connectEnabledProfiles: Connecting LeAudio profile (BAP)");
             mLeAudioService.connect(device);
+        }
+        if (mBassClientService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device)
+                && mBassClientService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "connectEnabledProfiles: Connecting LE Broadcast Assistant Profile");
+            mBassClientService.connect(device);
         }
         ///*_REF
         if (mBCService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
@@ -1871,6 +1922,14 @@ public class AdapterService extends Service {
             }
         }
         public String getIdentityAddress(String address) {
+            AdapterService service = getService();
+            if (service == null || !callerIsSystemOrActiveUser(TAG, "getIdentityAddress")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                            service, Utils.getCallingAttributionSource(mService),
+                            "AdapterService getIdentityAddress")) {
+                return null;
+            }
+            enforceBluetoothPrivilegedPermission(service);
             return null;
         }
 
@@ -2251,7 +2310,7 @@ public class AdapterService extends Service {
                     service, attributionSource, "AdapterService getMostRecentlyConnectedDevices")) {
                 return new ArrayList<>();
             }
-
+            enforceBluetoothPrivilegedPermission(service);
             return service.mDatabaseManager.getMostRecentlyConnectedDevices();
         }
 
@@ -3480,7 +3539,7 @@ public class AdapterService extends Service {
             }
         }
         private int isLeAudioBroadcastSourceSupported() {
-            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }
 
         @Override
@@ -3492,7 +3551,7 @@ public class AdapterService extends Service {
             }
         }
         public int isLeAudioBroadcastAssistantSupported() {
-            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }
 
         @Override
@@ -4401,8 +4460,8 @@ public class AdapterService extends Service {
                     Log.e(TAG, "getActiveDevices: LeAudioService is null");
                 } else {
                     activeDevices = mLeAudioService.getActiveDevices();
-                    //Log.i(TAG, "getActiveDevices: LeAudio devices: Out["
-                    //        + activeDevices.get(0) + "] - In[" + activeDevices.get(1) + "]");
+                    Log.i(TAG, "getActiveDevices: LeAudio devices: Out["
+                            + activeDevices.get(0) + "] - In[" + activeDevices.get(1) + "]");
                 }
                 break;
             default:
@@ -4521,6 +4580,13 @@ public class AdapterService extends Service {
                 BluetoothProfile.HEARING_AID, device)) {
             Log.i(TAG, "connectAllEnabledProfiles: Connecting Hearing Aid Profile");
             mHearingAidService.setConnectionPolicy(device,
+                    BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            numProfilesConnected++;
+        }
+        if (mBassClientService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device)) {
+            Log.i(TAG, "connectAllEnabledProfiles: Connecting LE Broadcast Assistant Profile");
+            mBassClientService.setConnectionPolicy(device,
                     BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             numProfilesConnected++;
         }
@@ -4651,6 +4717,12 @@ public class AdapterService extends Service {
                 == BluetoothProfile.STATE_CONNECTED) {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Sap Profile");
             mSapService.disconnect(device);
+        }
+        if (mBassClientService != null && mBassClientService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting "
+                    + "LE Broadcast Assistant Profile");
+            mBassClientService.disconnect(device);
         }
         ///*_REF
         if (mBCService != null &&  mBCGetConnState != null) {

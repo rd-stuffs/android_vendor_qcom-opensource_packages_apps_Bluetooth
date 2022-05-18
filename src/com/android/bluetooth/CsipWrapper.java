@@ -37,6 +37,7 @@ package com.android.bluetooth;
 import java.util.List;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.groupclient.GroupService;
@@ -156,14 +157,10 @@ public class CsipWrapper {
     }
 
     public void loadDeviceGroupFromBondedDevice(BluetoothDevice device, String setDetails) {
-        if (getGroupService() != null) {
-            mGroupService.loadDeviceGroupFromBondedDevice(device, setDetails);
-        } else if (getCsipSetCoordinatorService() != null) {
-            mCsipSetCoordinatorService.loadDeviceGroupFromBondedDevice
-                    (device, setDetails);
+        if (Config.getIsCsipQti()) {
+            GroupService.loadDeviceGroupFromBondedDevice(device, setDetails);
         } else {
-            if (DBG)
-                Log.d(TAG, "loadDeviceGroupFromBondedDevice not called");
+            CsipSetCoordinatorService.loadDeviceGroupFromBondedDevice(device, setDetails);
         }
     }
 
@@ -191,5 +188,9 @@ public class CsipWrapper {
                 new ServiceFactory().getCsipSetCoordinatorService();
         }
         return mCsipSetCoordinatorService;
+    }
+
+    public boolean isCsipEnabled() {
+        return (getGroupService() != null) || (getCsipSetCoordinatorService() != null);
     }
 }
