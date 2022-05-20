@@ -204,8 +204,11 @@ public class GroupService extends ProfileService {
             Log.w(TAG, "stop() called already..");
             return true;
         }
-
-        unregisterReceiver(mReceiver);
+        try {
+            unregisterReceiver(mReceiver);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, e.getMessage());
+        }
 
         // Cleanup native interface
         mGroupNativeInterface.cleanup();

@@ -262,14 +262,18 @@ public class CsipSetCoordinatorService extends ProfileService {
         if (mGroupScanner != null) {
             mGroupScanner.cleanup();
         }
-
-        unregisterReceiver(mReceiver);
-        unregisterReceiver(mConnectionStateChangedReceiver);
+        if (mConnectionStateChangedReceiver != null) {
+            try {
+                unregisterReceiver(mReceiver);
+                unregisterReceiver(mConnectionStateChangedReceiver);
+                mConnectionStateChangedReceiver = null;
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, e.getMessage());
+            }
+        }
         if (mLocalAppId != -1) {
             unregisterGroupClientModule(mLocalAppId);
         }
-        mConnectionStateChangedReceiver = null;
-
         // Cleanup native interface
         mGroupNativeInterface.cleanup();
         mGroupNativeInterface = null;
