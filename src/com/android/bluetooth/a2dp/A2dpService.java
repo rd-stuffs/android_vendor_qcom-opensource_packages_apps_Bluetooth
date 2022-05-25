@@ -981,7 +981,7 @@ public class A2dpService extends ProfileService {
      */
     public boolean setActiveDevice(BluetoothDevice device) {
 
-        if(/*ApmConstIntf.getQtiLeAudioEnabled()*/ true) {
+        if(ApmConstIntf.getQtiLeAudioEnabled() || (ApmConstIntf.getAospLeaEnabled())) {
             ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
             return activeDeviceManager.setActiveDevice(device, ApmConstIntf.AudioFeatures.MEDIA_AUDIO, false);
         }
