@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- * Changes from Qualcomm Innovation Center are provided under the following license:
  *
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
@@ -431,6 +430,15 @@
             android:enabled="@bool/profile_supported_le_audio">
             <intent-filter>
                 <action android:name="android.bluetooth.IBluetoothVcp" />
+            </intent-filter>
+        </service>
+        <service
+            android:process="@string/process"
+            android:name = "com.android.bluetooth.vc.VolumeControlService"
+            android:exported="true"
+            android:enabled="@bool/profile_supported_volume_control">
+            <intent-filter>
+                <action android:name="android.bluetooth.IBluetoothVolumeControl" />
             </intent-filter>
         </service>
         <service
