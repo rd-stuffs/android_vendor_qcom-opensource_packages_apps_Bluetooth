@@ -5069,9 +5069,7 @@ public class AdapterService extends Service {
 
     boolean isSdpCompleted(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        boolean sdpCompleted = deviceProp.isSdpCompleted();
-        debugLog("sdpCompleted  "  + sdpCompleted);
-        return sdpCompleted;
+        return (deviceProp != null ) ? deviceProp.isSdpCompleted() : false ;
     }
 
     private int getDeviceType(BluetoothDevice device){
