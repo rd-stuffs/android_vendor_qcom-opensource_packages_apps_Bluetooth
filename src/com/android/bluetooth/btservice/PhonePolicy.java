@@ -890,7 +890,12 @@ class PhonePolicy {
         int headsetConnectionPolicy = hsService.getConnectionPolicy(device);
         if (headsetConnectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
             debugLog("autoConnectHeadset: Connecting HFP with " + device);
-            hsService.connect(device);
+            if(ApmConstIntf.getQtiLeAudioEnabled()) {
+                CallAudioIntf mCallAudio = CallAudioIntf.get();
+                mCallAudio.autoConnect(device);
+            } else {
+                hsService.connect(device);
+            }
         } else {
             debugLog("autoConnectHeadset: skipped auto-connect HFP with device " + device
                     + " headsetConnectionPolicy " + headsetConnectionPolicy);
