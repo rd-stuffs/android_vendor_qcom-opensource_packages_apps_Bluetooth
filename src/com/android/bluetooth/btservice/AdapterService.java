@@ -160,6 +160,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -1719,6 +1720,31 @@ public class AdapterService extends Service {
                 mActiveDeviceManager.init_broadcast_ref();
             }
         }
+    }
+
+    public int isLeAudioSupported() {
+        if (BluetoothProperties.isProfileBapUnicastClientEnabled().orElse(false)) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    }
+
+    public int isLeAudioBroadcastSourceSupported() {
+        if (BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false)
+                && mAdapterProperties.isLePeriodicAdvertisingSupported()
+                && mAdapterProperties.isLeExtendedAdvertisingSupported()) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    }
+
+    public int isLeAudioBroadcastAssistantSupported() {
+        if (BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false)
+                && mAdapterProperties.isLePeriodicAdvertisingSupported()
+                && mAdapterProperties.isLeExtendedAdvertisingSupported()) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
     ///*_REF
@@ -3530,7 +3556,11 @@ public class AdapterService extends Service {
             }
         }
         private int isLeAudioSupported() {
-            return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            return service.isLeAudioSupported();
         }
 
         @Override
@@ -3542,7 +3572,11 @@ public class AdapterService extends Service {
             }
         }
         private int isLeAudioBroadcastSourceSupported() {
-            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            return service.isLeAudioBroadcastSourceSupported();
         }
 
         @Override
@@ -3553,8 +3587,12 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
-        public int isLeAudioBroadcastAssistantSupported() {
-            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        private int isLeAudioBroadcastAssistantSupported() {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            return service.isLeAudioBroadcastAssistantSupported();
         }
 
         @Override
