@@ -113,6 +113,7 @@ public class Config {
     private static ArrayList<Class> profiles = new ArrayList<>();
     private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled,
             mIsGroupSerEnabled, mIsCsipServiceEnabled;
+    private static boolean mIsHfpClient;
 
     static {
         mBCServiceClass = ReflectionUtils.getRequiredClass(
@@ -579,6 +580,10 @@ public class Config {
         } if (serviceName.equals("HapClientService")) {
             return addAospAudioProfiles(serviceName);
         }
+        if ((serviceName.equals("HeadsetClientService")) && (!mIsHfpClient))
+            return false;
+        if ((serviceName.equals("HeadsetService")) && (mIsHfpClient))
+            return false;
 
         // always return true for other profiles
         return true;
@@ -611,6 +616,7 @@ public class Config {
     private static void getAudioProperties() {
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
         mIsBAEnabled = SystemProperties.getBoolean("persist.vendor.service.bt.bca", false);
+        mIsHfpClient = SystemProperties.getBoolean("persist.vendor.service.bt.hfpclient", false);
         boolean isCsipQti = SystemProperties.getBoolean("ro.vendor.bluetooth.csip_qti", false);
         if (isCsipQti) {
             mIsGroupSerEnabled = true;
@@ -630,6 +636,7 @@ public class Config {
                 + mIsBAEnabled + " mIsSplitA2dpEnabled " + mIsSplitA2dpEnabled
                 + " isCsipQti " + isCsipQti);
         }
+        Log.d(TAG, "getAudioProperties mIsHfpClient" + mIsHfpClient);
     }
 
     public static boolean getIsCsipQti() {
