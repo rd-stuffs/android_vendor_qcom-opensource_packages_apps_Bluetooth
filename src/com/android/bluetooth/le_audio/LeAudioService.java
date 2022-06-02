@@ -47,10 +47,13 @@ import android.media.AudioManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.sysprop.BluetoothProperties;
 import android.util.Log;
+import android.util.Pair;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -60,6 +63,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 //import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.lebroadcast.LeBroadcastServIntf;
 //import com.android.bluetooth.vc.VolumeControlService;
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
 
@@ -1605,6 +1609,25 @@ public class LeAudioService extends ProfileService {
     }
 
     /**
+     * Set the user application ccid along with used context type
+     * @param userUuid user uuid
+     * @param ccid content control id
+     * @param contextType context type
+     */
+    public void setCcidInformation(ParcelUuid userUuid, int ccid, int contextType) {
+        /* for the moment we care only for GMCS and GTBS */
+        /*if (userUuid != BluetoothUuid.GENERIC_MEDIA_CONTROL
+                && userUuid.getUuid() != TbsGatt.UUID_GTBS) {
+            return;
+        }
+        if (!mLeAudioNativeIsInitialized) {
+            Log.e(TAG, "Le Audio not initialized properly.");
+            return;
+        }
+        mLeAudioNativeInterface.setCcidInformation(ccid, contextType);*/
+    }
+
+    /**
      * Set volume for streaming devices
      * @param volume volume to set
      */
@@ -1907,6 +1930,10 @@ public class LeAudioService extends ProfileService {
         public void connect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
@@ -1922,6 +1949,10 @@ public class LeAudioService extends ProfileService {
         public void disconnect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
@@ -1937,6 +1968,9 @@ public class LeAudioService extends ProfileService {
         public void getConnectedDevices(AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 List<BluetoothDevice> defaultValue = new ArrayList<>(0);
                 if (service != null) {
@@ -1952,6 +1986,9 @@ public class LeAudioService extends ProfileService {
         public void getConnectedGroupLeadDevice(int groupId, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 BluetoothDevice defaultValue = null;
                 if (service != null) {
@@ -1967,6 +2004,9 @@ public class LeAudioService extends ProfileService {
         public void getDevicesMatchingConnectionStates(int[] states,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 List<BluetoothDevice> defaultValue = new ArrayList<>(0);
                 if (service != null) {
@@ -1982,6 +2022,10 @@ public class LeAudioService extends ProfileService {
         public void getConnectionState(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
                 if (service != null) {
@@ -1997,6 +2041,10 @@ public class LeAudioService extends ProfileService {
         public void setActiveDevice(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
@@ -2011,6 +2059,9 @@ public class LeAudioService extends ProfileService {
         @Override
         public void getActiveDevices(AttributionSource source, SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 List<BluetoothDevice> defaultValue = new ArrayList<>();
                 if (service != null) {
@@ -2026,6 +2077,10 @@ public class LeAudioService extends ProfileService {
         public void getAudioLocation(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 int defaultValue = BluetoothLeAudio.AUDIO_LOCATION_INVALID;
                 if (service != null) {
@@ -2040,6 +2095,10 @@ public class LeAudioService extends ProfileService {
         @Override
         public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+            Objects.requireNonNull(device, "device cannot be null");
+            Objects.requireNonNull(source, "source cannot be null");
+            Objects.requireNonNull(receiver, "receiver cannot be null");
+
             try {
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
@@ -2056,12 +2115,39 @@ public class LeAudioService extends ProfileService {
         public void getConnectionPolicy(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 int defaultValue = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-                if (service != null) {
-                    defaultValue = service.getConnectionPolicy(device);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
                 }
+                enforceBluetoothPrivilegedPermission(service);
+                defaultValue = service.getConnectionPolicy(device);
                 receiver.send(defaultValue);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @Override
+        public void setCcidInformation(ParcelUuid userUuid, int ccid, int contextType,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                Objects.requireNonNull(userUuid, "userUuid cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
+                LeAudioService service = getService(source);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
+                }
+                enforceBluetoothPrivilegedPermission(service);
+                service.setCcidInformation(userUuid, ccid, contextType);
+                receiver.send(null);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
@@ -2071,12 +2157,17 @@ public class LeAudioService extends ProfileService {
         public void getGroupId(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 int defaultValue = LE_AUDIO_GROUP_ID_INVALID;
-                if (service != null) {
-
-                    defaultValue = service.getGroupId(device);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
                 }
+                enforceBluetoothPrivilegedPermission(service);
+                defaultValue = service.getGroupId(device);
                 receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -2087,11 +2178,17 @@ public class LeAudioService extends ProfileService {
         public void groupAddNode(int group_id, BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.groupAddNode(group_id, device);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
                 }
+                enforceBluetoothPrivilegedPermission(service);
+                defaultValue = service.groupAddNode(group_id, device);
                 receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -2102,11 +2199,17 @@ public class LeAudioService extends ProfileService {
         public void groupRemoveNode(int groupId, BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(device, "device cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
-                if (service != null) {
-                    defaultValue = service.groupRemoveNode(groupId, device);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
                 }
+                enforceBluetoothPrivilegedPermission(service);
+                defaultValue = service.groupRemoveNode(groupId, device);
                 receiver.send(defaultValue);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -2117,10 +2220,15 @@ public class LeAudioService extends ProfileService {
         public void setVolume(int volume, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
                 LeAudioService service = getService(source);
-                if (service != null) {
-                    service.setVolume(volume);
+                if (service == null) {
+                    throw new IllegalStateException("service is null");
                 }
+                enforceBluetoothPrivilegedPermission(service);
+                service.setVolume(volume);
                 receiver.send(null);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
@@ -2130,14 +2238,17 @@ public class LeAudioService extends ProfileService {
         @Override
         public void registerCallback(IBluetoothLeAudioCallback callback,
                 AttributionSource source, SynchronousResultReceiver receiver) {
-            LeAudioService service = getService(source);
-            if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                receiver.propagateException(new IllegalStateException("Service is unavailable"));
-                return;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
             try {
+                Objects.requireNonNull(callback, "callback cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
+                LeAudioService service = getService(source);
+                if ((service == null) || (service.mLeAudioCallbacks == null)) {
+                    throw new IllegalStateException("Service is unavailable: " + service);
+                }
+
+                enforceBluetoothPrivilegedPermission(service);
                 service.mLeAudioCallbacks.register(callback);
                 receiver.send(null);
             } catch (RuntimeException e) {
@@ -2148,14 +2259,18 @@ public class LeAudioService extends ProfileService {
         @Override
         public void unregisterCallback(IBluetoothLeAudioCallback callback,
                 AttributionSource source, SynchronousResultReceiver receiver) {
-            LeAudioService service = getService(source);
-            if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                receiver.propagateException(new IllegalStateException("Service is unavailable"));
-                return;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
             try {
+                Objects.requireNonNull(callback, "callback cannot be null");
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
+                LeAudioService service = getService(source);
+                if ((service == null) || (service.mLeAudioCallbacks == null)) {
+                    throw new IllegalStateException("Service is unavailable");
+                }
+
+                enforceBluetoothPrivilegedPermission(service);
+
                 service.mLeAudioCallbacks.unregister(callback);
                 receiver.send(null);
             } catch (RuntimeException e) {
