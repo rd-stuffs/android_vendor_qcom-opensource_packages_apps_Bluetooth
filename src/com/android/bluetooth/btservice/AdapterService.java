@@ -1198,6 +1198,26 @@ public class AdapterService extends Service {
     }
 
     private void setAllProfileServiceStates(Class[] services, int state) {
+        if (state == BluetoothAdapter.STATE_OFF) {
+            for (Class service : services) {
+              if (service.getSimpleName().equals("AcmService")) {
+               Log.d(TAG, "Calling setProfileServiceState for: " + service.getSimpleName());
+               setProfileServiceState(service, state);
+               break;
+              }
+            }
+            for (Class service : services) {
+              if (service.getSimpleName().equals("AcmService")) {
+                continue ;
+              }
+              if (GattService.class.getSimpleName().equals(service.getSimpleName())) {
+                continue;
+              }
+              Log.d(TAG, "Calling setProfileServiceState for: " + service.getSimpleName());
+              setProfileServiceState(service, state);
+           }
+           return ;
+        }
         for (Class service : services) {
             if (GattService.class.getSimpleName().equals(service.getSimpleName())) {
                 continue;
