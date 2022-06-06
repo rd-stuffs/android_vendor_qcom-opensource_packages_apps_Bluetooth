@@ -708,6 +708,12 @@ public class ActiveDeviceManager {
         if (!headsetService.setActiveDevice(device)) {
             return false;
         }
+        if ((ApmConstIntf.getQtiLeAudioEnabled() ||
+             ApmConstIntf.getAospLeaEnabled()) &&
+             mAdapterService.isGroupDevice(device)) {
+            Log.d(TAG, "setHfpActiveDevice(" + device + ")" + "is a group device, ignore");
+            return true;
+        }
         mHfpActiveDevice = device;
         return true;
     }
