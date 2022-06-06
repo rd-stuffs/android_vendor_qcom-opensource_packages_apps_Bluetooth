@@ -627,6 +627,10 @@ static void switch_buffer_size_callback(bool is_low_latency_buffer_size) {
 static void switch_codec_callback(bool is_low_latency_buffer_size) {
 }
 
+// KEYSTONE(Ic99494030a4a383c19c9346240a23c071978dbaf,b/235136777)
+static void le_rand_callback(uint64_t random) {
+}
+
 static bt_callbacks_t sBluetoothCallbacks = {
     sizeof(sBluetoothCallbacks), adapter_state_change_callback,
     adapter_properties_callback, remote_device_properties_callback,
@@ -637,7 +641,8 @@ static bt_callbacks_t sBluetoothCallbacks = {
     dut_mode_recv_callback,      le_test_mode_recv_callback,
     energy_info_recv_callback,   link_quality_report_callback,
     generate_local_oob_data_callback,
-    switch_buffer_size_callback, switch_codec_callback};
+    switch_buffer_size_callback, switch_codec_callback,
+    le_rand_callback};
 
 // The callback to call when the wake alarm fires.
 static alarm_cb sAlarmCallback;
