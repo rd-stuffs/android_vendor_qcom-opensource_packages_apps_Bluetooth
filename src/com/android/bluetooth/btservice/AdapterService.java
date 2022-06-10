@@ -4359,6 +4359,7 @@ public class AdapterService extends Service {
         boolean setA2dp = false;
         boolean setHeadset = false;
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
+        boolean isAospLeaEnabled = ApmConstIntf.getAospLeaEnabled();
         ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
 
         Log.i(TAG, "setActiveDevice" + "(device: " + device +"), for profiles: " + profiles);
@@ -4389,7 +4390,7 @@ public class AdapterService extends Service {
         }
 
         if (setA2dp && mA2dpService != null) {
-            if(isQtiLeAudioEnabled) {
+            if(isQtiLeAudioEnabled || isAospLeaEnabled) {
                 activeDeviceManager.setActiveDevice(device,
                         ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
             } else {
@@ -4405,7 +4406,7 @@ public class AdapterService extends Service {
         }
 
         if (setHeadset && mHeadsetService != null) {
-            if(isQtiLeAudioEnabled) {
+            if(isQtiLeAudioEnabled || isAospLeaEnabled) {
                 activeDeviceManager.setActiveDevice(device,
                         ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
             } else {
