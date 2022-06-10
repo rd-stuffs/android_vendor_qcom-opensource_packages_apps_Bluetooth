@@ -4682,9 +4682,13 @@ public class AdapterService extends Service {
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
         Log.i(TAG, "disconnectAllEnabledProfiles(): isQtiLeAudioEnabled: " + isQtiLeAudioEnabled);
         if(isQtiLeAudioEnabled) {
-            if(mMediaAudio != null)
+            if (mMediaAudio != null &&
+                mMediaAudio.getConnectionState(device) ==
+                              BluetoothProfile.STATE_CONNECTED) {
+                Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MEDIA");
                 mMediaAudio.disconnect(device, true);
                 disconnectMedia = true;
+            }
         } else if (mA2dpService != null && mA2dpService.getConnectionState(device)
                 == BluetoothProfile.STATE_CONNECTED) {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp");
@@ -4703,8 +4707,11 @@ public class AdapterService extends Service {
             mA2dpSinkService.disconnect(device);
         }
         if(isQtiLeAudioEnabled) {
-            if(mCallAudio != null)
+            if (mCallAudio != null) {
+                Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting CALL," +
+                           " disconnectMedia: " + disconnectMedia);
                 mCallAudio.disconnect(device, disconnectMedia);
+            }
         } else if (mHeadsetService != null && mHeadsetService.getConnectionState(device)
                 == BluetoothProfile.STATE_CONNECTED) {
             Log.i(TAG,
