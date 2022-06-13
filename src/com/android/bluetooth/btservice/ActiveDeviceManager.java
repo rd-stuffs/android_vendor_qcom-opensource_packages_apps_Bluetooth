@@ -551,12 +551,10 @@ public class ActiveDeviceManager {
                     }
                     // Just assign locally the new value
                     mHearingAidActiveDevice = device;
-                    if (device != null && (!ApmConstIntf.getQtiLeAudioEnabled())) {
+                    if (device != null && (!ApmConstIntf.getAospLeaEnabled() &&
+                                !ApmConstIntf.getQtiLeAudioEnabled())) {
                         setA2dpActiveDevice(null);
                         setHfpActiveDevice(null);
-                        if(!ApmConstIntf.getQtiLeAudioEnabled()) {
-                          setLeAudioActiveDevice(null);
-                        }
                     }
                 } break;
             }

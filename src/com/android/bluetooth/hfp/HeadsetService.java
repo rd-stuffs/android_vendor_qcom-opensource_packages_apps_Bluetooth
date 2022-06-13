@@ -2045,12 +2045,12 @@ public class HeadsetService extends ProfileService {
                 //If there is any device whose audio is still in progress
                 if (audioInProgressDevices.size() != 0)
                 {
-                   if (ApmConstIntf.getQtiLeAudioEnabled()) {
-                      mSHOStatus = true;
-                      mTempActiveDevice = device;
-                      mActiveDevice = null;
-                      return ActiveDeviceManagerServiceIntf.SHO_PENDING;
-                   }
+                    if (ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
+                        mSHOStatus = true;
+                        mTempActiveDevice = device;
+                        mActiveDevice = null;
+                        return ActiveDeviceManagerServiceIntf.SHO_PENDING;
+                    }
                 }
                 mActiveDevice = null;
                 if (!ApmConstIntf.getQtiLeAudioEnabled()) {
