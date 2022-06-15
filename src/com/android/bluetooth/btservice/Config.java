@@ -52,6 +52,7 @@
 package com.android.bluetooth.btservice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothCodecConfig;
+import android.bluetooth.BluetoothStatusCodes;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
@@ -175,8 +176,6 @@ public class Config {
                     (1 << BluetoothProfile.HEARING_AID)),
             new ProfileConfig(BATService.class, R.bool.profile_supported_ba,
                     (1 << BATService.BA_TRANSMITTER)),
-            new ProfileConfig(BassClientService.class, R.bool.profile_supported_bass_client,
-                    (1 << BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)),
     };
 
     /* List of Unicast Advance Audio Profiles */
@@ -200,7 +199,9 @@ public class Config {
                          R.bool.profile_supported_broadcast,
                         (1 << BluetoothProfile.BROADCAST)),
                     new ProfileConfig(mPCServiceClass, R.bool.profile_supported_pc,
-                        (1 << BluetoothProfile.PC_PROFILE))
+                        (1 << BluetoothProfile.PC_PROFILE)),
+                    new ProfileConfig(BassClientService.class, R.bool.profile_supported_bass_client,
+                        (1 << BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT))
             ));
 
     /* List of Profiles common for Unicast and Broadcast advance audio features */
@@ -221,7 +222,8 @@ public class Config {
                             (1 << ApmConstIntf.LE_AUDIO_UNICAST)),
                     new ProfileConfig(LeAudioService.class,
                             R.bool.profile_supported_le_audio,
-                            (1 << BluetoothProfile.LE_AUDIO))
+                            (1 << BluetoothProfile.LE_AUDIO |
+                             1 << BluetoothProfile.LE_AUDIO_BROADCAST))
             ));
 
     private static Class[] sSupportedProfiles = new Class[0];
@@ -348,12 +350,18 @@ public class Config {
                            (adv_audio_feature_mask & ADV_AUDIO_BCS_FEAT_MASK) == 0) {
                         continue;
                     } else if ((config.mClass == mBCServiceClass ||
-                                config.mClass == mPCServiceClass) &&
+                                config.mClass == mPCServiceClass ||
+                                config.mClass == BassClientService.class) &&
                             ((adv_audio_feature_mask & ADV_AUDIO_BCA_FEAT_MASK) == 0)) {
                         continue;
                     }
-                    Log.d(TAG, "Adding " + config.mClass.getSimpleName());
-                    advAudioProfiles.add(config.mClass);
+                    String serviceName = config.mClass.getSimpleName();
+                    if (addAospAudioProfiles(serviceName)) {
+                        Log.d(TAG, "Adding " + config.mClass.getSimpleName());
+                        advAudioProfiles.add(config.mClass);
+                    } else {
+                        if(DBG) Log.d(TAG, "Not added " + serviceName);
+                    }
                 }
             }
         }
@@ -503,9 +511,31 @@ public class Config {
             return mIsGroupSerEnabled;
         } if (serviceName.equals("CsipSetCoordinatorService")) {
             return mIsCsipServiceEnabled;
+        } if (serviceName.equals("LeAudioService")) {
+            return addAospAudioProfiles(serviceName);
         }
 
         // always return true for other profiles
+        return true;
+    }
+
+    private static synchronized boolean addAospAudioProfiles(String serviceName) {
+        AdapterService adapterService = AdapterService.getAdapterService();
+        if (adapterService == null) {
+            Log.e(TAG,"adapterService is null");
+            return true;
+        }
+        if (serviceName.equals("LeAudioService") && (adapterService.isLeAudioSupported() ==
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED ||
+                adapterService.isLeAudioBroadcastSourceSupported() ==
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED)) {
+            return false;
+        }
+        if (serviceName.equals("BassClientService") &&
+                adapterService.isLeAudioBroadcastAssistantSupported() ==
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED) {
+            return false;
+        }
         return true;
     }
 
