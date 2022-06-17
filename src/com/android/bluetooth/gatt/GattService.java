@@ -355,7 +355,7 @@ public class GattService extends ProfileService {
         mAdvertiseManager = new AdvertiseManager(this, AdapterService.getAdapterService());
         mAdvertiseManager.start();
 
-        mScanManager = new ScanManager(this);
+        mScanManager = new ScanManager(this, mAdapterService);
         mScanManager.start();
 
         mPeriodicScanManager = new PeriodicScanManager(AdapterService.getAdapterService());

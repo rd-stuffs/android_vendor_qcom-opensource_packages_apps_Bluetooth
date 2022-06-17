@@ -112,6 +112,7 @@ public class ScanManager {
 
     private Integer mCurUsedTrackableAdvertisements;
     private GattService mService;
+    private final AdapterService mAdapterService;
     private BroadcastReceiver mBatchAlarmReceiver;
     private boolean mBatchAlarmReceiverRegistered;
     private boolean mIsAptXLowLatencyModeEnabled;
@@ -155,7 +156,7 @@ public class ScanManager {
         }
     };
 
-    ScanManager(GattService service) {
+    ScanManager(GattService service, AdapterService adapterService) {
         mRegularScanClients =
                 Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
         mBatchClients = Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
@@ -169,6 +170,7 @@ public class ScanManager {
         mDm = (DisplayManager) mService.getSystemService(Context.DISPLAY_SERVICE);
         mActivityManager = (ActivityManager) mService.getSystemService(Context.ACTIVITY_SERVICE);
         mLocationManager = (LocationManager) mService.getSystemService(Context.LOCATION_SERVICE);
+        mAdapterService = adapterService;
 
         mPriorityMap.put(ScanSettings.SCAN_MODE_OPPORTUNISTIC, 0);
         mPriorityMap.put(ScanSettings.SCAN_MODE_LOW_POWER, 1);
@@ -642,6 +644,8 @@ public class ScanManager {
         private static final int SCAN_MODE_BATCH_LOW_LATENCY_INTERVAL_MS = 5000;
         private static final int SCAN_MODE_BATCH_AMBIENT_DISCOVERY_WINDOW_MS = 1500;
         private static final int SCAN_MODE_BATCH_AMBIENT_DISCOVERY_INTERVAL_MS = 15000;
+        private static final int SCAN_MODE_AMBIENT_DISCOVERY_INTERVAL_MS = 640;
+        private static final int SCAN_MODE_AMBIENT_DISCOVERY_WINDOW_MS = 128;
 
         // The logic is AND for each filter field.
         private static final int LIST_LOGIC_TYPE = 0x1111111;
