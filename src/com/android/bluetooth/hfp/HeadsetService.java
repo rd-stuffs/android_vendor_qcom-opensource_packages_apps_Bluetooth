@@ -1152,12 +1152,16 @@ public class HeadsetService extends ProfileService {
                 String number, int type, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             Log.d(TAG, "clccResponse");
-            CallControlIntf mCallControl = CallControlIntf.get();
-            if (mCallControl != null)
-               mCallControl.clccResponse(index, direction, status, mode, mpty, number, type);
-            else
-                Log.w(TAG, "mCallControl is null");
-
+            try {
+              CallControlIntf mCallControl = CallControlIntf.get();
+              if (mCallControl != null)
+                 mCallControl.clccResponse(index, direction, status, mode, mpty, number, type);
+              else
+                  Log.w(TAG, "mCallControl is null");
+              receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
