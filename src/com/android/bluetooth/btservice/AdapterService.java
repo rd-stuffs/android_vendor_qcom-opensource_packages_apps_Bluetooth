@@ -2168,6 +2168,7 @@ public class AdapterService extends Service {
                             service, attributionSource, "AdapterService setScanMode")) {
                 return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
             }
+            enforceBluetoothPrivilegedPermission(service);
 
             return service.mAdapterProperties.setScanMode(convertScanModeToHal(mode))
                     ? BluetoothStatusCodes.SUCCESS : BluetoothStatusCodes.ERROR_UNKNOWN;
@@ -2208,6 +2209,8 @@ public class AdapterService extends Service {
                             service, attributionSource, "AdapterService setDiscoverableTimeout")) {
                 return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
             }
+            enforceBluetoothPrivilegedPermission(service);
+
             return service.mAdapterProperties.setDiscoverableTimeout((int) timeout)
                     ? BluetoothStatusCodes.SUCCESS : BluetoothStatusCodes.ERROR_UNKNOWN;
         }
@@ -6116,9 +6119,7 @@ public class AdapterService extends Service {
 
     boolean isSdpCompleted(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        boolean sdpCompleted = deviceProp.isSdpCompleted();
-        debugLog("sdpCompleted  "  + sdpCompleted);
-        return sdpCompleted;
+        return (deviceProp != null ) ? deviceProp.isSdpCompleted() : false;
     }
 
     private int getDeviceType(BluetoothDevice device){
