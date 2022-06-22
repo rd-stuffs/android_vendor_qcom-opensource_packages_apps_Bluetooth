@@ -2287,8 +2287,8 @@ public class LeAudioService extends ProfileService {
                 return;
             }
 
-            enforceBluetoothPrivilegedPermission(service);
             try {
+                enforceBluetoothPrivilegedPermission(service);
                 service.registerLeBroadcastCallback(callback, source, receiver);
                 receiver.send(null);
             } catch (RuntimeException e) {
@@ -2305,8 +2305,8 @@ public class LeAudioService extends ProfileService {
                 return;
             }
 
-            enforceBluetoothPrivilegedPermission(service);
             try {
+                enforceBluetoothPrivilegedPermission(service);
                 service.unregisterLeBroadcastCallback(callback, source, receiver);
                 receiver.send(null);
             } catch (RuntimeException e) {
