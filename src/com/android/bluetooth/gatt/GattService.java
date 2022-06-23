@@ -355,7 +355,7 @@ public class GattService extends ProfileService {
         mAdvertiseManager = new AdvertiseManager(this, AdapterService.getAdapterService());
         mAdvertiseManager.start();
 
-        mScanManager = new ScanManager(this);
+        mScanManager = new ScanManager(this, mAdapterService);
         mScanManager.start();
 
         mPeriodicScanManager = new PeriodicScanManager(AdapterService.getAdapterService());
@@ -4873,8 +4873,7 @@ public class GattService extends ProfileService {
          * The handles are copied into a new list to avoid race conditions.
          */
         List<Integer> handleList = new ArrayList<Integer>();
-        List<HandleMap.Entry> entries = mHandleMap.getEntries();
-        for (HandleMap.Entry entry : entries) {
+        for (HandleMap.Entry entry : mHandleMap.getEntries()) {
             if (entry.type != HandleMap.TYPE_SERVICE || entry.serverIf != serverIf) {
                 continue;
             }

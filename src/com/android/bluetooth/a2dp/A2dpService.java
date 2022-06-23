@@ -1163,7 +1163,9 @@ public class A2dpService extends ProfileService {
         }
         synchronized (mBtAvrcpLock) {
             if (mAvrcp_ext != null && !tws_switch) {
-                mAvrcp_ext.setAbsVolumeFlag(device);
+                //mAvrcp_ext.setAbsVolumeFlag(device);
+                //use msg to avoid potential dead lock as it would call audioservice
+                mAvrcp_ext.sendSetAbsVolumeFlagMsg(device);
             }
         }
         tws_switch = false;

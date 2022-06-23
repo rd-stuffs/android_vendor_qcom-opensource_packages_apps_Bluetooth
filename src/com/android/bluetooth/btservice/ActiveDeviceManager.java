@@ -322,7 +322,7 @@ public class ActiveDeviceManager {
                         }
 
                         mA2dpConnectedDevices.remove(device);
-                        if (!ApmConstIntf.getQtiLeAudioEnabled()) {
+                        if (ApmConstIntf.getAospLeaEnabled()) {
                            int mMediaProfile =
                                getCurrentActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                            if (mMediaProfile == ApmConstIntf.AudioProfiles.A2DP) {
@@ -473,7 +473,7 @@ public class ActiveDeviceManager {
                         final HeadsetService hfpService = mFactory.getHeadsetService();
 
                         mHfpConnectedDevices.remove(device);
-                        if (!ApmConstIntf.getQtiLeAudioEnabled()) {
+                        if (ApmConstIntf.getAospLeaEnabled()) {
                            int mCallProfile =
                                getCurrentActiveProfile(ApmConstIntf.AudioFeatures.CALL_AUDIO);
                            if (mCallProfile == ApmConstIntf.AudioProfiles.HFP) {
