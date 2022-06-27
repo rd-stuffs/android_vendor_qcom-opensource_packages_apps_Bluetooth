@@ -6266,6 +6266,18 @@ public class AdapterService extends Service {
         return mAdapterProperties.setBufferLengthMillis(codec, value);
     }
 
+    /**
+     *  Get an incremental id of Bluetooth metrics and log
+     *
+     *  @param device Bluetooth device
+     *  @return int of id for Bluetooth metrics and logging, 0 if the device is invalid
+     */
+    public int getMetricId(BluetoothDevice device) {
+        if (device == null) {
+           return 0;
+        }
+        return getMetricIdNative(Utils.getByteAddress(device));
+    }
 
     boolean isSdpCompleted(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
