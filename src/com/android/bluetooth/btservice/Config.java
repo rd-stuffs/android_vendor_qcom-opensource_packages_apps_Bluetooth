@@ -68,6 +68,7 @@ public class Config {
     private static Class mGroupServiceClass = null;
     private static ArrayList<Class> profiles = new ArrayList<>();
     private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled;
+    private static boolean mIsHfpClient;
 
     static {
         mBCServiceClass = ReflectionUtils.getRequiredClass(
@@ -435,6 +436,10 @@ public class Config {
         if (serviceName.equals("BATService")) {
             return mIsBAEnabled && mIsSplitA2dpEnabled;
         }
+        if ((serviceName.equals("HeadsetClientService")) && (!mIsHfpClient))
+            return false;
+        if ((serviceName.equals("HeadsetService")) && (mIsHfpClient))
+            return false;
 
         // always return true for other profiles
         return true;
@@ -443,6 +448,7 @@ public class Config {
     private static void getAudioProperties() {
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
         mIsBAEnabled = SystemProperties.getBoolean("persist.vendor.service.bt.bca", false);
+        mIsHfpClient = SystemProperties.getBoolean("persist.vendor.service.bt.hfpclient", false);
         // Split A2dp will be enabled by default
         mIsSplitA2dpEnabled = true;
         AdapterService adapterService = AdapterService.getAdapterService();
@@ -455,5 +461,6 @@ public class Config {
             Log.d(TAG, "getAudioProperties mIsA2dpSink " + mIsA2dpSink + " mIsBAEnabled "
                 + mIsBAEnabled + " mIsSplitA2dpEnabled " + mIsSplitA2dpEnabled);
         }
+        Log.d(TAG, "getAudioProperties mIsHfpClient" + mIsHfpClient);
     }
 }
