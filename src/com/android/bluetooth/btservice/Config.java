@@ -446,9 +446,15 @@ public class Config {
     }
 
     private static void getAudioProperties() {
+        boolean mIsSplitSink = SystemProperties.getBoolean("persist.vendor.bluetooth.split_a2dp_sink", false);
+
+        if (mIsSplitSink) {
+           SystemProperties.set("persist.vendor.service.bt.a2dp.sink", "true");
+        }
+
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
         mIsBAEnabled = SystemProperties.getBoolean("persist.vendor.service.bt.bca", false);
-        mIsHfpClient = SystemProperties.getBoolean("persist.vendor.service.bt.hfpclient", false);
+        mIsHfpClient = SystemProperties.getBoolean("persist.vendor.bluetooth.hfp_client", false);
         // Split A2dp will be enabled by default
         mIsSplitA2dpEnabled = true;
         AdapterService adapterService = AdapterService.getAdapterService();
