@@ -4129,7 +4129,7 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         } boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
-            return false;
+            return true;
         }
 
         @Override
