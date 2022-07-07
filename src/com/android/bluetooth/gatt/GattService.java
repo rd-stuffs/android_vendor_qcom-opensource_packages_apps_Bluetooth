@@ -104,6 +104,7 @@ import android.os.UserHandle;
 import android.os.WorkSource;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 import android.text.format.DateUtils;
 import android.util.Log;
 
@@ -270,6 +271,10 @@ public class GattService extends ProfileService {
     private String mExposureNotificationPackage;
     private Handler mTestModeHandler;
     private final Object mTestModeLock = new Object();
+
+    public static boolean isEnabled() {
+        return BluetoothProperties.isProfileGattEnabled().orElse(false);
+    }
 
     /**
      */
@@ -1937,7 +1942,7 @@ public class GattService extends ProfileService {
             }
 
             if (!hasPermission && client.callingPackage != null
-                               && client.callingPackage.equals("com.android.bluetooth.services")) {
+                               && client.callingPackage.equals("com.android.bluetooth")) {
                 hasPermission = true;
             }
 
@@ -3157,7 +3162,7 @@ public class GattService extends ProfileService {
             }
         }
         if (callingPackage != null &&
-            callingPackage.equals("com.android.bluetooth.services")) {
+            callingPackage.equals("com.android.bluetooth")) {
             if (DBG) {
                 Log.d(TAG, "allowAddressTypeInResults only for Bluetooth apk");
             }

@@ -866,10 +866,10 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
       env->GetMethodID(jniCallbackClass, "sspRequestCallback", "([B[BIII)V");
 
   method_bondStateChangeCallback =
-      env->GetMethodID(jniCallbackClass, "bondStateChangeCallback", "(I[BI)V");
+      env->GetMethodID(jniCallbackClass, "bondStateChangeCallback", "(I[BII)V");
 
   method_aclStateChangeCallback =
-      env->GetMethodID(jniCallbackClass, "aclStateChangeCallback", "(I[BII)V");
+      env->GetMethodID(jniCallbackClass, "aclStateChangeCallback", "(I[BIII)V");
 
   method_setWakeAlarm = env->GetMethodID(clazz, "setWakeAlarm", "(JZ)Z");
   method_acquireWakeLock =
@@ -919,11 +919,13 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest,
     flags[i] = env->GetStringUTFChars(flagObjs[i], NULL);
   }
 
+  const char* userDataDirectory = "";
   int ret = sBluetoothInterface->init(&sBluetoothCallbacks,
                                       isGuest == JNI_TRUE ? 1 : 0,
                                       isCommonCriteriaMode == JNI_TRUE ? 1 : 0,
                                       configCompareResult, flags,
-                                      isAtvDevice == JNI_TRUE ? 1 : 0);
+                                      isAtvDevice == JNI_TRUE ? 1 : 0,
+                                      userDataDirectory);
 
   for (int i = 0; i < flagCount; i++) {
     env->ReleaseStringUTFChars(flagObjs[i], flags[i]);

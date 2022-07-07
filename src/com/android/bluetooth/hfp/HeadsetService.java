@@ -345,8 +345,8 @@ public class HeadsetService extends ProfileService {
             mStateMachines.clear();
         }
         // Reset A2DP suspend flag if bluetooth is turned off while call is already in progress
-        Log.d(TAG,"setting A2dpSuspended=false during BT off");
-        mSystemInterface.getAudioManager().setParameters("A2dpSuspended=false");
+        Log.d(TAG,"Release A2DP during BT off");
+        mHfpA2dpSyncInterface.releaseA2DP(null);
         // Step 4: Destroy native interface
         mNativeInterface.cleanup();
         // Step 3: Destroy system interface
@@ -1152,12 +1152,16 @@ public class HeadsetService extends ProfileService {
                 String number, int type, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             Log.d(TAG, "clccResponse");
-            CallControlIntf mCallControl = CallControlIntf.get();
-            if (mCallControl != null)
-               mCallControl.clccResponse(index, direction, status, mode, mpty, number, type);
-            else
-                Log.w(TAG, "mCallControl is null");
-
+            try {
+              CallControlIntf mCallControl = CallControlIntf.get();
+              if (mCallControl != null)
+                 mCallControl.clccResponse(index, direction, status, mode, mpty, number, type);
+              else
+                  Log.w(TAG, "mCallControl is null");
+              receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
 
         @Override
@@ -2041,12 +2045,12 @@ public class HeadsetService extends ProfileService {
                 //If there is any device whose audio is still in progress
                 if (audioInProgressDevices.size() != 0)
                 {
-                   if (ApmConstIntf.getQtiLeAudioEnabled()) {
-                      mSHOStatus = true;
-                      mTempActiveDevice = device;
-                      mActiveDevice = null;
-                      return ActiveDeviceManagerServiceIntf.SHO_PENDING;
-                   }
+                    if (ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
+                        mSHOStatus = true;
+                        mTempActiveDevice = device;
+                        mActiveDevice = null;
+                        return ActiveDeviceManagerServiceIntf.SHO_PENDING;
+                    }
                 }
                 mActiveDevice = null;
                 if (!ApmConstIntf.getQtiLeAudioEnabled()) {
