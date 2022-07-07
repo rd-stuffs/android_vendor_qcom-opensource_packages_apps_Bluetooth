@@ -644,6 +644,42 @@ public class DatabaseManager {
     }
 
     /**
+     * Updates the time this device was last connected with LeAudio
+     *
+     * @param device is the remote bluetooth device for which we are setting the connection time
+     */
+    public void setConnectionForLeAudio(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            Log.d(TAG, "setConnectionForLeAudio: device=" + device);
+            if (device == null) {
+                Log.e(TAG, "setConnectionForLeAudio: device is null");
+                return;
+            }
+
+            resetActiveLeAudioDevice();
+
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.w(TAG, "setConnectionForLeAudio: Creating new metadata entry for device: "
+                        + device);
+                createMetadataLeAudio(address);
+                return;
+            }
+            // Updates last_active_time to the current counter value and increments the counter
+            Metadata metadata = mMetadataCache.get(address);
+            metadata.last_active_time = MetadataDatabase.sCurrentConnectionNumber++;
+
+            // Only update is_active_le_audio_device if a hfp device is connected
+            metadata.is_active_le_audio_device = true;
+
+            Log.d(TAG, "Updating last connected time for device: " + device + " to "
+                    + metadata.last_active_time);
+            updateDatabase(metadata);
+        }
+    }
+
+    /**
      * Updates the time this device was last connected with A2dpSource
      *
      * @param device is the remote bluetooth device for which we are setting the connection time
@@ -730,6 +766,34 @@ public class DatabaseManager {
                 metadata.is_active_hfp_device = false;
                 Log.w(TAG, "setDisconnectionForHfp: Set is_active_hfp_device to false for device: "
                         + device.getAnonymizedAddress());
+                updateDatabase(metadata);
+            }
+        }
+    }
+
+    /**
+     * Sets is_active_le_audio_device to false if currently true for device
+     *
+     * @param device is the remote bluetooth device with which we have disconnected le_audio
+     */
+    public void setDisconnectionForLeAudio(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            if (device == null) {
+                Log.e(TAG, "setDisconnectionForLeAudio: device is null");
+                return;
+            }
+
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                return;
+            }
+            // Updates last connected time to either current time if connected or -1 if disconnected
+            Metadata metadata = mMetadataCache.get(address);
+            if (metadata.is_active_le_audio_device) {
+                metadata.is_active_le_audio_device = false;
+                Log.w(TAG, "setDisconnectionForLeAudio: Set is_active_le_audio_device to false for device: "
+                        + device);
                 updateDatabase(metadata);
             }
         }
@@ -895,6 +959,24 @@ public class DatabaseManager {
     }
 
     /**
+     * Remove LeAudioActiveDevice from the current active device in the connection order table
+     */
+    private void resetActiveLeAudioDevice() {
+        synchronized (mMetadataCache) {
+            Log.d(TAG, "resetActiveLeAudioDevice()");
+            for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
+                Metadata metadata = entry.getValue();
+                if (metadata.is_active_le_audio_device) {
+                    Log.d(TAG, "resetActiveLeAudioDevice");
+                    metadata.is_active_le_audio_device = false;
+                    updateDatabase(metadata);
+                }
+            }
+        }
+    }
+
+
+    /**
      * Remove ConnectedA2dpSrc device from the current connetced device
      * in the connection order table
      */
@@ -975,6 +1057,29 @@ public class DatabaseManager {
                                 metadata.getAddress());
                     } catch (IllegalArgumentException ex) {
                         Log.d(TAG, "getMostRecentlyConnectedHfpDevice: Invalid address for "
+                                + "device " + metadata.getAddress());
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the last active le_audio device
+     *
+     * @return the most recently active le_audio device or null if the last le_audio device was null
+     */
+    public BluetoothDevice getMostRecentlyConnectedLeAudioDevice() {
+        synchronized (mMetadataCache) {
+            for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
+                Metadata metadata = entry.getValue();
+                if (metadata.is_active_le_audio_device) {
+                    try {
+                        return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(
+                                metadata.getAddress());
+                    } catch (IllegalArgumentException ex) {
+                        Log.d(TAG, "getMostRecentlyConnectedLeAudioDevice: Invalid address for "
                                 + "device " + metadata.getAddress());
                     }
                 }
@@ -1120,6 +1225,17 @@ public class DatabaseManager {
         else
            data = new Metadata(address);
         data.is_active_hfp_device = true;
+        mMetadataCache.put(address, data);
+        updateDatabase(data);
+    }
+
+    void createMetadataLeAudio(String address) {
+        Metadata data;
+        if (mMetadataCache.containsKey(address))
+           data = mMetadataCache.get(address);
+        else
+           data = new Metadata(address);
+        data.is_active_le_audio_device = true;
         mMetadataCache.put(address, data);
         updateDatabase(data);
     }

@@ -87,6 +87,7 @@ class Metadata {
     public boolean is_connected_a2dpsrc_device;
     public boolean was_previously_connected_to_bc;
     public boolean device_supports_bc_profile;
+    public boolean is_active_le_audio_device;
 
     Metadata(String address) {
         this.address = address;
@@ -99,6 +100,7 @@ class Metadata {
         is_active_a2dp_device = true;
         is_active_hfp_device = true;
         is_connected_a2dpsrc_device = true;
+        is_active_le_audio_device = true;
         was_previously_connected_to_bc = false;
         device_supports_bc_profile = false;
     }
