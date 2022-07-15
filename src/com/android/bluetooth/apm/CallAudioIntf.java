@@ -41,6 +41,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 
 public class CallAudioIntf {
     public static final String TAG = "APM: CallAudioIntf";
@@ -217,13 +218,13 @@ public class CallAudioIntf {
         }
     }
 
-    public boolean connectAudio() {
+    public int connectAudio() {
         if(CallAudio == null)
-            return false;
+            return BluetoothStatusCodes.ERROR_PROFILE_NOT_CONNECTED;
 
         try {
             Method connectAudio = CallAudio.getDeclaredMethod("connectAudio");
-            Boolean ret = (Boolean)connectAudio.invoke(mCallAudio);
+            int ret = (int)connectAudio.invoke(mCallAudio);
             return ret;
         } catch(IllegalAccessException e) {
             Log.i(TAG, "Exception" + e);
@@ -233,16 +234,16 @@ public class CallAudioIntf {
             Log.i(TAG, "Exception" + e);
         }
 
-        return false;
+        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
-    public boolean disconnectAudio() {
+    public int disconnectAudio() {
         if(CallAudio == null)
-            return false;
+            return BluetoothStatusCodes.ERROR_PROFILE_NOT_CONNECTED;;
 
         try {
             Method disconnectAudio = CallAudio.getDeclaredMethod("disconnectAudio");
-            Boolean ret = (Boolean)disconnectAudio.invoke(mCallAudio);
+            int ret = (int)disconnectAudio.invoke(mCallAudio);
             return ret;
         } catch(IllegalAccessException e) {
             Log.i(TAG, "Exception" + e);
@@ -251,7 +252,7 @@ public class CallAudioIntf {
         } catch(InvocationTargetException e) {
             Log.i(TAG, "Exception" + e);
         }
-        return false;
+        return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     public boolean isVoiceOrCallActive() {
