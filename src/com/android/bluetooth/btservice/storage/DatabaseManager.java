@@ -354,9 +354,6 @@ public class DatabaseManager {
     @VisibleForTesting
     public boolean setProfileConnectionPolicy(BluetoothDevice device, int profile,
             int newConnectionPolicy) {
-
-        Log.v(TAG, "setProfileConnectionPolicy: " + device + ", profile=" + profile
-                    + ", newConnectionPolicy = " + newConnectionPolicy);
         synchronized (mMetadataCache) {
             if (device == null) {
                 Log.e(TAG, "setProfileConnectionPolicy: device is null");
@@ -382,8 +379,6 @@ public class DatabaseManager {
             Metadata data = mMetadataCache.get(address);
             int oldConnectionPolicy = data.getProfileConnectionPolicy(profile);
 
-            Log.v(TAG, "setProfileConnectionPolicy: " + address + ", profile=" + profile
-                    + ", oldConnectionPolicy = " + oldConnectionPolicy);
             if (oldConnectionPolicy == newConnectionPolicy) {
                 Log.v(TAG, "setProfileConnectionPolicy connection policy not changed.");
                 return true;
@@ -392,8 +387,6 @@ public class DatabaseManager {
             String profileStr = BluetoothProfile.getProfileName(profile);
             data.setProfileConnectionPolicy(profile, newConnectionPolicy);
             updateDatabase(data);
-            Log.v(TAG, "setProfileConnectionPolicy: " + address + ", profile=" + profile
-                    + ", newConnectionPolicy = " + newConnectionPolicy);
             return true;
         }
     }
@@ -433,8 +426,8 @@ public class DatabaseManager {
             Metadata data = mMetadataCache.get(address);
             int connectionPolicy = data.getProfileConnectionPolicy(profile);
 
-            Log.v(TAG, "getProfileConnectionPolicy: " + address + ", profile=" + profile
-                    + ", connectionPolicy = " + connectionPolicy);
+            Log.v(TAG, "getProfileConnectionPolicy: " + device.getAnonymizedAddress()
+                    + ", profile=" + profile + ", connectionPolicy = " + connectionPolicy);
             return connectionPolicy;
         }
     }
@@ -608,8 +601,8 @@ public class DatabaseManager {
                 metadata.is_active_a2dp_device = true;
             }
 
-            Log.d(TAG, "Updating last connected time for device: " + device + " to "
-                    + metadata.last_active_time);
+            Log.d(TAG, "Updating last connected time for device: " + device.getAnonymizedAddress()
+                    + " to " + metadata.last_active_time);
             updateDatabase(metadata);
         }
     }
@@ -644,8 +637,8 @@ public class DatabaseManager {
             // Only update is_active_hfp_device if a hfp device is connected
             metadata.is_active_hfp_device = true;
 
-            Log.d(TAG, "Updating last connected time for device: " + device + " to "
-                    + metadata.last_active_time);
+            Log.d(TAG, "Updating last connected time for device: " + device.getAnonymizedAddress()
+                    + " to " + metadata.last_active_time);
             updateDatabase(metadata);
         }
     }
@@ -680,8 +673,8 @@ public class DatabaseManager {
             // Only update is_connected_a2dpsrc_device if a a2dpsrc device is connected
             metadata.is_connected_a2dpsrc_device = true;
 
-            Log.d(TAG, "Updating last connected time for device: " + device + " to "
-                    + metadata.last_active_time);
+            Log.d(TAG, "Updating last connected time for device: " + device.getAnonymizedAddress()
+                    + " to " + metadata.last_active_time);
             updateDatabase(metadata);
         }
     }
@@ -708,7 +701,7 @@ public class DatabaseManager {
             if (metadata.is_active_a2dp_device) {
                 metadata.is_active_a2dp_device = false;
                 Log.d(TAG, "setDisconnection: Updating is_active_device to false for device: "
-                        + device);
+                        + device.getAnonymizedAddress());
                 updateDatabase(metadata);
             }
         }
@@ -736,7 +729,7 @@ public class DatabaseManager {
             if (metadata.is_active_hfp_device) {
                 metadata.is_active_hfp_device = false;
                 Log.w(TAG, "setDisconnectionForHfp: Set is_active_hfp_device to false for device: "
-                        + device);
+                        + device.getAnonymizedAddress());
                 updateDatabase(metadata);
             }
         }
@@ -764,7 +757,7 @@ public class DatabaseManager {
             if (metadata.is_connected_a2dpsrc_device) {
                 metadata.is_connected_a2dpsrc_device = false;
                 Log.w(TAG, "setDisconnectionForA2dpSrc: Set setDisconnectionForA2dpSrc to false" +
-                                     " for device: " + device);
+                                     " for device: " + device.getAnonymizedAddress());
                 updateDatabase(metadata);
             }
         }
@@ -807,7 +800,7 @@ public class DatabaseManager {
         }
         Log.w(TAG, "setConnectionStateForBc: Set" +
                             metadata.was_previously_connected_to_bc +
-                                     " for device: " + device);
+                                     " for device: " + device.getAnonymizedAddress());
         updateDatabase(metadata);
          }
     }
