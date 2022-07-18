@@ -618,6 +618,7 @@ public class Config {
 
         if (mIsSplitSink) {
            SystemProperties.set("persist.vendor.service.bt.a2dp.sink", "true");
+           SystemProperties.set("persist.vendor.bt.a2dp.sink_conn", "2");
         }
 
         mIsA2dpSink = SystemProperties.getBoolean("persist.vendor.service.bt.a2dp.sink", false);
