@@ -2355,7 +2355,7 @@ public class HeadsetService extends ProfileService {
         public void run() {
             synchronized (mStateMachines) {
                 mDialingOutTimeoutEvent = null;
-                if (ApmConstIntf.getQtiLeAudioEnabled()) {
+                if ((ApmConstIntf.getQtiLeAudioEnabled()) || (ApmConstIntf.getAospLeaEnabled())) {
                    Log.d(TAG, "Adv Audio enabled: clccResponse");
                    CallControlIntf mCallControl = CallControlIntf.get();
                    mCallControl.updateOriginateResult(mDialingOutDevice, 0/*unused*/, 0/*fail*/);
@@ -2653,7 +2653,7 @@ public class HeadsetService extends ProfileService {
                 if (callState == HeadsetHalConstants.CALL_STATE_DIALING) {
                     mStateMachinesThread.getThreadHandler()
                             .removeCallbacks(mDialingOutTimeoutEvent);
-                    if (ApmConstIntf.getQtiLeAudioEnabled()) {
+                    if ((ApmConstIntf.getQtiLeAudioEnabled()) || (ApmConstIntf.getAospLeaEnabled())) {
                         Log.d(TAG, "Adv Audio enabled: updateOriginateResult");
                         CallControlIntf mCallControl = CallControlIntf.get();
                         mCallControl.updateOriginateResult(mDialingOutTimeoutEvent.mDialingOutDevice, 0, 1/* success */);
