@@ -63,6 +63,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothVolumeControl;
+import android.bluetooth.DeviceGroup;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -83,6 +84,7 @@ import com.android.bluetooth.apm.MediaAudioIntf;
 import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.CsipWrapper;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hid.HidHostService;
@@ -98,6 +100,7 @@ import com.android.internal.util.ArrayUtils;
 import java.lang.reflect.*;
 //_REF*/
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -149,6 +152,8 @@ class PhonePolicy {
 
     private static final String PREFER_LE_AUDIO_ONLY_MODE =
             "persist.bluetooth.prefer_le_audio_only_mode";
+
+    private static final int INVALID_SET_ID = 0x10;
 
     private DatabaseManager mDatabaseManager;
     private final AdapterService mAdapterService;
@@ -854,7 +859,7 @@ class PhonePolicy {
                     debugLog("autoConnect: recently connected LeAudio active device " +
                                                       mostRecentlyActiveLeAudioDevice +
                              " attempting auto connection for LeAudio");
-                    autoConnectLeAudio(mostRecentlyActiveLeAudioDevice);
+                    autoConnectLeAudioSet(mostRecentlyActiveLeAudioDevice);
                 }
             }
 
@@ -932,6 +937,33 @@ class PhonePolicy {
         } else {
             debugLog("autoConnectLeAudio: skipped auto-connect LE-AUDIO with device " + device
                     + " leAudioConnectionPolicy " + leAudioConnectionPolicy);
+        }
+    }
+
+    private void autoConnectLeAudioSet(BluetoothDevice device) {
+        debugLog("autoConnectLeAudioSet: " + device);
+        final LeAudioService leAudioService = mFactory.getLeAudioService();
+        if (leAudioService == null) {
+            warnLog("autoConnectLeAudioSet: service is null, failed to connect to " + device);
+            return;
+        }
+
+        List<BluetoothDevice> deviceSet = null;
+        CsipWrapper csipWrapper = CsipWrapper.getInstance();
+        int setId = csipWrapper.getRemoteDeviceGroupId(device, null);
+        if (setId >= 0 && setId != INVALID_SET_ID) {
+            DeviceGroup set = csipWrapper.getCoordinatedSet(setId);
+            if (set != null) {
+                deviceSet = set.getDeviceGroupMembers();
+            }
+        }
+        if (deviceSet == null) {
+            deviceSet = new CopyOnWriteArrayList<BluetoothDevice>();
+            deviceSet.add(device);
+        }
+
+        for (BluetoothDevice dev : deviceSet) {
+            autoConnectLeAudio(dev);
         }
     }
 
