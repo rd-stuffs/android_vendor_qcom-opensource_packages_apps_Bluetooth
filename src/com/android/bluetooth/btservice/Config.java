@@ -111,7 +111,7 @@ public class Config {
     private static Class mCsClientServiceClass = null;
     private static Class mCcServiceClass = null;
     private static ArrayList<Class> profiles = new ArrayList<>();
-    private static boolean mIsA2dpSink, mIsBAEnabled, mIsSplitA2dpEnabled,
+    private static boolean mIsA2dpSink, mIsSplitSink, mIsBAEnabled, mIsSplitA2dpEnabled,
             mIsGroupSerEnabled, mIsCsipServiceEnabled;
     private static boolean mIsHfpClient;
 
@@ -298,7 +298,19 @@ public class Config {
                     if (DBG) Log.d(TAG, "Profile " + config.mClass.getSimpleName() + " Not added");
                     continue;
                 }
-                if (DBG) Log.d(TAG, "Adding " + config.mClass.getSimpleName());
+                // ignore adding map server service for targets where map client is enabled
+                if ((config.mClass.getSimpleName().equals("BluetoothMapService")) &&
+                    (mIsSplitSink)) {
+                    Log.i(TAG, " Profile " + config.mClass.getSimpleName() + " Not added ");
+                    continue;
+                }
+                // ignore adding map client service for targets where map client is disabled
+                if ((config.mClass.getSimpleName().equals("MapClientService")) &&
+                    (!mIsSplitSink)) {
+                    Log.i(TAG, " Profile " + config.mClass.getSimpleName() + " Not added ");
+                    continue;
+                }
+                Log.v(TAG, "Adding " + config.mClass.getSimpleName());
                 profiles.add(config.mClass);
             }
         }
@@ -614,7 +626,7 @@ public class Config {
     }
 
     private static void getAudioProperties() {
-        boolean mIsSplitSink = SystemProperties.getBoolean("persist.vendor.bluetooth.split_a2dp_sink", false);
+        mIsSplitSink = SystemProperties.getBoolean("persist.vendor.bluetooth.split_a2dp_sink", false);
 
         if (mIsSplitSink) {
            SystemProperties.set("persist.vendor.service.bt.a2dp.sink", "true");

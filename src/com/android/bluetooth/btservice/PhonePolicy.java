@@ -96,6 +96,7 @@ import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.lebroadcast.BassClientService;
+import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.bluetooth.ba.BATService;
@@ -941,6 +942,9 @@ class PhonePolicy {
                debugLog("autoConnect: attempting auto connection for recently"+
                         " connected A2DP Source device:" + mostRecentlyConnectedA2dpSrcDevice);
                autoConnectA2dpSink(mostRecentlyConnectedA2dpSrcDevice);
+               if (SystemProperties.get("ro.board.platform").equals("neo")) {
+                   autoConnectMapClient(mostRecentlyConnectedA2dpSrcDevice);
+               }
             }
 
             boolean isAospLeAudioEnabled = ApmConstIntf.getAospLeaEnabled();
@@ -1135,6 +1139,21 @@ class PhonePolicy {
         }
 
     }
+
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    private void autoConnectMapClient(BluetoothDevice device) {
+           MapClientService  mapClientService = MapClientService.getMapClientService();
+        if (mapClientService == null) {
+            warnLog("autoConnectMapClient: service is null, failed to connect to " + device);
+            return;
+        }
+        if (mAdapterService != null && ArrayUtils.contains(mAdapterService.getRemoteUuids(device),
+                                                                   BluetoothUuid.MAS)) {
+            debugLog("autoConnectMapClient: Connecting MapClient with " + device);
+            mapClientService.connect(device);
+        }
+    }
+
     ///*_REF
     private void autoConnectBC(boolean autoconnect, BluetoothDevice mDevice) {
         if (autoconnect == false) {

@@ -27,17 +27,20 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothA2dpSink;
 import android.content.AttributionSource;
 import android.util.Log;
 import android.os.SystemProperties;
 
 
+import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.internal.util.ArrayUtils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.modules.utils.SynchronousResultReceiver;
 import android.content.Context;
@@ -63,6 +66,7 @@ public class A2dpSinkService extends ProfileService {
     //static final int MAX_ALLOWED_SINK_CONNECTIONS = 2;
 
     private final BluetoothAdapter mAdapter;
+    private AdapterService mAdapterService;
     private DatabaseManager mDatabaseManager;
     protected static Map<BluetoothDevice, A2dpSinkStateMachine> mDeviceStateMap =
             new ConcurrentHashMap<>(1);
@@ -89,6 +93,8 @@ public class A2dpSinkService extends ProfileService {
         mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
                 "DatabaseManager cannot be null when A2dpSinkService starts");
 
+        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
+                "AdapterService cannot be null when A2dpSinkService starts");
         initNative();
         sService = this;
         mA2dpSinkStreamHandler = new A2dpSinkStreamHandler(this, this);
@@ -699,8 +705,26 @@ public class A2dpSinkService extends ProfileService {
                 msg.obj = device;
                 mA2dpSinkStreamHandler.sendMessage(msg);
             }
+            if (SystemProperties.get("ro.board.platform").equals("neo")) {
+                if (mAdapterService != null
+                    && ArrayUtils.contains(mAdapterService.getRemoteUuids(device),
+                                                   BluetoothUuid.MAS)) {
+                    Log.d(TAG ,"Connect MapClient for device :" +device);
+                    connectMapclient(device);
+                }
+            }
         }
         stateMachine.sendMessage(A2dpSinkStateMachine.STACK_EVENT, event);
+    }
+
+    //Initiate MapClient Connect after A2dp Sink connected
+    public boolean connectMapclient(BluetoothDevice device) {
+        MapClientService mapclientSvc = MapClientService.getMapClientService();
+        if(mapclientSvc ==null) {
+            return false;
+        }
+        Log.d(TAG,"Connect MapClient");
+        return mapclientSvc.connect(device);
     }
 
     private void onAudioStateChanged(byte[] address, int state) {
