@@ -1820,7 +1820,7 @@ public class AdapterService extends Service {
 
         try {
             startRfcommListenerInternal(name, uuid.getUuid(), pendingIntent, attributionSource);
-        } catch (IOException e) {
+        } catch (IOException|SecurityException e) {
             return BluetoothStatusCodes.RFCOMM_LISTENER_FAILED_TO_CREATE_SERVER_SOCKET;
         }
 
@@ -1949,7 +1949,7 @@ public class AdapterService extends Service {
                     uuid,
                     listenerData.mPendingIntent,
                     listenerData.mAttributionSource);
-        } catch (IOException e) {
+        } catch (IOException|SecurityException e) {
             Log.e(TAG, "Failed to recreate rfcomm server socket", e);
 
             mBluetoothServerSockets.remove(uuid);
