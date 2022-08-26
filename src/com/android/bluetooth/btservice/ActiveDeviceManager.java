@@ -15,6 +15,7 @@
  */
 
 package com.android.bluetooth.btservice;
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
@@ -602,12 +603,32 @@ public class ActiveDeviceManager {
             return false;
         }
 
+    private void broadcastLeActiveDeviceChange(BluetoothDevice device) {
+        if (DBG) {
+            Log.d(TAG, "broadcastLeActiveDeviceChange(" + device + ")");
+        }
+
+        Intent intent = new Intent(BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                        | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+
+        LeAudioService mLeAudioService = LeAudioService.getLeAudioService();
+        if(mLeAudioService == null) {
+            Log.e(TAG, "Le Audio Service not ready");
+            return;
+        }
+        mLeAudioService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+    }
+
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             if (DBG) {
                 Log.d(TAG, "onAudioDevicesAdded");
             }
             boolean hasAddedWiredDevice = false;
+            boolean hasAddedBleDevice = false;
+            AudioDeviceInfo bleDeviceInfo = null;
             for (AudioDeviceInfo deviceInfo : addedDevices) {
                 if (DBG) {
                     Log.d(TAG, "Audio device added: " + deviceInfo.getProductName() + " type: "
@@ -615,11 +636,35 @@ public class ActiveDeviceManager {
                 }
                 if (isWiredAudioHeadset(deviceInfo)) {
                     hasAddedWiredDevice = true;
-                    break;
+                    //break;
+                }
+
+                if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
+                   hasAddedBleDevice = true;
+                   bleDeviceInfo = deviceInfo;
                 }
             }
             if (hasAddedWiredDevice) {
                 wiredAudioDeviceConnected();
+            }
+            Log.d(TAG, "BLE Device info: " + bleDeviceInfo);
+            if (hasAddedBleDevice && bleDeviceInfo != null) {
+                Log.d(TAG, "LEA device is source : " + bleDeviceInfo.isSource());
+                BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                BluetoothDevice dev = adapter.getRemoteDevice(bleDeviceInfo.getAddress());
+                ActiveDeviceManagerServiceIntf activeDeviceManager = ActiveDeviceManagerServiceIntf.get();
+                if (activeDeviceManager != null) {
+                    BluetoothDevice AbsDevice = activeDeviceManager.getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+                    BluetoothDevice activeDevice = activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+                    Log.d(TAG, "  LEA active dev: " + dev + "absolute device:" + AbsDevice);
+                    Log.d(TAG, "current  active dev:" + activeDevice);
+                    if (Objects.equals(dev,activeDevice) && bleDeviceInfo.isSource()) {
+                        Log.d(TAG, " broadcast LEA device address: " + activeDevice);
+                        broadcastLeActiveDeviceChange(AbsDevice);
+                        onLeActiveDeviceChange(AbsDevice);
+                        mLeAudioActiveDevice = AbsDevice;
+                    }
+                }
             }
         }
 
@@ -789,7 +834,6 @@ public class ActiveDeviceManager {
         mLeAudioActiveDevice = device;
         return true;
     }
-
     private int getCurrentActiveProfile(int mAudioType) {
         if (DBG) {
             Log.d(TAG, "getCurrentActiveProfile for (" + mAudioType + ")");
