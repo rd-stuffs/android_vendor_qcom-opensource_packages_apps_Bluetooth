@@ -881,6 +881,9 @@ class PhonePolicy {
                     mostRecentlyActiveA2dpDevice + " attempting auto connection for A2DP, HFP");
                 autoConnectHeadset(mostRecentlyActiveA2dpDevice);
                 autoConnectA2dp(mostRecentlyActiveA2dpDevice);
+                debugLog("autoConnect: attempting auto connection for recently"+
+                        " connected HID device:" + mostRecentlyConnectedA2dpSrcDevice);
+                autoConnectHidHost(mostRecentlyActiveA2dpDevice);
                 if (peerTwsDevice != null) {
                     debugLog("autoConnect: 2nd pair TWS+ EB");
                     autoConnectHeadset(peerTwsDevice);
@@ -891,6 +894,9 @@ class PhonePolicy {
                      " recently connected HFP Device " + mostRecentlyActiveHfpDevice
                     + " attempting auto connection for HFP");
                 autoConnectHeadset(mostRecentlyActiveHfpDevice);
+                debugLog("autoConnect: attempting auto connection for recently"+
+                        " connected HID device:" + mostRecentlyActiveHfpDevice);
+                autoConnectHidHost(mostRecentlyActiveHfpDevice);
                 if (peerTwsDevice != null) {
                     debugLog("autoConnectHF: 2nd pair TWS+ EB");
                     autoConnectHeadset(peerTwsDevice);
@@ -989,6 +995,23 @@ class PhonePolicy {
         } else {
             debugLog("autoConnectHeadset: skipped auto-connect HFP with device " + device
                     + " headsetConnectionPolicy " + headsetConnectionPolicy);
+        }
+    }
+
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    private void autoConnectHidHost(BluetoothDevice device) {
+        final HidHostService hidHostService = mFactory.getHidHostService();
+        if (hidHostService == null) {
+            warnLog("autoConnectHidHost: service is null, failed to connect to " + device);
+            return;
+        }
+        int hidHostConnectionPolicy = hidHostService.getConnectionPolicy(device);
+        if (hidHostConnectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+            debugLog("autoConnectHidHost: Connecting HID with " + device);
+            hidHostService.connect(device);
+        } else {
+            debugLog("autoConnectHidHost: skipped auto-connect HID with device " + device
+                    + " connectionPolicy " + hidHostConnectionPolicy);
         }
     }
 
@@ -1117,6 +1140,7 @@ class PhonePolicy {
         A2dpService a2dpService = mFactory.getA2dpService();
         PanService panService = mFactory.getPanService();
         A2dpSinkService a2dpSinkService = mFactory.getA2dpSinkService();
+        HidHostService hidHostService = mFactory.getHidHostService();
         LeAudioService leAudioService = mFactory.getLeAudioService();
         VolumeControlService volumeControlService = mFactory.getVolumeControlService();
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
@@ -1252,6 +1276,16 @@ class PhonePolicy {
                          hsService.getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))) {
                 debugLog("Retrying connection for A2dpSink with device " + device);
                 a2dpSinkService.connect(device);
+            }
+        }
+
+         if (hidHostService != null) {
+            if ((hidHostService.getConnectionPolicy(device)
+                    == BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+                    && (hidHostService.getConnectionState(device)
+                    == BluetoothProfile.STATE_DISCONNECTED)) {
+                debugLog("Retrying connection to HID with device " + device);
+                hidHostService.connect(device);
             }
         }
 
