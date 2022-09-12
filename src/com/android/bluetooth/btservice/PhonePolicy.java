@@ -63,6 +63,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothVolumeControl;
+import android.bluetooth.DeviceGroup;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -72,6 +73,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
+import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -82,6 +84,7 @@ import com.android.bluetooth.apm.MediaAudioIntf;
 import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.CsipWrapper;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hid.HidHostService;
@@ -97,6 +100,7 @@ import com.android.internal.util.ArrayUtils;
 import java.lang.reflect.*;
 //_REF*/
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -146,6 +150,11 @@ class PhonePolicy {
     private static final int MESSAGE_PROFILE_ACTIVE_DEVICE_CHANGED = 5;
     private static final int MESSAGE_DEVICE_CONNECTED = 6;
 
+    private static final String PREFER_LE_AUDIO_ONLY_MODE =
+            "persist.bluetooth.prefer_le_audio_only_mode";
+
+    private static final int INVALID_SET_ID = 0x10;
+
     private DatabaseManager mDatabaseManager;
     private final AdapterService mAdapterService;
     private final ServiceFactory mFactory;
@@ -153,6 +162,8 @@ class PhonePolicy {
     private final HashSet<BluetoothDevice> mHeadsetRetrySet = new HashSet<>();
     private final HashSet<BluetoothDevice> mA2dpRetrySet = new HashSet<>();
     private final HashSet<BluetoothDevice> mConnectOtherProfilesDeviceSet = new HashSet<>();
+
+    private Boolean mPreferLeAudioOnlyMode = false;
     ///*_REF
     Object mBCService = null;
     Method mBCGetService = null;
@@ -372,6 +383,7 @@ class PhonePolicy {
                 "DatabaseManager cannot be null when PhonePolicy starts");
         mFactory = factory;
         mHandler = new PhonePolicyHandler(service.getMainLooper());
+        mPreferLeAudioOnlyMode = SystemProperties.getBoolean(PREFER_LE_AUDIO_ONLY_MODE, true);
     }
 
     // Policy implementation, all functions MUST be private
@@ -415,6 +427,7 @@ class PhonePolicy {
         LeAudioService leAudioService = mFactory.getLeAudioService();
         VolumeControlService volumeControlService = mFactory.getVolumeControlService();
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
+        boolean isAospLeAudioEnabled = ApmConstIntf.getAospLeaEnabled();
         BassClientService bcService = mFactory.getBassClientService();
 
         BluetoothDevice peerTwsDevice = null;
@@ -491,13 +504,31 @@ class PhonePolicy {
                     BluetoothProfile.HEARING_AID, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         }
 
-        if (!isQtiLeAudioEnabled &&
+        if (isAospLeAudioEnabled &&
             (leAudioService != null) && ArrayUtils.contains(uuids,
                 BluetoothUuid.LE_AUDIO) && (leAudioService.getConnectionPolicy(device)
                 == BluetoothProfile.CONNECTION_POLICY_UNKNOWN)) {
             debugLog("setting le audio profile priority for device " + device);
             mAdapterService.getDatabase().setProfileConnectionPolicy(device,
                     BluetoothProfile.LE_AUDIO, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            if (mPreferLeAudioOnlyMode) {
+                if (mAdapterService.getDatabase()
+                        .getProfileConnectionPolicy(device, BluetoothProfile.A2DP)
+                        >  BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+                    debugLog("clear a2dp profile priority for the le audio dual mode device "
+                            + device);
+                    mAdapterService.getDatabase().setProfileConnectionPolicy(device,
+                            BluetoothProfile.A2DP, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                }
+                if (mAdapterService.getDatabase()
+                        .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET)
+                        >  BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+                    debugLog("clear hfp profile priority for the le audio dual mode device "
+                            + device);
+                    mAdapterService.getDatabase().setProfileConnectionPolicy(device,
+                            BluetoothProfile.HEADSET, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                }
+            }
         }
         if ((bcService != null) && ArrayUtils.contains(uuids,
                 BluetoothUuid.BASS) && (bcService.getConnectionPolicy(device)
@@ -629,6 +660,7 @@ class PhonePolicy {
      */
     private void processActiveDeviceChanged(BluetoothDevice device, int profileId) {
         debugLog("processActiveDeviceChanged, device=" + device + ", profile=" + profileId);
+        boolean isAospLeAudioEnabled = ApmConstIntf.getAospLeaEnabled();
         if (mAdapterService != null && mBroadcastService == null) {
             mBroadcastService = mAdapterService.getBroadcastService();
             mBroadcastGetAddr = mAdapterService.getBroadcastAddress();
@@ -654,6 +686,7 @@ class PhonePolicy {
                 return;
             }
         }
+
         if (device != null) {
             mDatabaseManager.setConnection(device, profileId == BluetoothProfile.A2DP);
 
@@ -663,7 +696,6 @@ class PhonePolicy {
                 mDatabaseManager.setConnectionForHfp(device);
             }
 
-            boolean isAospLeAudioEnabled = ApmConstIntf.getAospLeaEnabled();
             debugLog("processActiveDeviceChanged: isAospLeAudioEnabled: " +
                                                            isAospLeAudioEnabled);
 
@@ -671,6 +703,37 @@ class PhonePolicy {
                 Log.w(TAG, "processActiveDeviceChanged: Calling " +
                            " setConnectionForLeAudio for device " + device);
                 mDatabaseManager.setConnectionForLeAudio(device);
+            }
+
+            if (isAospLeAudioEnabled) {
+                if (!mPreferLeAudioOnlyMode) {
+                    debugLog("processActiveDeviceChanged: Preferred duel mode, return");
+                    return;
+                }
+
+                if (profileId == BluetoothProfile.LE_AUDIO) {
+                    HeadsetService hsService = mFactory.getHeadsetService();
+                    if (hsService != null) {
+                        if ((hsService.getConnectionPolicy(device)
+                                != BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+                                && (hsService.getConnectionState(device)
+                                == BluetoothProfile.STATE_CONNECTED)) {
+                            debugLog("Disconnect HFP for the LE audio dual mode device " + device);
+                            hsService.disconnect(device);
+                        }
+                    }
+
+                    A2dpService a2dpService = mFactory.getA2dpService();
+                    if (a2dpService != null) {
+                        if ((a2dpService.getConnectionPolicy(device)
+                                != BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+                                && (a2dpService.getConnectionState(device)
+                                == BluetoothProfile.STATE_CONNECTED)) {
+                            debugLog("Disconnect A2DP for the LE audio dual mode device " + device);
+                            a2dpService.disconnect(device);
+                        }
+                    }
+                }
             }
         }
     }
@@ -796,7 +859,7 @@ class PhonePolicy {
                     debugLog("autoConnect: recently connected LeAudio active device " +
                                                       mostRecentlyActiveLeAudioDevice +
                              " attempting auto connection for LeAudio");
-                    autoConnectLeAudio(mostRecentlyActiveLeAudioDevice);
+                    autoConnectLeAudioSet(mostRecentlyActiveLeAudioDevice);
                 }
             }
 
@@ -874,6 +937,33 @@ class PhonePolicy {
         } else {
             debugLog("autoConnectLeAudio: skipped auto-connect LE-AUDIO with device " + device
                     + " leAudioConnectionPolicy " + leAudioConnectionPolicy);
+        }
+    }
+
+    private void autoConnectLeAudioSet(BluetoothDevice device) {
+        debugLog("autoConnectLeAudioSet: " + device);
+        final LeAudioService leAudioService = mFactory.getLeAudioService();
+        if (leAudioService == null) {
+            warnLog("autoConnectLeAudioSet: service is null, failed to connect to " + device);
+            return;
+        }
+
+        List<BluetoothDevice> deviceSet = null;
+        CsipWrapper csipWrapper = CsipWrapper.getInstance();
+        int setId = csipWrapper.getRemoteDeviceGroupId(device, null);
+        if (setId >= 0 && setId != INVALID_SET_ID) {
+            DeviceGroup set = csipWrapper.getCoordinatedSet(setId);
+            if (set != null) {
+                deviceSet = set.getDeviceGroupMembers();
+            }
+        }
+        if (deviceSet == null) {
+            deviceSet = new CopyOnWriteArrayList<BluetoothDevice>();
+            deviceSet.add(device);
+        }
+
+        for (BluetoothDevice dev : deviceSet) {
+            autoConnectLeAudio(dev);
         }
     }
 
