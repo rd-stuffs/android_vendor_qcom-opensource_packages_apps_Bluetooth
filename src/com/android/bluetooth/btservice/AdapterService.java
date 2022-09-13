@@ -4691,9 +4691,18 @@ public class AdapterService extends Service {
                 return false;
         }
 
+        boolean isLeAudioDeviceActive = false;
+        for (BluetoothDevice dev : getActiveDevices(BluetoothProfile.LE_AUDIO)) {
+            if (dev != null) {
+                Log.i(TAG, "setActiveDevice: LE audio device is active");
+                isLeAudioDeviceActive = true;
+                break;
+            }
+        }
+
         //Make only Le-A device setactive when qti LE-A not enabled.
         if (!isQtiLeAudioEnabled &&
-            mLeAudioService != null && (device == null
+            mLeAudioService != null && (device == null && isLeAudioDeviceActive
                 || mLeAudioService.getConnectionPolicy(device)
                 == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
             Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
