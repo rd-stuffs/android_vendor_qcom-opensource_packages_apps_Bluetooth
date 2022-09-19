@@ -6695,6 +6695,11 @@ public class AdapterService extends Service {
             return false;
         }
 
+        if (device == null) {
+            if (VERBOSE) Log.v(TAG, "isGroupDevice device is null");
+            return false;
+        }
+
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         boolean status = false;
 
