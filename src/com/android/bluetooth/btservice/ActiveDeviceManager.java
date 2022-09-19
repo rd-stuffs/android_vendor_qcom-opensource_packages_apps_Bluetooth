@@ -122,6 +122,9 @@ public class ActiveDeviceManager {
     private static final int MESSAGE_LE_AUDIO_ACTION_CONNECTION_STATE_CHANGED = 8;
     private static final int MESSAGE_LE_AUDIO_ACTION_ACTIVE_DEVICE_CHANGED = 9;
 
+    // Invalid CSIP Coodinator Set Id
+    private static final int INVALID_SET_ID = 0x10;
+
     private final AdapterService mAdapterService;
     private final ServiceFactory mFactory;
     private HandlerThread mHandlerThread = null;
@@ -266,7 +269,30 @@ public class ActiveDeviceManager {
                         }
 
                         if (Objects.equals(mLeAudioActiveDevice, device)) {
-                            setLeAudioActiveDevice(null);
+                            final LeAudioService leAudioService = mFactory.getLeAudioService();
+                            int groupId = leAudioService.getGroupId(device);
+                            BluetoothDevice peerLeAudioDevice = null;
+                            if (groupId != BluetoothLeAudio.GROUP_ID_INVALID &&
+                                    groupId != INVALID_SET_ID) {
+                                List<BluetoothDevice> leAudioConnectedDevice =
+                                        leAudioService.getConnectedDevices();
+                                for (BluetoothDevice peerDevice : leAudioConnectedDevice) {
+                                    if (leAudioService.getGroupId(peerDevice) == groupId) {
+                                        peerLeAudioDevice = peerDevice;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (peerLeAudioDevice != null) {
+                                Log.w(TAG, "Set leAudio active device to connected peer device");
+                                if (!setLeAudioActiveDevice(peerLeAudioDevice)) {
+                                    Log.w(TAG, "Set leAudio active device failed");
+                                    setLeAudioActiveDevice(null);
+                                }
+                            } else {
+                                Log.w(TAG, "Set leAudio active device to null");
+                                setLeAudioActiveDevice(null);
+                            }
                         }
                     }
                 } break;
