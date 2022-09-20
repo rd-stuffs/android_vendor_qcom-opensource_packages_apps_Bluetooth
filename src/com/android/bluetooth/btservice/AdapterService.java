@@ -1898,7 +1898,7 @@ public class AdapterService extends Service {
         try {
             bluetoothServerSocket =
                     mAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
-        } catch (IOException e) {
+        } catch (IOException|SecurityException e) {
             Log.e(TAG, "handleIncomingRfcommConnections IOException:" + e.getMessage());
             return;
         }
