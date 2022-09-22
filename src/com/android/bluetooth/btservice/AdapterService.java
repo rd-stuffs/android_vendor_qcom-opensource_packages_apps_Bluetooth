@@ -280,6 +280,7 @@ public class AdapterService extends Service {
     private static final int MIN_OFFLOADED_FILTERS = 10;
     private static final int MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024;
     private static final Duration PENDING_SOCKET_HANDOFF_TIMEOUT = Duration.ofMinutes(1);
+    private static final Duration GENERATE_LOCAL_OOB_DATA_TIMEOUT = Duration.ofSeconds(2);
     private static final int BT_TRANSPORT_BR_EDR = 1;
     private static final int BT_TRANSPORT_LE = 2;
     private static final int HCI_BTLE_AFH_CHANNEL_MAP_LEN = 5;
@@ -5257,13 +5258,29 @@ public class AdapterService extends Service {
         if (mOobDataCallbackQueue.peek() != null) {
             try {
                 callback.onError(BluetoothStatusCodes.ERROR_ANOTHER_ACTIVE_OOB_REQUEST);
-                return;
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to make callback", e);
             }
+            return;
         }
         mOobDataCallbackQueue.offer(callback);
+        mHandler.postDelayed(() -> removeFromOobDataCallbackQueue(callback),
+                GENERATE_LOCAL_OOB_DATA_TIMEOUT.toMillis());
         generateLocalOobDataNative(transport);
+    }
+
+    private synchronized void removeFromOobDataCallbackQueue(IBluetoothOobDataCallback callback) {
+        if (callback == null) {
+            return;
+        }
+
+        if (mOobDataCallbackQueue.peek() == callback) {
+            try {
+                mOobDataCallbackQueue.poll().onError(BluetoothStatusCodes.ERROR_UNKNOWN);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed to make OobDataCallback to remove callback from queue", e);
+            }
+        }
     }
 
     /* package */ synchronized void notifyOobDataCallback(int transport, OobData oobData) {
