@@ -636,7 +636,8 @@ static bt_callbacks_t sBluetoothCallbacks = {
     adapter_properties_callback, remote_device_properties_callback,
     device_found_callback,       discovery_state_changed_callback,
     pin_request_callback,        ssp_request_callback,
-    bond_state_changed_callback, NULL,
+    // KEYSTONE(Ie012ab6fd2182493e1cd216f0e5b077c4f407bd0,b/244773044)
+    bond_state_changed_callback, NULL, NULL,
     acl_state_changed_callback,  callback_thread_event,
     dut_mode_recv_callback,      le_test_mode_recv_callback,
     energy_info_recv_callback,   link_quality_report_callback,
