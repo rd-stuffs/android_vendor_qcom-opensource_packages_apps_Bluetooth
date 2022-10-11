@@ -811,7 +811,8 @@ public class A2dpSinkService extends ProfileService {
     public void onSuspendIndCallback(byte[] address) {
         BluetoothDevice device = getDevice(address);
         Log.d(TAG, "onSuspendIndCallback" + device);
-        if(sAudioIsEnabled == true) {
+        if(sAudioIsEnabled == true ||
+            (!sAudioIsEnabled && mStreamingDevice != null)) {
           mA2dpSinkStreamHandler.obtainMessage(
               A2dpSinkStreamHandler.STOP_SINK).sendToTarget();
           sAudioIsEnabled = false;
