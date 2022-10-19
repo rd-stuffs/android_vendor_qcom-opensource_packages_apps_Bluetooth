@@ -2222,6 +2222,7 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
+
         public String getIdentityAddress(String address) {
             AdapterService service = getService();
             if (service == null || !callerIsSystemOrActiveUser(TAG, "getIdentityAddress")
@@ -2231,7 +2232,7 @@ public class AdapterService extends Service {
                 return null;
             }
             enforceBluetoothPrivilegedPermission(service);
-            return null;
+            return service.getIdentityAddress(address);
         }
 
         @Override
@@ -6829,6 +6830,19 @@ public class AdapterService extends Service {
         BluetoothDevice mappingDevice
             = mRemoteDevices.getDevice(deviceProp.getMappingAddr());
         return mappingDevice;
+    }
+
+    public String getIdentityAddress(String address) {
+        BluetoothDevice device =
+                BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address.toUpperCase());
+        BluetoothDevice identityDevice  = getIdentityAddress(device);
+        if (identityDevice == null) {
+            if (DBG) Log.d(TAG, "getIdentityAddress null retruning " + address);
+            return address;
+        }
+        if (DBG) Log.d(TAG, "getIdentityAddress " + address + " - "
+                + identityDevice.getAddress());
+        return identityDevice.getAddress();
     }
 
     public boolean isAdvAudioDevice(BluetoothDevice device) {
