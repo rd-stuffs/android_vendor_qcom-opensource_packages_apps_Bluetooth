@@ -1395,7 +1395,7 @@ public class A2dpService extends ProfileService {
             }
         }
 
-        if(isAdvUnicastAudioEnabled) {
+        if(ApmConstIntf.getQtiLeAudioEnabled()) {
             VolumeManagerIntf mVolumeManager = VolumeManagerIntf.get();
             mVolumeManager.setMediaAbsoluteVolume(volume);
             return;
