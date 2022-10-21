@@ -443,6 +443,7 @@ public class A2dpSinkService extends ProfileService {
                 mA2dpSinkStreamHandler.obtainMessage(
                     A2dpSinkStreamHandler.SRC_PAUSE).sendToTarget();
             } else {
+                mStateMachine.setMediaControl(A2dpSinkStateMachine.MEDIA_CONTROL_NONE);
                 // Soft-Handoff from AVRCP Cmd (if received before AVDTP_START)
                 if(!mIsSplitSink) {
                     initiateHandoffOperations(device);
@@ -472,12 +473,17 @@ public class A2dpSinkService extends ProfileService {
                    // Send Passthrough Command for PAUSE
                    AvrcpControllerService avrcpService =
                            AvrcpControllerService.getAvrcpControllerService();
-                  avrcpService.sendPassThroughCommandNative(Utils.getByteAddress(mStreamingDevice),
-                              AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE,
-                               AvrcpControllerService.KEY_STATE_PRESSED);
-                  avrcpService.sendPassThroughCommandNative(Utils.getByteAddress(mStreamingDevice),
-                              AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE,
-                                AvrcpControllerService.KEY_STATE_RELEASED);
+                   if(otherSm.getMediaControl() == A2dpSinkStateMachine.MEDIA_CONTROL_NONE) {
+                      otherSm.setMediaControl(A2dpSinkStateMachine.MEDIA_CONTROL_PAUSE);
+                      avrcpService.sendPassThroughCommandNative(Utils.getByteAddress(mStreamingDevice),
+                                  AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE,
+                                   AvrcpControllerService.KEY_STATE_PRESSED);
+                      avrcpService.sendPassThroughCommandNative(Utils.getByteAddress(mStreamingDevice),
+                                  AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE,
+                                   AvrcpControllerService.KEY_STATE_RELEASED);
+                   } else {
+                      Log.d(TAG, "skip sending redundant pause for " + otherDevice);
+                   }
                    /* set autoconnect priority of non-streaming device to PRIORITY_ON and priority
                     *  of streaming device to PRIORITY_AUTO_CONNECT */
                    avrcpService.onDeviceUpdated(device);
