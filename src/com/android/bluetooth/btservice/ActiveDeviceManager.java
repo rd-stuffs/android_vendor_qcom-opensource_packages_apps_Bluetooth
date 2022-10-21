@@ -37,6 +37,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.UserHandle;
 import android.util.Log;
 import com.android.bluetooth.a2dp.A2dpService;
 
@@ -672,7 +673,9 @@ public class ActiveDeviceManager {
             Log.e(TAG, "Le Audio Service not ready");
             return;
         }
-        mLeAudioService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+        mLeAudioService.sendBroadcastAsUser(intent, UserHandle.ALL,
+                                            BLUETOOTH_CONNECT,
+                         Utils.getTempAllowlistBroadcastOptions());
     }
 
         @Override
