@@ -470,6 +470,23 @@ public class Config {
         }
         for (ProfileConfig config : commonAdvAudioProfiles) {
             if (config.mClass == profile) {
+                if (profile == LeAudioService.class) {
+                    // LeAudioService is shared by LE_AUDIO and LE_AUDIO_BROADCAST
+                    long mask = config.mMask;
+                    AdapterService adapterService = AdapterService.getAdapterService();
+                    if (adapterService != null) {
+                        if (adapterService.isLeAudioSupported() ==
+                                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED) {
+                            mask &= ~(1L << BluetoothProfile.LE_AUDIO);
+                        }
+                        if (adapterService.isLeAudioBroadcastSourceSupported() ==
+                                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED) {
+                            mask &= ~(1L << BluetoothProfile.LE_AUDIO_BROADCAST);
+                        }
+                    }
+                    Log.d(TAG, "LeAudioService profile mask: " + mask);
+                    return mask;
+                }
                 return config.mMask;
             }
         }
@@ -532,7 +549,7 @@ public class Config {
             return true;
         }
         if (serviceName.equals("LeAudioService") && (adapterService.isLeAudioSupported() ==
-                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED ||
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED &&
                 adapterService.isLeAudioBroadcastSourceSupported() ==
                 BluetoothStatusCodes.FEATURE_NOT_SUPPORTED)) {
             return false;
