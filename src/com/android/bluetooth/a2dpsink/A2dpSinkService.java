@@ -429,7 +429,7 @@ public class A2dpSinkService extends ProfileService {
 
     public  void informTGStatePlaying(BluetoothDevice device, boolean isPlaying) {
         Log.d(TAG, "informTGStatePlaying: device: " + device
-                + ", mStreamingDevice:" + mStreamingDevice);
+                + ", mStreamingDevice:" + mStreamingDevice + " isPlaying " + isPlaying);
         A2dpSinkStateMachine mStateMachine = null;
         synchronized (mBtA2dpLock) {
             mStateMachine = mDeviceStateMap.get(device);
@@ -444,10 +444,10 @@ public class A2dpSinkService extends ProfileService {
                     A2dpSinkStreamHandler.SRC_PAUSE).sendToTarget();
             } else {
                 // Soft-Handoff from AVRCP Cmd (if received before AVDTP_START)
-                initiateHandoffOperations(device);
-                if (mStreamingDevice != null && !mStreamingDevice.equals(device)) {
-                    Log.d(TAG, "updating streaming device after avrcp status command");
-                    if(!mIsSplitSink) {
+                if(!mIsSplitSink) {
+                    initiateHandoffOperations(device);
+                    if (mStreamingDevice != null && !mStreamingDevice.equals(device)) {
+                        Log.d(TAG, "updating streaming device after avrcp status command");
                         mStreamingDevice = device;
                     }
                 }
