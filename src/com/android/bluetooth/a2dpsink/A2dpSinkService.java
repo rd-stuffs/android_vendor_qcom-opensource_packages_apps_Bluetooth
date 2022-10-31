@@ -43,6 +43,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.ArrayUtils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.modules.utils.SynchronousResultReceiver;
+import com.android.bluetooth.hfpclient.HeadsetClientService;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.Message;
@@ -76,6 +77,7 @@ public class A2dpSinkService extends ProfileService {
     private static A2dpSinkService sService;
     protected static BluetoothDevice mStreamingDevice;
     protected static BluetoothDevice mHandOffPendingDevice = null;
+    private HeadsetClientService mHeadsetClientService;
 
     private static int mMaxA2dpSinkConnections = 1;
     private A2dpSinkVendorService mA2dpSinkVendor;
@@ -783,6 +785,14 @@ public class A2dpSinkService extends ProfileService {
     }
 
     public void onStartIndCallback(byte[] address) {
+        mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
+        if ( mHeadsetClientService!= null && mHeadsetClientService.isA2dpSinkPossible() == false) {
+            if(mA2dpSinkVendor!= null){
+                Log.d(TAG, "Reject A2dpSink");
+                mA2dpSinkVendor.StartIndRsp (address, false);
+            }
+            return;
+        }
         BluetoothDevice device = getDevice(address);
         Log.d(TAG, "onStartIndCallback dev " + device + "streaming device" + mStreamingDevice);
         if (mStreamingDevice != null && !mStreamingDevice.equals(device)) {
