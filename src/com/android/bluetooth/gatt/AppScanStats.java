@@ -26,6 +26,7 @@ import android.os.WorkSource;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.app.IBatteryStats;
 
 import java.text.DateFormat;
@@ -129,6 +130,7 @@ import java.util.Objects;
 
     public String appName;
     public WorkSource mWorkSource; // Used for BatteryStats and BluetoothStatsLog
+    public final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
     private int mScansStarted = 0;
     private int mScansStopped = 0;
     public boolean isRegistered = false;
@@ -164,6 +166,7 @@ import java.util.Objects;
         }
         mWorkSource = source;
         mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService());
+        mWorkSourceUtil = new WorkSourceUtil(source);
     }
 
     synchronized void addResult(int scannerId) {
@@ -180,7 +183,8 @@ import java.util.Objects;
                     /* ignore */
                 }
                 BluetoothStatsLog.write(
-                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED, mWorkSource, 100);
+                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                        mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), 100);
             }
         }
 
@@ -257,9 +261,10 @@ import java.util.Objects;
         } catch (RemoteException e) {
             /* ignore */
         }
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED, mWorkSource,
-                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+                    BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
+                    scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
 
         mOngoingScans.put(scannerId, scan);
     }
@@ -324,10 +329,12 @@ import java.util.Objects;
         } catch (RemoteException e) {
             /* ignore */
         }
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED, mWorkSource, scan.results % 100);
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED, mWorkSource,
-                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), scan.results % 100);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+                    BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
+                    scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
     }
 
     synchronized void recordScanSuspend(int scannerId) {
