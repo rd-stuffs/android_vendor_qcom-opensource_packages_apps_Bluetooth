@@ -493,6 +493,11 @@ public class ActiveDeviceManager {
                             // New connected device: select it as active
                             setHfpActiveDevice(device);
                             break;
+                        } else {
+                            if (!ApmConstIntf.getQtiLeAudioEnabled()) {
+                               setHearingAidActiveDevice(null);
+                               setHfpActiveDevice(device);
+                            }
                         }
                         break;
                     }
