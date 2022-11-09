@@ -6302,6 +6302,9 @@ public class AdapterService extends Service {
     @GuardedBy("mDeviceConfigLock")
     private int mScreenOffBalancedIntervalMillis =
             ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
+    @GuardedBy("mDeviceConfigLock")
+    private int mScanUpgradeDurationMillis =
+            DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
 
     public @NonNull Predicate<String> getLocationDenylistName() {
         synchronized (mDeviceConfigLock) {
@@ -6375,6 +6378,15 @@ public class AdapterService extends Service {
         }
     }
 
+    /**
+     * Returns scan upgrade duration in millis.
+     */
+    public long getScanUpgradeDurationMillis() {
+        synchronized (mDeviceConfigLock) {
+            return mScanUpgradeDurationMillis;
+        }
+    }
+
     private final DeviceConfigListener mDeviceConfigListener = new DeviceConfigListener();
 
     private class DeviceConfigListener implements DeviceConfig.OnPropertiesChangedListener {
@@ -6398,7 +6410,8 @@ public class AdapterService extends Service {
                 "screen_off_balanced_window_millis";
         private static final String SCREEN_OFF_BALANCED_INTERVAL_MILLIS =
                 "screen_off_balanced_interval_millis";
-
+        private static final String SCAN_UPGRADE_DURATION_MILLIS =
+                "scan_upgrade_duration_millis";
         /**
          * Default denylist which matches Eddystone and iBeacon payloads.
          */
@@ -6408,6 +6421,7 @@ public class AdapterService extends Service {
         private static final int DEFAULT_SCAN_QUOTA_COUNT = 5;
         private static final long DEFAULT_SCAN_QUOTA_WINDOW_MILLIS = 30 * SECOND_IN_MILLIS;
         private static final long DEFAULT_SCAN_TIMEOUT_MILLIS = 30 * MINUTE_IN_MILLIS;
+        private static final int DEFAULT_SCAN_UPGRADE_DURATION_MILLIS = (int) SECOND_IN_MILLIS * 6;
 
         public void start() {
             DeviceConfig.addOnPropertiesChangedListener(DeviceConfig.NAMESPACE_BLUETOOTH,
@@ -6445,6 +6459,8 @@ public class AdapterService extends Service {
                 mScreenOffBalancedIntervalMillis = properties.getInt(
                         SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
                         ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS);
+                mScanUpgradeDurationMillis = properties.getInt(SCAN_UPGRADE_DURATION_MILLIS,
+                        DEFAULT_SCAN_UPGRADE_DURATION_MILLIS);
             }
         }
     }
