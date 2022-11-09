@@ -2420,7 +2420,9 @@ public class HeadsetStateMachine extends StateMachine {
                  log("processCallState: enable SWB for all voip calls ");
                  mHeadsetService.enableSwbCodec(true);
             } else if((callState.mCallState == HeadsetHalConstants.CALL_STATE_DIALING) ||
-               (callState.mCallState == HeadsetHalConstants.CALL_STATE_INCOMING)) {
+               (callState.mCallState == HeadsetHalConstants.CALL_STATE_INCOMING) ||
+                ((callState.mCallState == HeadsetHalConstants.CALL_STATE_IDLE) &&
+                 (callState.mNumActive > 0))) {
                  if (!mSystemInterface.isHighDefCallInProgress()) {
                     log("processCallState: disable SWB for non-HD call ");
                     mHeadsetService.enableSwbCodec(false);
