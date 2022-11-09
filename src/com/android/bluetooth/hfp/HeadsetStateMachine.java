@@ -1071,6 +1071,18 @@ public class HeadsetStateMachine extends StateMachine {
                             break;
                     }
                     break;
+                case RESUME_A2DP:
+                      /* If the call started/ended by the time A2DP suspend ack
+                      * is received, send the call indicators before resuming
+                      * A2DP.
+                      */
+                     if (mPendingCallStates.size() == 0) {
+                         stateLogD("RESUME_A2DP evt, resuming A2DP");
+                         mHeadsetService.getHfpA2DPSyncInterface().releaseA2DP(mDevice);
+                     } else {
+                         stateLogW("RESUME_A2DP evt, pending call states to be sent, not resuming");
+                     }
+                     break;
                 default:
                     stateLogE("Unexpected msg " + getMessageName(message.what) + ": " + message);
                     return NOT_HANDLED;
