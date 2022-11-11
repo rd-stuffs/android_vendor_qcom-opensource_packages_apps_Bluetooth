@@ -2426,9 +2426,11 @@ public class HeadsetStateMachine extends StateMachine {
                  if (!mSystemInterface.isHighDefCallInProgress()) {
                     log("processCallState: disable SWB for non-HD call ");
                     mHeadsetService.enableSwbCodec(false);
+                    mAudioParams.put(HEADSET_SWB, HEADSET_SWB_DISABLE);
                  } else {
                     log("processCallState: enable SWB for HD call ");
                     mHeadsetService.enableSwbCodec(true);
+                    mAudioParams.put(HEADSET_SWB, "0");
                  }
             }
         }
