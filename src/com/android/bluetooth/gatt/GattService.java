@@ -98,12 +98,14 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.os.DeadObjectException;
 import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.os.WorkSource;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 import android.text.format.DateUtils;
 import android.util.Log;
 
@@ -270,6 +272,10 @@ public class GattService extends ProfileService {
     private String mExposureNotificationPackage;
     private Handler mTestModeHandler;
     private final Object mTestModeLock = new Object();
+
+    public static boolean isEnabled() {
+        return BluetoothProperties.isProfileGattEnabled().orElse(false);
+    }
 
     /**
      */
@@ -1937,7 +1943,7 @@ public class GattService extends ProfileService {
             }
 
             if (!hasPermission && client.callingPackage != null
-                               && client.callingPackage.equals("com.android.bluetooth.services")) {
+                               && client.callingPackage.equals("com.android.bluetooth")) {
                 hasPermission = true;
             }
 
@@ -3157,7 +3163,7 @@ public class GattService extends ProfileService {
             }
         }
         if (callingPackage != null &&
-            callingPackage.equals("com.android.bluetooth.services")) {
+            callingPackage.equals("com.android.bluetooth")) {
             if (DBG) {
                 Log.d(TAG, "allowAddressTypeInResults only for Bluetooth apk");
             }
@@ -4336,8 +4342,14 @@ public class GattService extends ProfileService {
             return;
         }
 
-        app.callback.onCharacteristicWriteRequest(address, transId, offset, length, isPrep, needRsp,
-                handle, data);
+        try {
+            app.callback.onCharacteristicWriteRequest(address, transId, offset, length, isPrep,
+                    needRsp, handle, data);
+        } catch(DeadObjectException e) {
+            Log.e(TAG, "error sending onServerWriteCharacteristic callback", e);
+            unregisterServer(entry.serverIf);
+            return;
+        }
     }
 
     void onServerWriteDescriptor(String address, int connId, int transId, int handle, int offset,
@@ -4482,14 +4494,7 @@ public class GattService extends ProfileService {
             return;
         }
 
-        if (DBG) {
-            Log.d(TAG, "unregisterServer() - serverIf=" + serverIf);
-        }
-
-        deleteServices(serverIf);
-
-        mServerMap.remove(serverIf);
-        gattServerUnregisterAppNative(serverIf);
+        unregisterServer(serverIf);
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -4696,6 +4701,17 @@ public class GattService extends ProfileService {
     /**************************************************************************
      * Private functions
      *************************************************************************/
+
+    private void unregisterServer(int serverIf) {
+        if (DBG) {
+            Log.d(TAG, "unregisterServer() - serverIf=" + serverIf);
+        }
+
+        deleteServices(serverIf);
+
+        mServerMap.remove(serverIf);
+        gattServerUnregisterAppNative(serverIf);
+    }
 
     private boolean isHidSrvcUuid(final UUID uuid) {
         return HID_SERVICE_UUID.equals(uuid);

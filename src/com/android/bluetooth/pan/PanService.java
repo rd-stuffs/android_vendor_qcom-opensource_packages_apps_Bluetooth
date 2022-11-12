@@ -37,6 +37,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.UserManager;
+import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMetricsProto;
@@ -113,6 +114,11 @@ public class PanService extends ProfileService {
 
     static {
         classInitNative();
+    }
+
+    public static boolean isEnabled() {
+        return BluetoothProperties.isProfilePanNapEnabled().orElse(false)
+                || BluetoothProperties.isProfilePanPanuEnabled().orElse(false);
     }
 
     @Override
@@ -483,9 +489,6 @@ public class PanService extends ProfileService {
                     return;
                 }
             }
-        } else if (mBluetoothTetheringCallbacks.isEmpty()) {
-            Log.e(TAG, "setBluetoothTethering: " + value + ", Error: no callbacks registered.");
-            return;
         }
         if (mTetherOn != value) {
             //drop any existing panu or pan-nap connection when changing the tethering state

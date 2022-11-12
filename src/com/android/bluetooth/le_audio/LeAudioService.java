@@ -71,6 +71,7 @@ import com.android.bluetooth.apm.ActiveDeviceManagerServiceIntf;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.apm.ApmConst;
 import com.android.bluetooth.apm.MediaAudioIntf;
+import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.apm.VolumeManagerIntf;
 import com.android.bluetooth.acm.AcmServIntf;
 import com.android.internal.util.ArrayUtils;
@@ -166,20 +167,17 @@ public class LeAudioService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceAudioLocationMap = new ConcurrentHashMap<>();
 
     private final int mContextSupportingInputAudio =
-            BluetoothLeAudio.CONTEXT_TYPE_COMMUNICATION |
-            BluetoothLeAudio.CONTEXT_TYPE_MAN_MACHINE;
+            BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL |
+            BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL;
 
-    private final int mContextSupportingOutputAudio = BluetoothLeAudio.CONTEXT_TYPE_COMMUNICATION |
+    private final int mContextSupportingOutputAudio = BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL |
             BluetoothLeAudio.CONTEXT_TYPE_MEDIA |
+            BluetoothLeAudio.CONTEXT_TYPE_GAME |
             BluetoothLeAudio.CONTEXT_TYPE_INSTRUCTIONAL |
-            BluetoothLeAudio.CONTEXT_TYPE_ATTENTION_SEEKING |
-            BluetoothLeAudio.CONTEXT_TYPE_IMMEDIATE_ALERT |
-            BluetoothLeAudio.CONTEXT_TYPE_MAN_MACHINE |
-            BluetoothLeAudio.CONTEXT_TYPE_EMERGENCY_ALERT |
+            BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL |
+            BluetoothLeAudio.CONTEXT_TYPE_EMERGENCY_ALARM |
             BluetoothLeAudio.CONTEXT_TYPE_RINGTONE |
-            BluetoothLeAudio.CONTEXT_TYPE_TV |
-            BluetoothLeAudio.CONTEXT_TYPE_LIVE |
-            BluetoothLeAudio.CONTEXT_TYPE_GAME;
+            BluetoothLeAudio.CONTEXT_TYPE_ALERTS;
 
     private BroadcastReceiver mBondStateChangedReceiver;
     private BroadcastReceiver mConnectionStateChangedReceiver;
@@ -400,8 +398,19 @@ public class LeAudioService extends ProfileService {
         // Connect other devices from this group
         //connectSet(device);
 
-        AcmServIntf mAcmService = AcmServIntf.get();
-        mAcmService.connect(device);
+        //AcmServIntf mAcmService = AcmServIntf.get();
+        //mAcmService.connect(device);
+
+        CallAudioIntf mCallAudio = CallAudioIntf.get();
+        MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+
+        if (mMediaAudio != null) {
+            mMediaAudio.connect(device);
+        }
+
+        if (mCallAudio != null) {
+            mCallAudio.connect(device);
+        }
 
         return true;
     }
@@ -450,8 +459,18 @@ public class LeAudioService extends ProfileService {
             }
         }*/
 
-        AcmServIntf mAcmService = AcmServIntf.get();
-        mAcmService.disconnect(device);
+        //AcmServIntf mAcmService = AcmServIntf.get();
+        //mAcmService.disconnect(device);
+        CallAudioIntf mCallAudio = CallAudioIntf.get();
+        MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+
+        if (mMediaAudio != null) {
+            mMediaAudio.disconnect(device);
+        }
+
+        if (mCallAudio != null) {
+            mCallAudio.disconnect(device);
+        }
 
         return true;
     }
@@ -473,12 +492,12 @@ public class LeAudioService extends ProfileService {
     }
 
     public BluetoothDevice getConnectedGroupLeadDevice(int groupId) {
-        ActiveDeviceManagerServiceIntf activeDeviceManager =
-                                            ActiveDeviceManagerServiceIntf.get();
-        BluetoothDevice lead_device =
-            activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-         //return getFirstDeviceFromGroup(groupId);
-         Log.w(TAG, "returning group lead device as currently active one" + lead_device);
+         BluetoothDevice lead_device = null;
+         List<BluetoothDevice> devices = getConnectedDevices();
+         if (devices.size() > 0) {
+             lead_device = devices.get(0);
+         }
+         Log.w(TAG, "returning group lead device as first connected device" + lead_device);
          return lead_device;
    }
 

@@ -570,7 +570,10 @@ public class HearingAidService extends ProfileService {
                 .getProfileConnectionPolicy(device, BluetoothProfile.HEARING_AID);
     }
 
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     void setVolume(int volume) {
+        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
+                "Need BLUETOOTH_PRIVILEGED permission");
         try {
             mHearingAidNativeInterfaceLock.writeLock().lock();
             if (mHearingAidNativeInterface != null)
@@ -856,8 +859,8 @@ public class HearingAidService extends ProfileService {
                         BluetoothMetricsProto.ProfileId.HEARING_AID);
             }
             if (!mHiSyncIdConnectedMap.getOrDefault(myHiSyncId, false)) {
-                if(ApmConstIntf.getQtiLeAudioEnabled()) {
-                    ActiveDeviceManagerServiceIntf mActiveDeviceManager = 
+                if(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
+                    ActiveDeviceManagerServiceIntf mActiveDeviceManager =
                             ActiveDeviceManagerServiceIntf.get();
                     mActiveDeviceManager.setActiveDevice(device, ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
                     mActiveDeviceManager.setActiveDevice(device, ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
@@ -869,9 +872,9 @@ public class HearingAidService extends ProfileService {
         }
         if (fromState == BluetoothProfile.STATE_CONNECTED && getConnectedDevices().isEmpty()) {
             ActiveDeviceManagerServiceIntf service = ActiveDeviceManagerServiceIntf.get();
-            if(ApmConstIntf.getQtiLeAudioEnabled()) {
-                ActiveDeviceManagerServiceIntf mActiveDeviceManager = 
-                        ActiveDeviceManagerServiceIntf.get();
+            if(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
+                ActiveDeviceManagerServiceIntf mActiveDeviceManager =
+                         ActiveDeviceManagerServiceIntf.get();
                 if (mActiveDeviceManager.getActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO) !=
                     ApmConstIntf.AudioProfiles.HAP_BREDR) {
                     setActiveDevice(null);
@@ -1018,8 +1021,8 @@ public class HearingAidService extends ProfileService {
         @Override
         public void setActiveDevice(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
-            if(ApmConstIntf.getQtiLeAudioEnabled()) {
-                ActiveDeviceManagerServiceIntf mActiveDeviceManager = 
+            if(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
+                ActiveDeviceManagerServiceIntf mActiveDeviceManager =
                         ActiveDeviceManagerServiceIntf.get();
                 if (device == null) {
                     int profile =

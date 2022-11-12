@@ -84,6 +84,12 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.bluetooth.btservice;
 
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
@@ -119,6 +125,8 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BufferConstraints;
@@ -199,6 +207,7 @@ import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.ReflectionUtils;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.sdp.SdpManager;
+import com.android.bluetooth.vc.VolumeControlService;
 import com.android.bluetooth.ba.BATService;
 import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
@@ -226,15 +235,21 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
 public class AdapterService extends Service {
@@ -244,6 +259,7 @@ public class AdapterService extends Service {
     private static final int MIN_ADVT_INSTANCES_FOR_MA = 5;
     private static final int MIN_OFFLOADED_FILTERS = 10;
     private static final int MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024;
+    private static final Duration PENDING_SOCKET_HANDOFF_TIMEOUT = Duration.ofMinutes(1);
 
     private final Object mEnergyInfoLock = new Object();
     private int mStackReportedState;
@@ -349,6 +365,9 @@ public class AdapterService extends Service {
     private int mCurrentRequestId;
     private boolean mQuietmode = false;
 
+    private final Map<UUID, RfcommListenerData> mBluetoothServerSockets = new ConcurrentHashMap<>();
+    private final Executor mSocketServersExecutor = r -> new Thread(r).start();
+
     private AlarmManager mAlarmManager;
     private PendingIntent mPendingAlarm;
     private IBatteryStats mBatteryStats;
@@ -381,6 +400,7 @@ public class AdapterService extends Service {
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
     private GroupService mGroupService;
+    private VolumeControlService mVolumeControlService;
     private CsipSetCoordinatorService mCsipSetCoordinatorService;
     private SapService mSapService;
     private GattService mGattService;
@@ -737,7 +757,7 @@ public class AdapterService extends Service {
 
         setAdapterService(this);
 
-        //invalidateBluetoothCaches();
+        invalidateBluetoothCaches();
 
         // First call to getSharedPreferences will result in a file read into
         // memory cache. Call it here asynchronously to avoid potential ANR
@@ -994,13 +1014,13 @@ public class AdapterService extends Service {
       }
     }
 
-    /*private void invalidateBluetoothGetStateCache() {
+    private void invalidateBluetoothGetStateCache() {
         BluetoothAdapter.invalidateBluetoothGetStateCache();
-    }*/
+    }
 
     void updateAdapterState(int prevState, int newState) {
         mAdapterProperties.setState(newState);
-        //invalidateBluetoothGetStateCache();
+        invalidateBluetoothGetStateCache();
         if (mCallbacks != null) {
             int n = mCallbacks.beginBroadcast();
             debugLog("updateAdapterState() - Broadcasting state " + BluetoothAdapter.nameForState(
@@ -1053,16 +1073,17 @@ public class AdapterService extends Service {
             mAdapter = null;
         }
 
-        //BluetoothAdapter.invalidateGetProfileConnectionStateCache();
-        //BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
+        BluetoothAdapter.invalidateGetProfileConnectionStateCache();
+        BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
 
         clearAdapterService(this);
 
         mCleaningUp = true;
-        //invalidateBluetoothCaches();
+        invalidateBluetoothCaches();
 
         unregisterReceiver(mAlarmBroadcastReceiver);
         unregisterReceiver(mWifiStateBroadcastReceiver);
+        stopRfcommServerSockets();
 
         if (mPendingAlarm != null) {
             mAlarmManager.cancel(mPendingAlarm);
@@ -1158,12 +1179,12 @@ public class AdapterService extends Service {
         }
     }
 
-    /*private void invalidateBluetoothCaches() {
+    private void invalidateBluetoothCaches() {
         BluetoothAdapter.invalidateGetProfileConnectionStateCache();
         BluetoothAdapter.invalidateIsOffloadedFilteringSupportedCache();
         BluetoothDevice.invalidateBluetoothGetBondStateCache();
         BluetoothAdapter.invalidateBluetoothGetStateCache();
-    }*/
+    }
 
     private void setProfileServiceState(Class service, int state) {
         Intent intent = new Intent(this, service);
@@ -1297,6 +1318,10 @@ public class AdapterService extends Service {
         if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
             return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.BASS);
         }
+        if (profile == BluetoothProfile.VOLUME_CONTROL) {
+            Log.d(TAG, "isSupported: profile: " + profile);
+            return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
+        }
 
         Log.e(TAG, "isSupported: Unexpected profile passed in to function: " + profile);
         return false;
@@ -1366,6 +1391,12 @@ public class AdapterService extends Service {
         }
         if (mBassClientService != null && mBassClientService.getConnectionPolicy(device)
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            return true;
+        }
+        if (!isQtiLeAudioEnabled &&
+            mVolumeControlService != null && mVolumeControlService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "isAnyProfileEnabled: VOLUME_CONTROL profile enabled");
             return true;
         }
         ///*_REF
@@ -1511,6 +1542,14 @@ public class AdapterService extends Service {
             Log.i(TAG, "connectEnabledProfiles: Connecting LE Broadcast Assistant Profile");
             mBassClientService.connect(device);
         }
+        if (!isQtiLeAudioEnabled &&
+            mVolumeControlService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                BluetoothProfile.VOLUME_CONTROL, device)
+                && mVolumeControlService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "connectEnabledProfiles: Connecting Volume Control profile");
+            mVolumeControlService.connect(device);
+        }
         ///*_REF
         if (mBCService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
                 BluetoothProfile.BC_PROFILE, device) && mBCGetConnPolicy != null) {
@@ -1587,6 +1626,7 @@ public class AdapterService extends Service {
         mSapService = SapService.getSapService();
         mGattService = GattService.getGattService();
         mLeAudioService = LeAudioService.getLeAudioService();
+        mVolumeControlService = VolumeControlService.getVolumeControlService();
         if (isAdvBCAAudioFeatEnabled()) {
         ///*_REF
             Class<?> bcClass = null;
@@ -1770,6 +1810,237 @@ public class AdapterService extends Service {
     }
     //_REF*/
 
+    @BluetoothAdapter.RfcommListenerResult
+    private int startRfcommListener(
+            String name,
+            ParcelUuid uuid,
+            PendingIntent pendingIntent,
+            AttributionSource attributionSource) {
+        synchronized (mBluetoothServerSockets) {
+            if (mBluetoothServerSockets.containsKey(uuid.getUuid())) {
+                Log.d(TAG, String.format(
+                        "Cannot start RFCOMM listener: UUID %s already in use.", uuid.getUuid()));
+                return BluetoothStatusCodes.RFCOMM_LISTENER_START_FAILED_UUID_IN_USE;
+            }
+        }
+
+        try {
+            startRfcommListenerInternal(name, uuid.getUuid(), pendingIntent, attributionSource);
+        } catch (IOException|SecurityException e) {
+            return BluetoothStatusCodes.RFCOMM_LISTENER_FAILED_TO_CREATE_SERVER_SOCKET;
+        }
+
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    @BluetoothAdapter.RfcommListenerResult
+    private int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
+        RfcommListenerData listenerData = null;
+        synchronized (mBluetoothServerSockets) {
+            listenerData = mBluetoothServerSockets.get(uuid.getUuid());
+
+            if (listenerData == null) {
+                Log.d(TAG, String.format(
+                        "Cannot stop RFCOMM listener: UUID %s is not registered.", uuid.getUuid()));
+                return BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_NO_MATCHING_SERVICE_RECORD;
+            }
+
+            if (attributionSource.getUid() != listenerData.mAttributionSource.getUid()) {
+                return BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP;
+            }
+
+            // Remove the entry so that it does not try and restart the server socket.
+            mBluetoothServerSockets.remove(uuid.getUuid());
+        }
+
+        return listenerData.closeServerAndPendingSockets(mHandler);
+    }
+
+    private IncomingRfcommSocketInfo retrievePendingSocketForServiceRecord(
+            ParcelUuid uuid, AttributionSource attributionSource) {
+        IncomingRfcommSocketInfo socketInfo = new IncomingRfcommSocketInfo();
+        RfcommListenerData listenerData = null;
+        synchronized (mBluetoothServerSockets) {
+            listenerData = mBluetoothServerSockets.get(uuid.getUuid());
+        }
+        if (listenerData == null) {
+            socketInfo.status =
+                    BluetoothStatusCodes
+                            .RFCOMM_LISTENER_OPERATION_FAILED_NO_MATCHING_SERVICE_RECORD;
+            return socketInfo;
+        }
+
+        if (attributionSource.getUid() != listenerData.mAttributionSource.getUid()) {
+            socketInfo.status = BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP;
+            return socketInfo;
+        }
+
+        BluetoothSocket socket = listenerData.mPendingSockets.poll();
+
+        if (socket == null) {
+            socketInfo.status = BluetoothStatusCodes.RFCOMM_LISTENER_NO_SOCKET_AVAILABLE;
+            return socketInfo;
+        }
+
+        mHandler.removeCallbacksAndMessages(socket);
+
+        socketInfo.bluetoothDevice = socket.getRemoteDevice();
+        socketInfo.pfd = socket.getParcelFileDescriptor();
+        socketInfo.status = BluetoothStatusCodes.SUCCESS;
+
+        return socketInfo;
+    }
+
+    private void handleIncomingRfcommConnections(String name, UUID uuid,
+            PendingIntent intent, AttributionSource attributionSource) {
+        BluetoothServerSocket bluetoothServerSocket;
+
+        try {
+            bluetoothServerSocket =
+                    mAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
+        } catch (IOException e) {
+            Log.e(TAG, "handleIncomingRfcommConnections IOException:" + e.getMessage());
+            return;
+        }
+
+        RfcommListenerData listenerData =
+                new RfcommListenerData(bluetoothServerSocket, name, intent, attributionSource);
+
+        synchronized (mBluetoothServerSockets) {
+            mBluetoothServerSockets.put(uuid, listenerData);
+        }
+
+        for (;;) {
+            BluetoothSocket socket;
+            try {
+                socket = listenerData.mServerSocket.accept();
+            } catch (IOException e) {
+                synchronized (mBluetoothServerSockets) {
+                    if (mBluetoothServerSockets.containsKey(uuid)) {
+                        // The uuid still being in the map indicates that the accept failure is
+                        // unexpected. Try and restart the listener.
+                        Log.e(TAG, "Failed to accept socket on " + listenerData.mServerSocket, e);
+                        restartRfcommListener(listenerData, uuid);
+                    }
+                }
+                return;
+            }
+
+            listenerData.mPendingSockets.add(socket);
+            try {
+                listenerData.mPendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+                Log.e(TAG, "PendingIntent for RFCOMM socket notifications cancelled.", e);
+                // The pending intent was cancelled, close the server as there is no longer any way
+                // to notify the app that registered the listener.
+                listenerData.closeServerAndPendingSockets(mHandler);
+                synchronized (mBluetoothServerSockets) {
+                    mBluetoothServerSockets.remove(uuid);
+                }
+                return;
+            }
+            mHandler.postDelayed(
+                    () -> pendingSocketTimeoutRunnable(listenerData, socket),
+                    socket,
+                    PENDING_SOCKET_HANDOFF_TIMEOUT.toMillis());
+        }
+    }
+
+    // Tries to restart the rfcomm listener for the given UUID
+    private void restartRfcommListener(RfcommListenerData listenerData, UUID uuid) {
+        listenerData.closeServerAndPendingSockets(mHandler);
+        try {
+            startRfcommListenerInternal(
+                    listenerData.mName,
+                    uuid,
+                    listenerData.mPendingIntent,
+                    listenerData.mAttributionSource);
+        } catch (IOException|SecurityException e) {
+            Log.e(TAG, "Failed to recreate rfcomm server socket", e);
+
+            mBluetoothServerSockets.remove(uuid);
+        }
+    }
+
+    private void pendingSocketTimeoutRunnable(
+            RfcommListenerData listenerData, BluetoothSocket socket) {
+        boolean socketFound = listenerData.mPendingSockets.remove(socket);
+        if (socketFound) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to close bt socket", e);
+                // We don't care if closing the socket failed, just continue on.
+            }
+        }
+    }
+
+    private void startRfcommListenerInternal(
+            String name, UUID uuid, PendingIntent intent, AttributionSource attributionSource)
+            throws IOException {
+        mSocketServersExecutor.execute(
+                () -> handleIncomingRfcommConnections(name, uuid, intent, attributionSource));
+    }
+
+    private void stopRfcommServerSockets() {
+        synchronized (mBluetoothServerSockets) {
+            Iterator<Map.Entry<UUID, RfcommListenerData>> socketsIterator =
+                    mBluetoothServerSockets.entrySet().iterator();
+            while (socketsIterator.hasNext()) {
+                socketsIterator.next().getValue().closeServerAndPendingSockets(mHandler);
+                socketsIterator.remove();
+            }
+        }
+    }
+
+    private static class RfcommListenerData {
+        final BluetoothServerSocket mServerSocket;
+        // Service record name
+        final String mName;
+        // The Intent which contains the Service info to which the incoming socket connections are
+        // handed off to.
+        final PendingIntent mPendingIntent;
+        // AttributionSource for the requester of the RFCOMM listener
+        final AttributionSource mAttributionSource;
+        // Contains the connected sockets which are pending transfer to the app which requested the
+        // listener.
+        final ConcurrentLinkedQueue<BluetoothSocket> mPendingSockets =
+                new ConcurrentLinkedQueue<>();
+
+        RfcommListenerData(
+                BluetoothServerSocket serverSocket,
+                String name,
+                PendingIntent pendingIntent,
+                AttributionSource attributionSource) {
+            mServerSocket = serverSocket;
+            mName = name;
+            mPendingIntent = pendingIntent;
+            mAttributionSource = attributionSource;
+        }
+
+        int closeServerAndPendingSockets(Handler handler) {
+            int result = BluetoothStatusCodes.SUCCESS;
+            try {
+                mServerSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to call close on rfcomm server socket", e);
+                result = BluetoothStatusCodes.RFCOMM_LISTENER_FAILED_TO_CLOSE_SERVER_SOCKET;
+            }
+            mPendingSockets.forEach(
+                    pendingSocket -> {
+                        handler.removeCallbacksAndMessages(pendingSocket);
+                        try {
+                            pendingSocket.close();
+                        } catch (IOException e) {
+                            Log.e(TAG, "Failed to close socket", e);
+                        }
+                    });
+            mPendingSockets.clear();
+
+            return result;
+        }
+    }
+
     private boolean isAvailable() {
         return !mCleaningUp;
     }
@@ -1822,8 +2093,8 @@ public class AdapterService extends Service {
 
         AdapterServiceBinder(AdapterService svc) {
             mService = svc;
-            //mService.invalidateBluetoothGetStateCache();
-            //BluetoothAdapter.getDefaultAdapter().disableBluetoothGetStateCache();
+            mService.invalidateBluetoothGetStateCache();
+            BluetoothAdapter.getDefaultAdapter().disableBluetoothGetStateCache();
         }
 
         public void cleanup() {
@@ -2875,7 +3146,7 @@ public class AdapterService extends Service {
 
             ParcelUuid[] parcels = service.getRemoteUuids(device);
             if (parcels == null) {
-                parcels = new ParcelUuid[0];
+                return null;
             }
             return Arrays.asList(parcels);
         }
@@ -3886,7 +4157,7 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         } boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
-            return false;
+            return true;
         }
 
         @Override
@@ -3898,12 +4169,13 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
+
         public int startRfcommListener(
             String name,
             ParcelUuid uuid,
             PendingIntent pendingIntent,
             AttributionSource attributionSource) {
-            return -1;
+            return mService.startRfcommListener(name, uuid, pendingIntent, attributionSource);
         }
 
         @Override
@@ -3914,8 +4186,9 @@ public class AdapterService extends Service {
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
-        } int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
-            return -1;
+        }
+        public int stopRfcommListener(ParcelUuid uuid, AttributionSource attributionSource) {
+            return mService.stopRfcommListener(uuid, attributionSource);
         }
 
         @Override
@@ -3929,7 +4202,7 @@ public class AdapterService extends Service {
         }
         public IncomingRfcommSocketInfo retrievePendingSocketForServiceRecord(
                 ParcelUuid uuid, AttributionSource attributionSource) {
-            return null;
+            return mService.retrievePendingSocketForServiceRecord(uuid, attributionSource);
         }
 
         @Override
@@ -4633,6 +4906,14 @@ public class AdapterService extends Service {
                     BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             numProfilesConnected++;
         }
+        if (!isQtiLeAudioEnabled &&
+            mVolumeControlService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                BluetoothProfile.VOLUME_CONTROL, device)) {
+            Log.i(TAG, "connectAllEnabledProfiles: Connecting Volume Control Profile");
+            mVolumeControlService.setConnectionPolicy(device,
+                    BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            numProfilesConnected++;
+        }
         ///*_REF
         if (mBCService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
                 BluetoothProfile.BC_PROFILE, device)) {
@@ -4773,6 +5054,12 @@ public class AdapterService extends Service {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting "
                     + "LE Broadcast Assistant Profile");
             mBassClientService.disconnect(device);
+        }
+        if (!isQtiLeAudioEnabled &&
+            mVolumeControlService != null && mVolumeControlService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Volume Control Profile");
+            mVolumeControlService.disconnect(device);
         }
         ///*_REF
         if (mBCService != null &&  mBCGetConnState != null) {
@@ -6231,6 +6518,18 @@ public class AdapterService extends Service {
         return mAdapterProperties.setBufferLengthMillis(codec, value);
     }
 
+    /**
+     *  Get an incremental id of Bluetooth metrics and log
+     *
+     *  @param device Bluetooth device
+     *  @return int of id for Bluetooth metrics and logging, 0 if the device is invalid
+     */
+    public int getMetricId(BluetoothDevice device) {
+        if (device == null) {
+           return 0;
+        }
+        return getMetricIdNative(Utils.getByteAddress(device));
+    }
 
     boolean isSdpCompleted(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
@@ -6399,6 +6698,11 @@ public class AdapterService extends Service {
     public boolean isGroupDevice(BluetoothDevice device) {
         if (mGroupService == null) {
             if (VERBOSE) Log.v(TAG, "isGroupDevice GroupService not enabled");
+            return false;
+        }
+
+        if (device == null) {
+            if (VERBOSE) Log.v(TAG, "isGroupDevice device is null");
             return false;
         }
 
