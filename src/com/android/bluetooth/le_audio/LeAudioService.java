@@ -2065,6 +2065,12 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
+        public void setInactiveForHfpHandover(BluetoothDevice hfpHandoverDevice,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+        }
+
+        @Override
         public void disconnect(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
