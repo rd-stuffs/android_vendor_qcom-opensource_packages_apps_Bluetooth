@@ -428,17 +428,18 @@ public class LeAudioService extends ProfileService {
 
         Log.d(TAG, "connect(): mPtsMediaAndVoice: " + mPtsMediaAndVoice +
                    ", mPtsTmapConfBandC: " + mPtsTmapConfBandC);
-        if (!mPtsTmapConfBandC &&
-            (mPtsMediaAndVoice == 1 || mPtsMediaAndVoice == 3)) {
-            if (mMediaAudio != null) {
-                mMediaAudio.connect(device);
-            }
-        }
 
         if (!mPtsTmapConfBandC &&
             (mPtsMediaAndVoice == 2 || mPtsMediaAndVoice == 3)) {
             if (mCallAudio != null) {
                 mCallAudio.connect(device);
+            }
+        }
+
+        if (!mPtsTmapConfBandC &&
+            (mPtsMediaAndVoice == 1 || mPtsMediaAndVoice == 3)) {
+            if (mMediaAudio != null) {
+                mMediaAudio.connect(device);
             }
         }
 
