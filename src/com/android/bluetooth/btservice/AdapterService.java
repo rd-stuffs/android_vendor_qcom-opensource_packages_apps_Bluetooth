@@ -2657,7 +2657,8 @@ public class AdapterService extends Service {
          * methods must be changed if the logic behind this method changes.
          */
         @Override
-        public void getProfileConnectionState(int profile, SynchronousResultReceiver receiver) {
+        public void getProfileConnectionState(int profile, AttributionSource source,
+                        SynchronousResultReceiver receiver) {
             try {
                 receiver.send(getProfileConnectionState(profile));
             } catch (RuntimeException e) {
