@@ -146,6 +146,7 @@ public class ActiveDeviceManager {
     private BluetoothDevice mHearingAidActiveDevice = null;
     private BluetoothDevice mLeAudioActiveDevice = null;
     private boolean mTwsPlusSwitch = false;
+    private boolean mWiredDeviceConnected = false;
 
     Object mBroadcastService = null;
     Method mBroadcastIsActive = null;
@@ -751,11 +752,13 @@ public class ActiveDeviceManager {
                        ", hasAddedBleDevice: " + hasAddedBleDevice);
 
             if (hasAddedWiredDevice) {
+                mWiredDeviceConnected = true;
                 wiredAudioDeviceConnected();
             }
 
             if (hasAddedBleDevice && bleDeviceInfo != null) {
                 Log.d(TAG, "LEA device is source : " + bleDeviceInfo.isSource());
+                mWiredDeviceConnected = false;
                 BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
                 BluetoothDevice dev = adapter.getRemoteDevice(bleDeviceInfo.getAddress());
                 ActiveDeviceManagerServiceIntf activeDeviceManager =
@@ -779,6 +782,34 @@ public class ActiveDeviceManager {
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+            if (DBG) {
+                Log.d(TAG, "onAudioDevicesRemoved");
+            }
+            boolean hasRemovedWiredDevice = false;
+            boolean hasRemovedBleDevice = false;
+            AudioDeviceInfo bleDeviceInfo = null;
+            for (AudioDeviceInfo deviceInfo : removedDevices) {
+                if (DBG) {
+                    Log.d(TAG, "Audio device removeed: " + deviceInfo.getProductName() + " type: "
+                            + deviceInfo.getType());
+                }
+                if (isWiredAudioHeadset(deviceInfo)) {
+                    Log.d(TAG, "Wired Device is removed");
+                    mWiredDeviceConnected = false;
+                    break;
+                }
+
+                if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
+                   Log.d(TAG, "BLE Device is removed");
+                   hasRemovedBleDevice = true;
+                   bleDeviceInfo = deviceInfo;
+                }
+            }
+            if (mWiredDeviceConnected && hasRemovedBleDevice &&
+                    bleDeviceInfo != null && bleDeviceInfo.isSource()) {
+                Log.d(TAG, "LEA device removed is source : " + bleDeviceInfo.isSource());
+                setBroadcastActiveDevice(null);
+            }
         }
     }
 
@@ -1032,12 +1063,18 @@ public class ActiveDeviceManager {
         if (DBG) {
             Log.d(TAG, "wiredAudioDeviceConnected");
         }
+        boolean isLeAudioActive = (mLeAudioActiveDevice != null) ? true : false;
         setA2dpActiveDevice(null);
         setHfpActiveDevice(null);
         setHearingAidActiveDevice(null);
-        setBroadcastActiveDevice(null);
         if(!ApmConstIntf.getQtiLeAudioEnabled()) {
           setLeAudioActiveDevice(null);
+          if (!isLeAudioActive) {
+            Log.d(TAG, "WiredConnected, set Broadcast device to null immediately if LeAudio is not active");
+            setBroadcastActiveDevice(null);
+          }
+        } else {
+          setBroadcastActiveDevice(null);
         }
     }
 
