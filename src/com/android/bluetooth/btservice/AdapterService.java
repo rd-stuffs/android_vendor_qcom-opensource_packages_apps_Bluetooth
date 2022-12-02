@@ -89,6 +89,11 @@
  * Changes from Qualcomm Innovation Center are provided under the following license:
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  */
 
 package com.android.bluetooth.btservice;
@@ -4774,7 +4779,9 @@ public class AdapterService extends Service {
                     Log.e(TAG, "getActiveDevices: HeadsetService is null");
                 } else {
                     BluetoothDevice defaultValue = null;
-                    if (ApmConstIntf.getQtiLeAudioEnabled()) {
+                    CallAudioIntf mCallAudio = CallAudioIntf.get();
+                    if (ApmConstIntf.getQtiLeAudioEnabled() ||
+                            (ApmConstIntf.getAospLeaEnabled() && mCallAudio.isVoipLeaWarEnabled())) {
                         Log.i(TAG, "getQtiLeAudioEnabled() is true, get HFP active dev from APM");
                         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                   ActiveDeviceManagerServiceIntf.get();
