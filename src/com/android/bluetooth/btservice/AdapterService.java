@@ -47,6 +47,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 /*
@@ -5788,6 +5789,15 @@ public class AdapterService extends Service {
      */
     public boolean isBroadcastAudioRxwithEC_3_9() {
         return mAdapterProperties.isBroadcastAudioRxwithEC_3_9();
+    }
+
+    /**
+     * Check whether ISO CIG Parameter calculator enabled.
+     *
+     * @return true if ISO CIG Parameter calculator is enabled
+     */
+    public boolean isISOCIGParameterCalculator() {
+        return mAdapterProperties.isISOCIGParameterCalculator();
     }
 
     /**
