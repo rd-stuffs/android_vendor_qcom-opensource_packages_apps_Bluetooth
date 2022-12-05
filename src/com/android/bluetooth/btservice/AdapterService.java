@@ -4779,8 +4779,18 @@ public class AdapterService extends Service {
                 if (mA2dpService == null) {
                     Log.e(TAG, "getActiveDevices: A2dpService is null");
                 } else {
-                    activeDevices.add(mA2dpService.getActiveDevice());
-                    Log.i(TAG, "getActiveDevices: A2dp device: " + activeDevices.get(0));
+                    BluetoothDevice defaultValue = null;
+                    if (ApmConstIntf.getQtiLeAudioEnabled()) {
+                        Log.i(TAG, "getQtiLeAudioEnabled() is true, get A2DP active dev from APM");
+                        ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                                   ActiveDeviceManagerServiceIntf.get();
+                        defaultValue = activeDeviceManager.
+                                  getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+                        activeDevices.add(defaultValue);
+                    } else {
+                        activeDevices.add(mA2dpService.getActiveDevice());
+                    }
+                    Log.i(TAG, "getActiveDevices: A2DP device: " + activeDevices.get(0));
                 }
                 break;
             case BluetoothProfile.HEARING_AID:
