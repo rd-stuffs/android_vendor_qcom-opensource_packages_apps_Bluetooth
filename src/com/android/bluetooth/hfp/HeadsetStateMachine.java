@@ -255,13 +255,13 @@ public class HeadsetStateMachine extends StateMachine {
     private HeadsetAgIndicatorEnableState mAgIndicatorEnableState;
     private boolean mA2dpSuspend;
     private boolean mIsCsCall = true;
-    private boolean mPendingScoForVR = false;
     private boolean mIsCallIndDelay = false;
     private boolean mIsBlacklistedDevice = false;
     private boolean mIsBlacklistedForSCOAfterSLC = false;
     private int retryConnectCount = 0;
     private boolean mIsRetrySco = false;
     private boolean mIsBlacklistedDeviceforRetrySCO = false;
+    private boolean mIsSwbSupportedByRemote = false;
 
     private static boolean mIsAvailable = false;
 
@@ -703,6 +703,7 @@ public class HeadsetStateMachine extends StateMachine {
             mIsBlacklistedDevice = false;
             mIsRetrySco = false;
             mIsBlacklistedDeviceforRetrySCO = false;
+            mIsSwbSupportedByRemote = false;
         }
 
         @Override
@@ -958,6 +959,8 @@ public class HeadsetStateMachine extends StateMachine {
                             mSystemInterface.hangupCall(event.device, ApmConstIntf.AudioProfiles.HFP);
                             break;
                         case HeadsetStackEvent.EVENT_TYPE_SWB:
+                            Log.w(TAG, "Remote supports SWB. setting mIsSwbSupportedByRemote to true");
+                            mIsSwbSupportedByRemote = true;
                             processSWBEvent(event.valueInt);
                             break;
                         default:
@@ -1532,7 +1535,10 @@ public class HeadsetStateMachine extends StateMachine {
                         break;
                     }
 
-                    if (mHeadsetService.isSwbEnabled() && mHeadsetService.isSwbPmEnabled()) {
+                    Log.w(TAG, "mIsSwbSupportedByRemote is " + mIsSwbSupportedByRemote);
+
+                    if (mIsSwbSupportedByRemote && mHeadsetService.isSwbEnabled() &&
+                            mHeadsetService.isSwbPmEnabled()) {
                         if (!mHeadsetService.isVirtualCallStarted() &&
                              mSystemInterface.isHighDefCallInProgress()) {
                            log("CONNECT_AUDIO: enable SWB for HD call ");
@@ -2427,7 +2433,10 @@ public class HeadsetStateMachine extends StateMachine {
                 + callState.mNumHeld + " mCallState: " + callState.mCallState);
         log("processCallState: mNumber: " + callState.mNumber + " mType: " + callState.mType);
 
-        if (mHeadsetService.isSwbEnabled() && mHeadsetService.isSwbPmEnabled()) {
+        Log.w(TAG, "processCallState: mIsSwbSupportedByRemote is " + mIsSwbSupportedByRemote);
+
+        if (mIsSwbSupportedByRemote && mHeadsetService.isSwbEnabled() &&
+               mHeadsetService.isSwbPmEnabled()) {
             if (mHeadsetService.isVirtualCallStarted()) {
                  log("processCallState: enable SWB for all voip calls ");
                  mHeadsetService.enableSwbCodec(true);
