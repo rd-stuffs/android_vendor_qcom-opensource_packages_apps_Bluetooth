@@ -250,6 +250,7 @@ public class Config {
         getAudioProperties();
         for (ProfileConfig config : PROFILE_SERVICES_AND_FLAGS) {
             boolean supported = false;
+            boolean isAoAEnabled = false;
             if (config.mClass == HearingAidService.class) {
                 supported =
                         BluetoothProperties.isProfileAshaCentralEnabled().orElse(false);
@@ -269,6 +270,16 @@ public class Config {
                                 .isEnabled(ctx, FeatureFlagUtils.HEARING_AID_SETTINGS)) {
                 Log.v(TAG, "Feature Flag enables support for HearingAidService");
                 supported = true;
+            }
+
+            if (config.mClass.getSimpleName().equals("AtpLocatorService")) {
+                isAoAEnabled = SystemProperties.getBoolean(
+                        "persist.vendor.service.bt.aoa", false);
+                Log.d(TAG, " isAoAEnabled:" + isAoAEnabled);
+                if (!isAoAEnabled) {
+                    Log.d(TAG, " AoA property set to false");
+                    continue;
+                }
             }
 
             if (supported && !isProfileDisabled(ctx, config.mMask)) {
@@ -470,6 +481,23 @@ public class Config {
         }
         for (ProfileConfig config : commonAdvAudioProfiles) {
             if (config.mClass == profile) {
+                if (profile == LeAudioService.class) {
+                    // LeAudioService is shared by LE_AUDIO and LE_AUDIO_BROADCAST
+                    long mask = config.mMask;
+                    AdapterService adapterService = AdapterService.getAdapterService();
+                    if (adapterService != null) {
+                        if (adapterService.isLeAudioSupported() ==
+                                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED) {
+                            mask &= ~(1L << BluetoothProfile.LE_AUDIO);
+                        }
+                        if (adapterService.isLeAudioBroadcastSourceSupported() ==
+                                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED) {
+                            mask &= ~(1L << BluetoothProfile.LE_AUDIO_BROADCAST);
+                        }
+                    }
+                    Log.d(TAG, "LeAudioService profile mask: " + mask);
+                    return mask;
+                }
                 return config.mMask;
             }
         }
@@ -532,7 +560,7 @@ public class Config {
             return true;
         }
         if (serviceName.equals("LeAudioService") && (adapterService.isLeAudioSupported() ==
-                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED ||
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED &&
                 adapterService.isLeAudioBroadcastSourceSupported() ==
                 BluetoothStatusCodes.FEATURE_NOT_SUPPORTED)) {
             return false;

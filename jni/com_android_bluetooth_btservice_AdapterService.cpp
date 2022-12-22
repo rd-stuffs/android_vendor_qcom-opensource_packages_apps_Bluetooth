@@ -309,7 +309,8 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
 static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
                                        bt_acl_state_t state,
                                        int transport_link_type,
-                                       bt_hci_error_code_t hci_reason) {
+                                       bt_hci_error_code_t hci_reason,
+                                       bt_conn_direction_t direction) {
   if (!bd_addr) {
     ALOGE("Address is null in %s", __func__);
     return;
@@ -632,12 +633,12 @@ static bt_callbacks_t sBluetoothCallbacks = {
     adapter_properties_callback, remote_device_properties_callback,
     device_found_callback,       discovery_state_changed_callback,
     pin_request_callback,        ssp_request_callback,
-    bond_state_changed_callback, NULL,
+    bond_state_changed_callback, NULL, NULL,
     acl_state_changed_callback,  callback_thread_event,
     dut_mode_recv_callback,      le_test_mode_recv_callback,
     energy_info_recv_callback,   link_quality_report_callback,
     generate_local_oob_data_callback,
-    switch_buffer_size_callback, switch_codec_callback};
+    switch_buffer_size_callback, switch_codec_callback, NULL};
 
 // The callback to call when the wake alarm fires.
 static alarm_cb sAlarmCallback;
@@ -1673,7 +1674,9 @@ static jint createSocketChannelNative(JNIEnv* env, jobject obj, jint type,
     goto done;
   }
   uuidBytes = env->GetByteArrayElements(uuid, nullptr);
-  nativeServiceName = env->GetStringUTFChars(serviceName, nullptr);
+  if (serviceName != nullptr) {
+    nativeServiceName = env->GetStringUTFChars(serviceName, nullptr);
+  }
   if (uuidBytes == nullptr) {
     jniThrowIOException(env, EINVAL);
     goto done;

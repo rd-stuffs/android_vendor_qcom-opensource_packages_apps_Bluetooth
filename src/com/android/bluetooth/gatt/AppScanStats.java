@@ -26,6 +26,7 @@ import android.os.WorkSource;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.app.IBatteryStats;
 
 import java.text.DateFormat;
@@ -54,14 +55,17 @@ import java.util.Objects;
     static final int AMBIENT_DISCOVERY_WEIGHT = 20;
     static final int BALANCED_WEIGHT = 25;
     static final int LOW_LATENCY_WEIGHT = 100;
+    static final int LARGE_SCAN_TIME_GAP_MS = 24000;
 
     /* ContextMap here is needed to grab Apps and Connections */ ContextMap mContextMap;
 
-    /* GattService is needed to add scan event protos to be dumped later */ GattService
-            mGattService;
+    // GattService is needed to add scan event protos to be dumped later
+    final GattService mGattService;
 
     /* Battery stats is used to keep track of scans and result stats */ IBatteryStats
             mBatteryStats;
+
+    private final AdapterService mAdapterService;
 
     class LastScan {
         public long duration;
@@ -119,8 +123,14 @@ import java.util.Objects;
         return AdapterService.getAdapterService().getScanTimeoutMillis();
     }
 
+    // Scan mode upgrade duration after scanStart()
+    static long getScanUpgradeDurationMillis() {
+        return AdapterService.getAdapterService().getScanUpgradeDurationMillis();
+    }
+
     public String appName;
     public WorkSource mWorkSource; // Used for BatteryStats and BluetoothStatsLog
+    public final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
     private int mScansStarted = 0;
     private int mScansStopped = 0;
     public boolean isRegistered = false;
@@ -155,6 +165,8 @@ import java.util.Objects;
             source = new WorkSource(Binder.getCallingUid(), appName);
         }
         mWorkSource = source;
+        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService());
+        mWorkSourceUtil = new WorkSourceUtil(source);
     }
 
     synchronized void addResult(int scannerId) {
@@ -171,7 +183,8 @@ import java.util.Objects;
                     /* ignore */
                 }
                 BluetoothStatsLog.write(
-                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED, mWorkSource, 100);
+                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                        mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), 100);
             }
         }
 
@@ -248,9 +261,10 @@ import java.util.Objects;
         } catch (RemoteException e) {
             /* ignore */
         }
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED, mWorkSource,
-                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+                    BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
+                    scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
 
         mOngoingScans.put(scannerId, scan);
     }
@@ -270,7 +284,7 @@ import java.util.Objects;
             mTotalSuspendTime += suspendDuration;
         }
         mOngoingScans.remove(scannerId);
-        if (mLastScans.size() >= getNumScanDurationsKept()) {
+        if (mLastScans.size() >= mAdapterService.getScanQuotaCount()) {
             mLastScans.remove(0);
         }
         mLastScans.add(scan);
@@ -315,10 +329,12 @@ import java.util.Objects;
         } catch (RemoteException e) {
             /* ignore */
         }
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED, mWorkSource, scan.results % 100);
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED, mWorkSource,
-                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), scan.results % 100);
+        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                    mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+                    BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
+                    scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
     }
 
     synchronized void recordScanSuspend(int scannerId) {
@@ -355,19 +371,29 @@ import java.util.Objects;
     }
 
     synchronized boolean isScanningTooFrequently() {
-        if (mLastScans.size() < getNumScanDurationsKept()) {
+        if (mLastScans.size() < mAdapterService.getScanQuotaCount()) {
             return false;
         }
 
         return (SystemClock.elapsedRealtime() - mLastScans.get(0).timestamp)
-                < getExcessiveScanningPeriodMillis();
+                < mAdapterService.getScanQuotaWindowMillis();
     }
 
     synchronized boolean isScanningTooLong() {
         if (!isScanning()) {
             return false;
         }
-        return (SystemClock.elapsedRealtime() - mScanStartTime) > getScanTimeoutMillis();
+        return (SystemClock.elapsedRealtime() - mScanStartTime)
+                > mAdapterService.getScanTimeoutMillis();
+    }
+
+    synchronized boolean hasRecentScan() {
+        if (!isScanning() || mLastScans.isEmpty()) {
+            return false;
+        }
+        LastScan lastScan = mLastScans.get(mLastScans.size() - 1);
+        return ((SystemClock.elapsedRealtime() - lastScan.duration - lastScan.timestamp)
+                < LARGE_SCAN_TIME_GAP_MS);
     }
 
     // This function truncates the app name for privacy reasons. Apps with

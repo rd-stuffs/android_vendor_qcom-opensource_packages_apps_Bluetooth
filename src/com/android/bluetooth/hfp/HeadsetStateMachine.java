@@ -88,6 +88,7 @@ import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.apm.DeviceProfileMapIntf;
+import com.android.bluetooth.apm.VolumeManagerIntf;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -493,7 +494,7 @@ public class HeadsetStateMachine extends StateMachine {
                 Log.e(TAG, "HeadsetService is null");
                 return;
             }
-            if(ApmConstIntf.getQtiLeAudioEnabled()) {
+            if(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled()) {
                 mHeadsetService.updateConnState(device, toState);
             }
             mHeadsetService.onConnectionStateChangedFromStateMachine(device, fromState, toState);
@@ -691,6 +692,9 @@ public class HeadsetStateMachine extends StateMachine {
                              ApmConstIntf.AudioProfiles.HFP, false);
             dpm.profileConnectionUpdate(mDevice, ApmConstIntf.AudioFeatures.CALL_VOLUME_CONTROL,
                              ApmConstIntf.AudioProfiles.HFP, false);
+            VolumeManagerIntf mVolumeManager = VolumeManagerIntf.get();
+            mVolumeManager.onConnStateChange(mDevice, BluetoothProfile.STATE_DISCONNECTED,
+                             ApmConstIntf.AudioProfiles.HFP);
             // Remove the state machine for unbonded devices
             if (mPrevState != null
                     && mAdapterService.getBondState(mDevice) == BluetoothDevice.BOND_NONE) {
@@ -1067,6 +1071,18 @@ public class HeadsetStateMachine extends StateMachine {
                             break;
                     }
                     break;
+                case RESUME_A2DP:
+                      /* If the call started/ended by the time A2DP suspend ack
+                      * is received, send the call indicators before resuming
+                      * A2DP.
+                      */
+                     if (mPendingCallStates.size() == 0) {
+                         stateLogD("RESUME_A2DP evt, resuming A2DP");
+                         mHeadsetService.getHfpA2DPSyncInterface().releaseA2DP(mDevice);
+                     } else {
+                         stateLogW("RESUME_A2DP evt, pending call states to be sent, not resuming");
+                     }
+                     break;
                 default:
                     stateLogE("Unexpected msg " + getMessageName(message.what) + ": " + message);
                     return NOT_HANDLED;
@@ -1468,6 +1484,9 @@ public class HeadsetStateMachine extends StateMachine {
                              ApmConstIntf.AudioProfiles.HFP, true);
             dpm.profileConnectionUpdate(mDevice, ApmConstIntf.AudioFeatures.CALL_VOLUME_CONTROL,
                              ApmConstIntf.AudioProfiles.HFP, true);
+            VolumeManagerIntf mVolumeManager = VolumeManagerIntf.get();
+            mVolumeManager.onConnStateChange(mDevice, BluetoothProfile.STATE_CONNECTED,
+                             ApmConstIntf.AudioProfiles.HFP);
             if ((mPrevState == mAudioOn) || (mPrevState == mAudioDisconnecting)||
                  (mPrevState == mAudioConnecting)) {
                 if (!(mSystemInterface.isInCall() || mSystemInterface.isRinging())) {
@@ -2413,13 +2432,17 @@ public class HeadsetStateMachine extends StateMachine {
                  log("processCallState: enable SWB for all voip calls ");
                  mHeadsetService.enableSwbCodec(true);
             } else if((callState.mCallState == HeadsetHalConstants.CALL_STATE_DIALING) ||
-               (callState.mCallState == HeadsetHalConstants.CALL_STATE_INCOMING)) {
+               (callState.mCallState == HeadsetHalConstants.CALL_STATE_INCOMING) ||
+                ((callState.mCallState == HeadsetHalConstants.CALL_STATE_IDLE) &&
+                 (callState.mNumActive > 0))) {
                  if (!mSystemInterface.isHighDefCallInProgress()) {
                     log("processCallState: disable SWB for non-HD call ");
                     mHeadsetService.enableSwbCodec(false);
+                    mAudioParams.put(HEADSET_SWB, HEADSET_SWB_DISABLE);
                  } else {
                     log("processCallState: enable SWB for HD call ");
                     mHeadsetService.enableSwbCodec(true);
+                    mAudioParams.put(HEADSET_SWB, "0");
                  }
             }
         }
@@ -2689,7 +2712,12 @@ public class HeadsetStateMachine extends StateMachine {
     private void processAtCpbs(String atString, int type, BluetoothDevice device) {
         log("processAtCpbs - atString = " + atString);
         if (mPhonebook != null) {
-            mPhonebook.handleCpbsCommand(atString, type, device);
+            if (atString.equals("SM") && !mSystemInterface.getHeadsetPhoneState().getIsSimCardLoaded()){
+               Log.e(TAG, " SM is not loaded");
+               mNativeInterface.atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
+            } else {
+              mPhonebook.handleCpbsCommand(atString, type, device);
+            }
         } else {
             Log.e(TAG, "Phonebook handle null for At+CPBS");
             mNativeInterface.atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);

@@ -296,7 +296,14 @@ public class VolumeControlService extends ProfileService {
     /**
      * {@hide}
      */
-    public void setVolumeGroup(int groupId, int volume) {
+    public void setGroupVolume(int groupId, int volume) {
+    }
+
+    /**
+     * {@hide}
+     */
+    public int getGroupVolume(int groupId) {
+        return -1;
     }
 
     /**
@@ -520,7 +527,7 @@ public class VolumeControlService extends ProfileService {
         }
 
         @Override
-        public void setVolumeGroup(int groupId, int volume, AttributionSource source,
+        public void setGroupVolume(int groupId, int volume, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
                 Objects.requireNonNull(source, "source cannot be null");
@@ -528,7 +535,24 @@ public class VolumeControlService extends ProfileService {
 
                 VolumeControlService service = getService(source);
                 if (service != null) {
-                    service.setVolumeGroup(groupId, volume);
+                    service.setGroupVolume(groupId, volume);
+                }
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @Override
+        public void getGroupVolume(int group_id, AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                Objects.requireNonNull(source, "source cannot be null");
+                Objects.requireNonNull(receiver, "receiver cannot be null");
+
+                VolumeControlService service = getService(source);
+                if (service != null) {
+                    service.getGroupVolume(group_id);
                 }
                 receiver.send(null);
             } catch (RuntimeException e) {
