@@ -1986,7 +1986,7 @@ public class HeadsetService extends ProfileService {
      * @return true on success, otherwise false
      */
     public int setActiveDeviceHF(BluetoothDevice device) {
-        Log.i(TAG, "setActiveDevice: device=" + device + ", " + Utils.getUidPidString());
+        Log.i(TAG, "setActiveDeviceHF: device=" + device + ", " + Utils.getUidPidString());
         synchronized (mStateMachines) {
             if (device == null) {
                 // Clear the active device
@@ -2030,7 +2030,7 @@ public class HeadsetService extends ProfileService {
                     }
                 }
                 mActiveDevice = null;
-                if (!ApmConstIntf.getQtiLeAudioEnabled()) {
+                if (!(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled())) {
                    broadcastActiveDevice(null);
                 }
                 return ActiveDeviceManagerServiceIntf.SHO_SUCCESS;
@@ -2098,7 +2098,7 @@ public class HeadsetService extends ProfileService {
                     mNativeInterface.setActiveDevice(previousActiveDevice);
                     return ActiveDeviceManagerServiceIntf.SHO_FAILED;
                 }
-                if(!ApmConstIntf.getQtiLeAudioEnabled()) {
+                if (!(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled())) {
                     broadcastActiveDevice(mActiveDevice);
                 }
             } else if (shouldPersistAudio()) {
@@ -2112,11 +2112,11 @@ public class HeadsetService extends ProfileService {
                         return ActiveDeviceManagerServiceIntf.SHO_FAILED;
                     }
                 }
-                if(!ApmConstIntf.getQtiLeAudioEnabled()) {
+                if (!(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled())) {
                     broadcastActiveDevice(mActiveDevice);
                 }
             } else {
-                if(!ApmConstIntf.getQtiLeAudioEnabled()) {
+                if (!(ApmConstIntf.getQtiLeAudioEnabled() || ApmConstIntf.getAospLeaEnabled())) {
                     broadcastActiveDevice(mActiveDevice);
                 }
             }
