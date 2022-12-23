@@ -430,17 +430,18 @@ public class LeAudioService extends ProfileService {
 
         Log.d(TAG, "connect(): mPtsMediaAndVoice: " + mPtsMediaAndVoice +
                    ", mPtsTmapConfBandC: " + mPtsTmapConfBandC);
-        if (!mPtsTmapConfBandC &&
-            (mPtsMediaAndVoice == 1 || mPtsMediaAndVoice == 3)) {
-            if (mMediaAudio != null) {
-                mMediaAudio.connect(device);
-            }
-        }
 
         if (!mPtsTmapConfBandC &&
             (mPtsMediaAndVoice == 2 || mPtsMediaAndVoice == 3)) {
             if (mCallAudio != null) {
                 mCallAudio.connect(device);
+            }
+        }
+
+        if (!mPtsTmapConfBandC &&
+            (mPtsMediaAndVoice == 1 || mPtsMediaAndVoice == 3)) {
+            if (mMediaAudio != null) {
+                mMediaAudio.connect(device);
             }
         }
 
@@ -1116,9 +1117,13 @@ public class LeAudioService extends ProfileService {
 
     public void onLeCodecConfigChange(BluetoothDevice device,
             BluetoothLeAudioCodecStatus codecStatus, int audioType) {
-        Log.d(TAG, "onLeCodecConfigChange");
-        notifyUnicastCodecConfigChanged(1 /*group id*/, codecStatus);
 
+        int groupId = getGroupId(device);
+        Log.d(TAG, "onLeCodecConfigChange(): device: " + device + ", groupId: " + groupId);
+
+        if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
+            notifyUnicastCodecConfigChanged(groupId, codecStatus);
+        }
     }
 
     /*void connectSet(BluetoothDevice device) {
