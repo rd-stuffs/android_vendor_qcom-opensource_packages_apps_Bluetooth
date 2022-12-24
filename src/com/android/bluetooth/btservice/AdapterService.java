@@ -4498,7 +4498,8 @@ public class AdapterService extends Service {
         }
 
         int groupId = getGroupId(device);
-        if (deviceProp.isCoordinatedSetMember() || groupId != INVALID_GROUP_ID) {
+        if (deviceProp != null
+                && (deviceProp.isCoordinatedSetMember() || groupId != INVALID_GROUP_ID)) {
             Log.d(TAG, "createBond(): Process Coordinated SetMember");
             if (processGroupMember(groupId, device, remoteOobDatasBundle)) {
                 return true;
