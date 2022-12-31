@@ -2226,10 +2226,11 @@ static void ble_advertising_set_timeout_cb(uint8_t advertiser_id,
 
 static void startAdvertisingSetNative(JNIEnv* env, jobject object,
                                       jobject parameters, jbyteArray adv_data,
-                                      jbyteArray scan_resp,
-                                      jobject periodic_parameters,
-                                      jbyteArray periodic_data, jint duration,
-                                      jint maxExtAdvEvents, jint reg_id) {
+                                      jbyteArray adv_data_enc, jbyteArray scan_resp,
+                                      jbyteArray scan_resp_enc, jobject periodic_parameters,
+                                      jbyteArray periodic_data, jbyteArray periodic_data_enc,
+                                      jint duration, jint maxExtAdvEvents,
+                                      jbyteArray enc_key_material_value, jint reg_id) {
   if (!sGattIf) return;
 
   jbyte* scan_resp_data = env->GetByteArrayElements(scan_resp, NULL);
@@ -2237,6 +2238,12 @@ static void startAdvertisingSetNative(JNIEnv* env, jobject object,
   std::vector<uint8_t> scan_resp_vec(scan_resp_data,
                                      scan_resp_data + scan_resp_len);
   env->ReleaseByteArrayElements(scan_resp, scan_resp_data, JNI_ABORT);
+
+  jbyte* scan_resp_data_enc = env->GetByteArrayElements(scan_resp_enc, NULL);
+  uint16_t scan_resp_enc_len = (uint16_t)env->GetArrayLength(scan_resp_enc);
+  std::vector<uint8_t> scan_resp_enc_vec(scan_resp_data_enc,
+                                     scan_resp_data_enc + scan_resp_enc_len);
+  env->ReleaseByteArrayElements(scan_resp_enc, scan_resp_data_enc, JNI_ABORT);
 
   AdvertiseParameters params = parseParams(env, parameters);
   PeriodicAdvertisingParameters periodicParams =
@@ -2247,16 +2254,33 @@ static void startAdvertisingSetNative(JNIEnv* env, jobject object,
   std::vector<uint8_t> data_vec(adv_data_data, adv_data_data + adv_data_len);
   env->ReleaseByteArrayElements(adv_data, adv_data_data, JNI_ABORT);
 
+  jbyte* adv_data_data_enc = env->GetByteArrayElements(adv_data_enc, NULL);
+  uint16_t adv_data_enc_len = (uint16_t)env->GetArrayLength(adv_data_enc);
+  std::vector<uint8_t> data_enc_vec(adv_data_data_enc, adv_data_data_enc + adv_data_enc_len);
+  env->ReleaseByteArrayElements(adv_data_enc, adv_data_data_enc, JNI_ABORT);
+
   jbyte* periodic_data_data = env->GetByteArrayElements(periodic_data, NULL);
   uint16_t periodic_data_len = (uint16_t)env->GetArrayLength(periodic_data);
   std::vector<uint8_t> periodic_data_vec(
       periodic_data_data, periodic_data_data + periodic_data_len);
   env->ReleaseByteArrayElements(periodic_data, periodic_data_data, JNI_ABORT);
 
+  jbyte* periodic_data_data_enc = env->GetByteArrayElements(periodic_data_enc, NULL);
+  uint16_t periodic_data_enc_len = (uint16_t)env->GetArrayLength(periodic_data_enc);
+  std::vector<uint8_t> periodic_data_enc_vec(
+      periodic_data_data_enc, periodic_data_data_enc + periodic_data_enc_len);
+  env->ReleaseByteArrayElements(periodic_data_enc, periodic_data_data_enc, JNI_ABORT);
+
+  jbyte* enc_key_value = env->GetByteArrayElements(enc_key_material_value, NULL);
+  uint16_t enc_key_value_len = (uint16_t)env->GetArrayLength(enc_key_material_value);
+  std::vector<uint8_t> enc_key_vec(enc_key_value, enc_key_value + enc_key_value_len);
+  env->ReleaseByteArrayElements(enc_key_material_value, enc_key_value, JNI_ABORT);
+
   sGattIf->advertiser->StartAdvertisingSet(
       reg_id, base::Bind(&ble_advertising_set_started_cb, reg_id), params,
-      data_vec, scan_resp_vec, periodicParams, periodic_data_vec, duration,
-      maxExtAdvEvents, base::Bind(ble_advertising_set_timeout_cb));
+      data_vec, data_enc_vec, scan_resp_vec, scan_resp_enc_vec, periodicParams,
+      periodic_data_vec, periodic_data_enc_vec, duration, maxExtAdvEvents,
+      enc_key_vec, base::Bind(ble_advertising_set_timeout_cb));
 }
 
 static void stopAdvertisingSetNative(JNIEnv* env, jobject object,
@@ -2324,20 +2348,22 @@ static void enableAdvertisingSetNative(JNIEnv* env, jobject object,
 }
 
 static void setAdvertisingDataNative(JNIEnv* env, jobject object,
-                                     jint advertiser_id, jbyteArray data) {
+                                     jint advertiser_id, jbyteArray data,
+                                     jbyteArray data_enc) {
   if (!sGattIf) return;
 
   sGattIf->advertiser->SetData(
-      advertiser_id, false, toVector(env, data),
+      advertiser_id, false, toVector(env, data), toVector(env, data_enc),
       base::Bind(&callJniCallback, method_onAdvertisingDataSet, advertiser_id));
 }
 
 static void setScanResponseDataNative(JNIEnv* env, jobject object,
-                                      jint advertiser_id, jbyteArray data) {
+                                      jint advertiser_id, jbyteArray data,
+                                      jbyteArray data_enc) {
   if (!sGattIf) return;
 
   sGattIf->advertiser->SetData(
-      advertiser_id, true, toVector(env, data),
+      advertiser_id, true, toVector(env, data), toVector(env, data_enc),
       base::Bind(&callJniCallback, method_onScanResponseDataSet,
                  advertiser_id));
 }
@@ -2381,11 +2407,12 @@ static void setPeriodicAdvertisingParametersNative(
 
 static void setPeriodicAdvertisingDataNative(JNIEnv* env, jobject object,
                                              jint advertiser_id,
-                                             jbyteArray data) {
+                                             jbyteArray data,
+                                             jbyteArray data_enc) {
   if (!sGattIf) return;
 
   sGattIf->advertiser->SetPeriodicAdvertisingData(
-      advertiser_id, toVector(env, data),
+      advertiser_id, toVector(env, data), toVector(env, data_enc),
       base::Bind(&callJniCallback, method_onPeriodicAdvertisingDataSet,
                  advertiser_id));
 }
@@ -2580,22 +2607,22 @@ static JNINativeMethod sAdvertiseMethods[] = {
     {"initializeNative", "()V", (void*)advertiseInitializeNative},
     {"cleanupNative", "()V", (void*)advertiseCleanupNative},
     {"startAdvertisingSetNative",
-     "(Landroid/bluetooth/le/AdvertisingSetParameters;[B[BLandroid/bluetooth/"
-     "le/PeriodicAdvertisingParameters;[BIII)V",
+     "(Landroid/bluetooth/le/AdvertisingSetParameters;[B[B[B[BLandroid/bluetooth/"
+     "le/PeriodicAdvertisingParameters;[B[BII[BI)V",
      (void*)startAdvertisingSetNative},
     {"getOwnAddressNative", "(I)V", (void*)getOwnAddressNative},
     {"stopAdvertisingSetNative", "(I)V", (void*)stopAdvertisingSetNative},
     {"enableAdvertisingSetNative", "(IZII)V",
      (void*)enableAdvertisingSetNative},
-    {"setAdvertisingDataNative", "(I[B)V", (void*)setAdvertisingDataNative},
-    {"setScanResponseDataNative", "(I[B)V", (void*)setScanResponseDataNative},
+    {"setAdvertisingDataNative", "(I[B[B)V", (void*)setAdvertisingDataNative},
+    {"setScanResponseDataNative", "(I[B[B)V", (void*)setScanResponseDataNative},
     {"setAdvertisingParametersNative",
      "(ILandroid/bluetooth/le/AdvertisingSetParameters;)V",
      (void*)setAdvertisingParametersNative},
     {"setPeriodicAdvertisingParametersNative",
      "(ILandroid/bluetooth/le/PeriodicAdvertisingParameters;)V",
      (void*)setPeriodicAdvertisingParametersNative},
-    {"setPeriodicAdvertisingDataNative", "(I[B)V",
+    {"setPeriodicAdvertisingDataNative", "(I[B[B)V",
      (void*)setPeriodicAdvertisingDataNative},
     {"setPeriodicAdvertisingEnableNative", "(IZ)V",
      (void*)setPeriodicAdvertisingEnableNative},

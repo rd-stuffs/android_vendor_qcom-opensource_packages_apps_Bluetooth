@@ -4113,6 +4113,23 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void getEncKeyMaterialValue(SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getEncKeyMaterialValue());
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private byte[] getEncKeyMaterialValue() {
+            AdapterService service = getService();
+            if (service == null) {
+                return null;
+            }
+
+            return service.getEncKeyMaterialValue();
+        }
+
+        @Override
         public void isActivityAndEnergyReportingSupported(SynchronousResultReceiver receiver) {
             try {
                 receiver.send(isActivityAndEnergyReportingSupported());
@@ -5849,6 +5866,10 @@ public class AdapterService extends Service {
 
     public int getLeMaximumAdvertisingDataLength() {
         return mAdapterProperties.getLeMaximumAdvertisingDataLength();
+    }
+
+    public byte[] getEncKeyMaterialValue() {
+        return mAdapterProperties.getEncKeyMaterialValue();
     }
 
     /**

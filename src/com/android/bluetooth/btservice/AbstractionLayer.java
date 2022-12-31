@@ -49,6 +49,12 @@
  * limitations under the License.
  */
 
+/*
+ * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.bluetooth.btservice;
 
 /*
@@ -87,6 +93,8 @@ public final class AbstractionLayer {
 
     static final int BT_PROPERTY_DYNAMIC_AUDIO_BUFFER = 0x10;
     static final int BT_PROPERTY_REMOTE_DEVICE_GROUP = 0x12;
+
+    static final int BT_PROPERTY_ENC_KEY_MATERIAL = 0x18;
 
     public static final int BT_DEVICE_TYPE_BREDR = 0x01;
     public static final int BT_DEVICE_TYPE_BLE = 0x02;
