@@ -1065,11 +1065,20 @@ public class LeAudioService extends ProfileService {
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
         activeDeviceManager.setActiveDevice(device,
-                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO/*,
-                                            true*/);
+                                            ApmConstIntf.AudioFeatures.CALL_AUDIO);
         activeDeviceManager.setActiveDevice(device,
-                                            ApmConstIntf.AudioFeatures.CALL_AUDIO/*,
-                                            true*/);
+                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+        return true;
+    }
+
+    public boolean setActiveDeviceBlocking(BluetoothDevice device) {
+        Log.d(TAG, "setActiveDeviceBlocking() for device: " + device);
+        ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                            ActiveDeviceManagerServiceIntf.get();
+        activeDeviceManager.setActiveDeviceBlocking(device,
+                                            ApmConstIntf.AudioFeatures.CALL_AUDIO);
+        activeDeviceManager.setActiveDevice(device,
+                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
         return true;
     }
 
@@ -2137,8 +2146,16 @@ public class LeAudioService extends ProfileService {
 
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
+                boolean defaultValueVoice = false;
+                boolean defaultValueMedia = false;
                 if (service != null) {
-                    defaultValue = service.setActiveDevice(device);
+                    ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                                ActiveDeviceManagerServiceIntf.get();
+                    defaultValueVoice = activeDeviceManager.setActiveDevice(device,
+                                          ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
+                    defaultValueMedia = activeDeviceManager.setActiveDevice(device,
+                                          ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
+                    defaultValue = (defaultValueVoice & defaultValueMedia);
                 }
                 receiver.send(defaultValue);
             } catch (RuntimeException e) {
