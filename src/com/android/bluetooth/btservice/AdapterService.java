@@ -2091,7 +2091,8 @@ public class AdapterService extends Service {
      * why an inner instance class should be avoided.
      *
      */
-    private static class AdapterServiceBinder extends IBluetooth.Stub {
+    @VisibleForTesting
+    public static class AdapterServiceBinder extends IBluetooth.Stub {
         private AdapterService mService;
 
         AdapterServiceBinder(AdapterService svc) {
