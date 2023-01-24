@@ -3176,7 +3176,21 @@ public class AdapterService extends Service {
                 enforceBluetoothPrivilegedPermission(service);
             }
 
-            service.fetchRemoteUuids(device);
+            Log.d(TAG, "fetchRemoteUuidsWithAttribution on transport "+ transport);
+            if ((transport == BluetoothDevice.TRANSPORT_BREDR) ||
+                 (transport == BluetoothDevice.TRANSPORT_AUTO)) {
+                service.fetchRemoteUuids(device);
+            } else {
+                String propValue;
+                propValue = SystemProperties.get("persist.bluetooth.qti_lea_fp");
+                if (propValue == null || propValue.length() == 0 ||
+                      propValue.equals("false")) {
+                    service.fetchRemoteUuids(device);
+                } else {
+                    Log.d(TAG, "fetchRemoteUuids on LE transport ");
+                    service.fetchRemoteLeUuids(device, transport);
+                }
+            }
             return true;
         }
 
@@ -5205,6 +5219,17 @@ public class AdapterService extends Service {
         }
         mRemoteDevices.fetchUuids(device);
         return true;
+    }
+
+    boolean fetchRemoteLeUuids(BluetoothDevice device, int transport) {
+        Log.d(TAG," fetchRemoteLeUuids Triggered for transport "+transport);
+
+        if (transport == BluetoothDevice.TRANSPORT_LE) {
+          mVendor.fetchRemoteLeUuids(device, transport);
+        } else {
+          mRemoteDevices.fetchUuids(device);
+        }
+            return true;
     }
 
     int getPhonebookAccessPermission(BluetoothDevice device) {
