@@ -1183,7 +1183,7 @@ public class LeAudioService extends ProfileService {
                                             ActiveDeviceManagerServiceIntf.get();
         activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
-        activeDeviceManager.setActiveDevice(device,
+        activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
         return true;
     }
