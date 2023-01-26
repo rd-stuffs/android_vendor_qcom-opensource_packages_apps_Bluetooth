@@ -2406,8 +2406,9 @@ static void setPeriodicAdvertisingEnableNative(JNIEnv* env, jobject object,
                                                jboolean enable) {
   if (!sGattIf) return;
 
+  bool include_adi = false;
   sGattIf->advertiser->SetPeriodicAdvertisingEnable(
-      advertiser_id, enable,
+      advertiser_id, enable, include_adi,
       base::Bind(&enablePeriodicSetCb, advertiser_id, enable));
 }
 
