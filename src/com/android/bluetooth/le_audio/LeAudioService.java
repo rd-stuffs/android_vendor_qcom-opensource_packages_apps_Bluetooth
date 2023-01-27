@@ -107,7 +107,7 @@ public class LeAudioService extends ProfileService {
     private static final int INVALID_SET_ID = 0x10;
 
     private static final int NON_CSIP_MIN_GROUP_ID = 0x11;
-    private static final int NON_CSIP_MAX_GROUP_ID = 0x16;
+    private static final int NON_CSIP_MAX_GROUP_ID = 0x20;
 
     // Upper limit of all LeAudio devices: Bonded or Connected
     private static final int MAX_LE_AUDIO_STATE_MACHINES = 10;
@@ -564,29 +564,25 @@ public class LeAudioService extends ProfileService {
                      lead_device = curr_active_device;
                  } else {
                      // TO-DO: check for better way
-                     for (int gid = NON_CSIP_MIN_GROUP_ID; gid <= NON_CSIP_MAX_GROUP_ID; ++gid) {
-                         List<BluetoothDevice> d = getGroupDevices(gid);
-                         lead_device = d.isEmpty() ? null : d.get(0);
-                         Log.w(TAG, "loop non-CSIP group " + gid + " device " + lead_device);
-                         if (lead_device != null)
-                             break;
+                     if (mNonCSIPGruopID.size() > 0) {
+                         for (int gid = NON_CSIP_MIN_GROUP_ID;gid <= NON_CSIP_MAX_GROUP_ID;++gid) {
+                             List<BluetoothDevice> d = getGroupDevices(gid);
+                             lead_device = d.isEmpty() ? null : d.get(0);
+                             if (lead_device != null) {
+                                 Log.w(TAG, "return 1st connected grp lead device " + lead_device +
+                                         " for group id " + groupId + " placeholder gid " + gid);
+                                 break;
+                             }
+                         }
                      }
+                     Log.w(TAG, "returning group lead device from non-CSIP group " + lead_device);
                  }
-                 Log.w(TAG, "returning group lead device from non-CSIP group " + lead_device);
              } else {
                  List<BluetoothDevice> d = getGroupDevices(groupId);
                  lead_device = d.isEmpty() ? null : d.get(0);
                  Log.w(TAG, "returning group lead device from non CSIP group " + lead_device);
              }
          }
-
-         /*List<BluetoothDevice> devices = getConnectedDevices();
-         if (devices.size() > 0) {
-             if (lead_device == null) {
-                 lead_device = devices.get(0);
-                 Log.w(TAG, "returning group lead device from connect list group as device " + lead_device);
-             }
-         }*/
 
          Log.w(TAG, "returning group lead device " + lead_device + " for group " + groupId);
          return lead_device;
@@ -1585,12 +1581,12 @@ public class LeAudioService extends ProfileService {
     }
 
     private int getNonCsipGroupId() {
-        int groupid = -1;
+        int groupid = LE_AUDIO_GROUP_ID_INVALID;
         if (mNonCSIPGruopID.size() == 0) {
             groupid = NON_CSIP_MIN_GROUP_ID;
-        } else if (mNonCSIPGruopID.last() < NON_CSIP_MIN_GROUP_ID) {
+        } else if (mNonCSIPGruopID.last() < NON_CSIP_MAX_GROUP_ID) {
             groupid = mNonCSIPGruopID.last() + 1;
-        } else if (mNonCSIPGruopID.first() > NON_CSIP_MAX_GROUP_ID) {
+        } else if (mNonCSIPGruopID.first() > NON_CSIP_MIN_GROUP_ID) {
             groupid = mNonCSIPGruopID.first() - 1;
         } else {
             int first_groupid_avail = mNonCSIPGruopID.first() + 1;
@@ -1678,22 +1674,23 @@ public class LeAudioService extends ProfileService {
                 mAcmService.removeStateMachine(device);
             }
             int groupId = getGroupId(device);
-            if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
-                if (groupId == INVALID_SET_ID) {
-                    groupId = mDeviceGroupIdMap.getOrDefault(device, LE_AUDIO_GROUP_ID_INVALID);
-                    Log.d(TAG, "non-CSIP remove device " + device + " group ID " + groupId);
-                    if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
-                        mDeviceGroupIdMap.remove(device);
-                        mNonCSIPGruopID.remove(groupId);
-                    }
-                } else {
-                    if (getConnectedPeerDevices(groupId).size() == 0) {
-                        List<BluetoothDevice> removedevices = new ArrayList<BluetoothDevice>();
-                        for (Map.Entry<BluetoothDevice,Integer> e : mDeviceGroupIdMap.entrySet()) {
-                            if (e.getValue() == groupId) {
-                                Log.d(TAG,"CSIP remove device " + e.getKey() + " grpID " + groupId);
-                                removedevices.add(e.getKey());
-                            }
+            if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
+                Log.d(TAG, "Disconnect for Invalid group ID return ");
+                return;
+            }
+
+            if (groupId >= INVALID_SET_ID) {
+                Log.d(TAG, "non-CSIP remove device " + device + " group ID " + groupId);
+                mDeviceGroupIdMap.remove(device);
+                if (groupId > INVALID_SET_ID)
+                    mNonCSIPGruopID.remove(groupId);
+            } else {
+                if (getConnectedPeerDevices(groupId).size() == 0) {
+                    List<BluetoothDevice> removedevices = new ArrayList<BluetoothDevice>();
+                    for (Map.Entry<BluetoothDevice,Integer> e : mDeviceGroupIdMap.entrySet()) {
+                        if (e.getValue() == groupId) {
+                            Log.d(TAG,"CSIP remove device " + e.getKey() + " grpID " + groupId);
+                            removedevices.add(e.getKey());
                         }
                         for (BluetoothDevice dev : removedevices) {
                             mDeviceGroupIdMap.remove(dev);
