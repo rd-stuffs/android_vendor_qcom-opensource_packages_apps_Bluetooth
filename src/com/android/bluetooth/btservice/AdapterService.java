@@ -96,6 +96,7 @@ package com.android.bluetooth.btservice;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
+import static com.android.bluetooth.ChangeIds.ENFORCE_CONNECT;
 import static com.android.bluetooth.Utils.addressToBytes;
 import static com.android.bluetooth.Utils.callerIsSystem;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
@@ -118,6 +119,7 @@ import android.app.PropertyInvalidatedCache;
 import android.app.Service;
 import android.bluetooth.BluetoothA2dp;
 import android.app.admin.DevicePolicyManager;
+import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
@@ -2719,16 +2721,28 @@ public class AdapterService extends Service {
         public void getProfileConnectionState(int profile, AttributionSource source,
                         SynchronousResultReceiver receiver) {
             try {
-                receiver.send(getProfileConnectionState(profile));
+                receiver.send(getProfileConnectionState(profile, source));
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
-        private int getProfileConnectionState(int profile) {
+        @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+        private int getProfileConnectionState(int profile, AttributionSource source) {
             AdapterService service = getService();
+            boolean checkConnect = false;
+            final int callingUid = Binder.getCallingUid();
+            final long token = Binder.clearCallingIdentity();
+            try {
+                checkConnect =
+                       CompatChanges.isChangeEnabled(ENFORCE_CONNECT, callingUid);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(
-                            service, TAG, "getProfileConnectionState")) {
+                            service, TAG, "getProfileConnectionState")
+                    || (checkConnect && !Utils.checkConnectPermissionForDataDelivery(
+                            service, source, "AdapterService getProfileConnectionState"))) {
                 return BluetoothProfile.STATE_DISCONNECTED;
             }
             return service.mAdapterProperties.getProfileConnectionState(profile);
