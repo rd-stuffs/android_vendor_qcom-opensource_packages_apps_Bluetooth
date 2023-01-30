@@ -181,6 +181,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
@@ -315,7 +316,6 @@ public class AdapterService extends Service {
     private static final int TYPE_PRIVATE_ADDRESS = 101;
     private static final int INVALID_GROUP_ID = 16;
 
-
     private static final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     private final ArrayList<DiscoveringPackage> mDiscoveringPackages = new ArrayList<>();
@@ -411,6 +411,7 @@ public class AdapterService extends Service {
     private SapService mSapService;
     private GattService mGattService;
     private LeAudioService mLeAudioService;
+    private HapClientService mHapClientService;
     private BassClientService mBassClientService;
 
     ///*_REF
@@ -1380,6 +1381,10 @@ public class AdapterService extends Service {
             Log.e(TAG, "isSupported: profile: " + profile);
             return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO);
         }
+        if (profile == BluetoothProfile.HAP_CLIENT) {
+           Log.e(TAG, "isSupported: profile: " + profile);
+           return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.HAS);
+        }
         if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
             return ArrayUtils.contains(remoteDeviceUuids, BluetoothUuid.BASS);
         }
@@ -1452,6 +1457,12 @@ public class AdapterService extends Service {
             mLeAudioService != null && mLeAudioService.getConnectionPolicy(device)
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             Log.i(TAG, "isAnyProfileEnabled: LE_AUDIO profile enabled");
+            return true;
+        }
+        if (!isQtiLeAudioEnabled &&
+            mHapClientService != null && mHapClientService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "isAnyProfileEnabled: HAP profile enabled");
             return true;
         }
         if (mBassClientService != null && mBassClientService.getConnectionPolicy(device)
@@ -1597,8 +1608,15 @@ public class AdapterService extends Service {
                 BluetoothProfile.LE_AUDIO, device)
                 && mLeAudioService.getConnectionPolicy(device)
                 > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
-            Log.i(TAG, "connectEnabledProfiles: Connecting LeAudio profile (BAP)");
+            Log.i(TAG, "connectEnabledProfiles: Connecting LeAudio and HAP profile (BAP)");
             mLeAudioService.connect(device);
+        }
+        if (mHapClientService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                BluetoothProfile.HAP_CLIENT, device)
+                && mHapClientService.getConnectionPolicy(device)
+                > BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+            Log.i(TAG, "connectEnabledProfiles: Connecting HAP profile ");
+            mHapClientService.connect(device);
         }
         if (mBassClientService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
                 BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device)
@@ -1691,6 +1709,7 @@ public class AdapterService extends Service {
         mSapService = SapService.getSapService();
         mGattService = GattService.getGattService();
         mLeAudioService = LeAudioService.getLeAudioService();
+        mHapClientService = HapClientService.getHapClientService();
         mVolumeControlService = VolumeControlService.getVolumeControlService();
         if (isAdvBCAAudioFeatEnabled()) {
         ///*_REF
@@ -5179,6 +5198,14 @@ public class AdapterService extends Service {
             numProfilesConnected++;
         }
         if (!isQtiLeAudioEnabled &&
+            mHapClientService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
+                    BluetoothProfile.HAP_CLIENT, device)) {
+            Log.i(TAG, "connectAllEnabledProfiles: Connecting HAP");
+            mHapClientService.setConnectionPolicy(device,
+            BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            numProfilesConnected++;
+         }
+        if (!isQtiLeAudioEnabled &&
             mLeAudioService != null && isSupported(localDeviceUuids, remoteDeviceUuids,
                 BluetoothProfile.LE_AUDIO, device)) {
             Log.i(TAG, "connectAllEnabledProfiles: Connecting Le Audio");
@@ -5329,6 +5356,12 @@ public class AdapterService extends Service {
                 == BluetoothProfile.STATE_CONNECTED) {
             Log.i(TAG, "connectAllEnabledProfiles: Disconnecting Le Audio");
             mLeAudioService.disconnect(device);
+        }
+        if (!isQtiLeAudioEnabled &&
+            mHapClientService != null && mHapClientService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "connectAllEnabledProfiles: Disconnecting HAP");
+            mHapClientService.disconnect(device);
         }
         if (mA2dpSinkService != null && mA2dpSinkService.getConnectionState(device)
                 == BluetoothProfile.STATE_CONNECTED) {
