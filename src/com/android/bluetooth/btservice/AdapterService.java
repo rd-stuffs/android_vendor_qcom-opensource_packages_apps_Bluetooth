@@ -2194,6 +2194,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public boolean isLogRedactionEnabled() {
+            return false;
+        }
+
+        @Override
         public void getUuids(AttributionSource source, SynchronousResultReceiver receiver) {
             try {
                 receiver.send(getUuids(source));
