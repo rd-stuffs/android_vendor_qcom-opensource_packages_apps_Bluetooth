@@ -1219,21 +1219,38 @@ public class GattService extends ProfileService {
                                        maxConnectionEventLen, attributionSource);
         }
 
-        @Override
-        public void subrateModeRequest(int clientIf, String address,
-                int subrateMode, AttributionSource attributionSource) {
+        public void subrateModeRequest(int clientIf, String address, int subrateMode,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                subrateModeRequest(clientIf, address, subrateMode, attributionSource);
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private void subrateModeRequest(int clientIf, String address, int subrateMode,
+                AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
-            service.subrateModeRequest(clientIf, address, subrateMode,
-                                       attributionSource);
+            service.subrateModeRequest(clientIf, address, subrateMode, attributionSource);
         }
 
         @Override
-        public void leSubrateRequest(int clientIf, String address,
-                int subrateMin, int subrateMax, int maxLatency,
-                int contNumber, int supervisionTimeout,
+        public void leSubrateRequest(int clientIf, String address, int subrateMin, int subrateMax,
+                int maxLatency, int contNumber, int supervisionTimeout,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                leSubrateRequest(clientIf, address, subrateMin, subrateMax, maxLatency, contNumber,
+                                 supervisionTimeout, attributionSource);
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private void leSubrateRequest(int clientIf, String address, int subrateMin, int subrateMax,
+                int maxLatency, int contNumber, int supervisionTimeout,
                 AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -4115,7 +4132,7 @@ public class GattService extends ProfileService {
         int supervisionTimeout = 500; // 5s
 
         switch (subrateMode) {
-            case BluetoothGatt.SUBRATE_REQ_HIGH:
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_HIGH:
                 subrateMin =
                         getResources().getInteger(R.integer.subrate_mode_high_priority_min_subrate);
                 subrateMax =
@@ -4126,7 +4143,7 @@ public class GattService extends ProfileService {
                         getResources().getInteger(R.integer.subrate_mode_high_priority_cont_number);
                 break;
 
-            case BluetoothGatt.SUBRATE_REQ_LOW_POWER:
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_LOW_POWER:
                 subrateMin =
                         getResources().getInteger(R.integer.subrate_mode_low_power_min_subrate);
                 subrateMax =
@@ -4135,6 +4152,7 @@ public class GattService extends ProfileService {
                 contNumber = getResources().getInteger(R.integer.subrate_mode_low_power_cont_number);
                 break;
 
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_BALANCED:
             default:
                 // Using the values for SUBRATE_REQ_BALANCED.
                 subrateMin =
