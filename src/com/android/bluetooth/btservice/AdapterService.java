@@ -3024,7 +3024,7 @@ public class AdapterService extends Service {
         private boolean removeActiveDevice(@ActiveDeviceUse int profiles, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "removeActiveDevice")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return false;
             }
@@ -3044,7 +3044,7 @@ public class AdapterService extends Service {
         private boolean setActiveDevice(BluetoothDevice device, @ActiveDeviceUse int profiles, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setActiveDevice")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return false;
             }
@@ -3066,7 +3066,7 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getActiveDevices")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return new ArrayList<>();
             }
@@ -4139,7 +4139,8 @@ public class AdapterService extends Service {
                 BluetoothDevice device, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service,
+                            TAG, "registerMetadataListener")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return false;
             }
@@ -4173,7 +4174,8 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service,
+                            TAG, "unregisterMetadataListener")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return false;
             }
@@ -4201,7 +4203,7 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             AdapterService service = getService();
             if (service == null
-                    || !Utils.checkCallerIsSystemOrActiveUser(TAG)
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setMetadata")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
                 return false;
             }
