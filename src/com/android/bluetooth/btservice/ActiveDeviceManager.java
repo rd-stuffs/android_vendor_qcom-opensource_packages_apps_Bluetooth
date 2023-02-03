@@ -236,8 +236,11 @@ public class ActiveDeviceManager {
 
                     int prevState = intent.getIntExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, -1);
                     int nextState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
+
+                    Log.d(TAG, "prevState: " + prevState + ", nextState: " + nextState);
                     if (prevState == nextState) {
                         // Nothing has changed
+                        Log.d(TAG, "prevState is same as nextState.");
                         break;
                     }
 
@@ -249,8 +252,6 @@ public class ActiveDeviceManager {
                              + " device " + device + " connected");
                         }
 
-                        //setHfpActiveDevice(null);
-                        //setA2dpActiveDevice(null);
                         setLeAudioActiveDevice(device);
                         break;
                     }
@@ -275,6 +276,8 @@ public class ActiveDeviceManager {
                             }
                         }
 
+                        Log.d(TAG, "mLeAudioActiveDevice: " + mLeAudioActiveDevice);
+
                         if (Objects.equals(mLeAudioActiveDevice, device)) {
                             final LeAudioService leAudioService = mFactory.getLeAudioService();
                             int groupId = leAudioService.getGroupId(device);
@@ -297,8 +300,32 @@ public class ActiveDeviceManager {
                                     setLeAudioActiveDevice(null);
                                 }
                             } else {
-                                Log.w(TAG, "Set leAudio active device to null");
-                                setLeAudioActiveDevice(null);
+                                ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                                         ActiveDeviceManagerServiceIntf.get();
+                                boolean isMediaActive = false;
+                                boolean isCallActive = false;
+                                if (activeDeviceManager != null && device != null) {
+                                    isMediaActive =
+                                      device.equals(activeDeviceManager.getActiveDevice(
+                                                           ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
+                                    isCallActive =
+                                      device.equals(activeDeviceManager.getActiveDevice(
+                                                           ApmConstIntf.AudioFeatures.CALL_AUDIO));
+                                }
+
+                                Log.w(TAG, "isMediaActive: " + isMediaActive +
+                                           ", isCallActive: " + isCallActive);
+
+                                if (isMediaActive && isCallActive) {
+                                    Log.w(TAG, "Set leAudio active device to null");
+                                    setLeAudioActiveDevice(null);
+                                } else if(isMediaActive) {
+                                    activeDeviceManager.setActiveDevice(null,
+                                                           ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+                                } else if(isCallActive) {
+                                    activeDeviceManager.setActiveDevice(null,
+                                                           ApmConstIntf.AudioFeatures.CALL_AUDIO);
+                                }
                             }
                         }
                     }
@@ -404,6 +431,8 @@ public class ActiveDeviceManager {
                            "handleMessage(MESSAGE_LE_AUDIO_ACTION_ACTIVE_DEVICE_CHANGED): "
                                 + "device= " + device);
                     }
+
+                    Log.d(TAG, "mLeAudioActiveDevice: " + mLeAudioActiveDevice);
 
                     // Just assign locally the new value
                     if (device != null && !Objects.equals(mLeAudioActiveDevice, device)) {
