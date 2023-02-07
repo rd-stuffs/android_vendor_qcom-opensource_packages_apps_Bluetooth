@@ -2867,6 +2867,19 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void getConnectionHandle(BluetoothDevice device, int transport,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private int getConnectionHandle(
+                BluetoothDevice device, int transport, AttributionSource attributionSource) {
+            return BluetoothDevice.ERROR;
+        }
+
+        @Override
         public void canBondWithoutDialog(BluetoothDevice device, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
@@ -4672,6 +4685,10 @@ public class AdapterService extends Service {
     int getConnectionState(BluetoothDevice device) {
         byte[] addr = Utils.getBytesFromAddress(device.getAddress());
         return getConnectionStateNative(addr);
+    }
+
+    int getConnectionHandle(BluetoothDevice device, int transport) {
+        return BluetoothDevice.ERROR;
     }
 
     /**
