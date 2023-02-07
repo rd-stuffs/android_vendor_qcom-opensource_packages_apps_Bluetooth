@@ -1696,11 +1696,11 @@ public class LeAudioService extends ProfileService {
                             Log.d(TAG,"CSIP remove device " + e.getKey() + " grpID " + groupId);
                             removedevices.add(e.getKey());
                         }
-                        for (BluetoothDevice dev : removedevices) {
-                            mDeviceGroupIdMap.remove(dev);
-                        }
-                        removedevices.clear();
                     }
+                    for (BluetoothDevice dev : removedevices) {
+                        mDeviceGroupIdMap.remove(dev);
+                    }
+                    removedevices.clear();
                 }
             }
 
