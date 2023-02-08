@@ -555,7 +555,7 @@ public class LeAudioService extends ProfileService {
          ActiveDeviceManagerServiceIntf activeDeviceManager =
                  ActiveDeviceManagerServiceIntf.get();
          BluetoothDevice curr_active_device =
-                 activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+           activeDeviceManager.getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
 
          Log.w(TAG, "req groupId " + groupId + " active group " + mLeActiveGroupID);
 
@@ -1527,12 +1527,7 @@ public class LeAudioService extends ProfileService {
             Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
         }
 
-        if (bondState == BluetoothDevice.BOND_NONE) {
-            Log.d(TAG, "Remove device from device group map: " + device);
-            mDeviceGroupIdMap.remove(device);
-        }
-/*
-        if (bondState == BluetoothDevice.BOND_NONE) {
+        /*if (bondState == BluetoothDevice.BOND_NONE) {
             return;
         }
 
@@ -1558,8 +1553,7 @@ public class LeAudioService extends ProfileService {
         mAcmService.bondStateChanged(device, bondState);
     }
 
-/*
-    private void removeStateMachine(BluetoothDevice device) {
+    /*private void removeStateMachine(BluetoothDevice device) {
         synchronized (mStateMachines) {
             LeAudioStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
@@ -1624,8 +1618,8 @@ public class LeAudioService extends ProfileService {
                     + " fromState=" + fromState + " toState=" + toState);
             return;
         }
-        if (toState == BluetoothProfile.STATE_CONNECTED) {
-            Log.d(TAG, "connectionStateChanged as connected for device " + device);
+        if (toState == BluetoothProfile.STATE_CONNECTING) {
+            Log.d(TAG, "connectionStateChanged as connecting for device " + device);
             CsipWrapper csipWrapper = CsipWrapper.getInstance();
             int groupId = csipWrapper.getRemoteDeviceGroupId(device, null);
             if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
@@ -1639,7 +1633,7 @@ public class LeAudioService extends ProfileService {
                 Log.d(TAG, "Add device " + device + " to group " + groupId);
                 mDeviceGroupIdMap.put(device, groupId);
             }
-
+        } else if (toState == BluetoothProfile.STATE_CONNECTED) {
             /*int myGroupId = getGroupId(device);
             if (myGroupId == LE_AUDIO_GROUP_ID_INVALID
                     || getConnectedPeerDevices(myGroupId).size() == 1) {
