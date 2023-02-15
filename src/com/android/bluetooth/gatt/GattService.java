@@ -833,24 +833,25 @@ public class GattService extends ProfileService {
 
         @Override
         public void clientConnect(int clientIf, String address, boolean isDirect, int transport,
-                boolean opportunistic, int phy, AttributionSource attributionSource,
+                boolean opportunistic, int phy, int connectionPriority, AttributionSource attributionSource,
                 SynchronousResultReceiver receiver) {
             try {
                 clientConnect(clientIf, address, isDirect, transport, opportunistic, phy,
-                        attributionSource);
+                        connectionPriority, attributionSource);
                 receiver.send(null);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
+
         private void clientConnect(int clientIf, String address, boolean isDirect, int transport,
-                boolean opportunistic, int phy, AttributionSource attributionSource) {
+                boolean opportunistic, int phy, int connectionPriority, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
             service.clientConnect(clientIf, address, isDirect, transport, opportunistic, phy,
-                    attributionSource);
+                    connectionPriority, attributionSource);
         }
 
         @Override
@@ -3624,7 +3625,7 @@ public class GattService extends ProfileService {
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     void clientConnect(int clientIf, String address, boolean isDirect, int transport,
-            boolean opportunistic, int phy, AttributionSource attributionSource) {
+            boolean opportunistic, int phy, int clientConnect, AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService clientConnect")) {
             return;
@@ -3632,7 +3633,7 @@ public class GattService extends ProfileService {
 
         if (DBG) {
             Log.d(TAG, "clientConnect() - address=" + address + ", isDirect=" + isDirect
-                    + ", opportunistic=" + opportunistic + ", phy=" + phy);
+                    + ", opportunistic=" + opportunistic + ", phy=" + phy + ", clientConnect=" + clientConnect);
         }
         gattClientConnectNative(clientIf, address, isDirect, transport, opportunistic, phy);
     }
