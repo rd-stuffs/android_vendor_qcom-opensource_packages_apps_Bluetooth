@@ -387,7 +387,12 @@ class PhonePolicy {
         mAdapterService.unregisterReceiver(mReceiver);
         resetStates();
     }
-
+    public void populateUuid(BluetoothDevice device, ParcelUuid[] uuids) {
+        Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+        mHandler.obtainMessage(MESSAGE_PROFILE_INIT_PRIORITIES, intent).sendToTarget();
+    }
     PhonePolicy(AdapterService service, ServiceFactory factory) {
         mAdapterService = service;
         mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
