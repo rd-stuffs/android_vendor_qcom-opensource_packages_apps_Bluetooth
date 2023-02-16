@@ -122,6 +122,7 @@ import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceUse;
+import android.bluetooth.BluetoothAudioPolicy;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMap;
@@ -4042,6 +4043,21 @@ public class AdapterService extends Service {
             enforceBluetoothPrivilegedPermission(service);
 
             return service.mDatabaseManager.getCustomMeta(device, key);
+        }
+
+        @Override
+        public void getAudioPolicyRemoteSupported(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+
+        @Override
+        public void setAudioPolicy(BluetoothDevice device, BluetoothAudioPolicy policies,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+
+        @Override
+        public void getAudioPolicy(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
