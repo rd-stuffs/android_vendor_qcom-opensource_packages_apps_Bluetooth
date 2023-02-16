@@ -4228,6 +4228,36 @@ public class AdapterService extends Service {
             enforceBluetoothPrivilegedPermission(service);
             Utils.setForegroundUserId(userId);
         }
+
+        @Override
+        public void setPreferredAudioProfiles(BluetoothDevice device, Bundle modeToProfileBundle,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(setPreferredAudioProfiles(device, modeToProfileBundle, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int setPreferredAudioProfiles(BluetoothDevice device, Bundle modeToProfileBundle,
+                AttributionSource source) {
+            return 1;
+        }
+
+        @Override
+        public void getPreferredAudioProfiles(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getPreferredAudioProfiles(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private Bundle getPreferredAudioProfiles(BluetoothDevice device,
+                AttributionSource source) {
+            return null;
+        }
     };
 
     public boolean isEnabled() {
