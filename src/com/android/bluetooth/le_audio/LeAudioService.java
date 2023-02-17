@@ -2431,6 +2431,7 @@ public class LeAudioService extends ProfileService {
                 LeAudioService service = getService(source);
                 int defaultValue = BluetoothLeAudio.AUDIO_LOCATION_INVALID;
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.getAudioLocation(device);
                 }
                 receiver.send(defaultValue);
@@ -2455,6 +2456,7 @@ public class LeAudioService extends ProfileService {
                 LeAudioService service = getService(source);
                 boolean defaultValue = false;
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.setConnectionPolicy(device, connectionPolicy);
                 }
                 receiver.send(defaultValue);
@@ -2518,7 +2520,6 @@ public class LeAudioService extends ProfileService {
                 if (service == null) {
                     throw new IllegalStateException("service is null");
                 }
-                enforceBluetoothPrivilegedPermission(service);
                 defaultValue = service.getGroupId(device);
                 receiver.send(defaultValue);
             } catch (RuntimeException e) {
@@ -2690,6 +2691,7 @@ public class LeAudioService extends ProfileService {
                 BluetoothLeBroadcastSettings broadcastSettings, AttributionSource source) {
             LeAudioService service = getService(source);
             if (service != null) {
+                enforceBluetoothPrivilegedPermission(service);
                 service.startBroadcast(broadcastSettings.getPublicBroadcastMetadata(),
                     broadcastSettings.getBroadcastCode(),
                     source);
@@ -2700,6 +2702,7 @@ public class LeAudioService extends ProfileService {
         public void stopBroadcast(int broadcastId, AttributionSource source) {
             LeAudioService service = getService(source);
             if (service != null) {
+                enforceBluetoothPrivilegedPermission(service);
                 service.stopBroadcast(broadcastId, source);
             }
         }
@@ -2711,6 +2714,7 @@ public class LeAudioService extends ProfileService {
                 AttributionSource source) {
             LeAudioService service = getService(source);
             if (service != null) {
+                enforceBluetoothPrivilegedPermission(service);
                 service.updateBroadcast(broadcastId, broadcastSettings.getPublicBroadcastMetadata(), source);
             }
         }
@@ -2722,6 +2726,7 @@ public class LeAudioService extends ProfileService {
                 boolean defaultValue = false;
                 LeAudioService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.isPlaying(broadcastId,
                             source, receiver);
                 }
@@ -2738,6 +2743,7 @@ public class LeAudioService extends ProfileService {
                 List<BluetoothLeBroadcastMetadata> defaultValue = new ArrayList<>();
                 LeAudioService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.getAllBroadcastMetadata(source, receiver);
                 }
                 receiver.send(defaultValue);
@@ -2753,6 +2759,7 @@ public class LeAudioService extends ProfileService {
                 int defaultValue = 0;
                 LeAudioService service = getService(source);
                 if (service != null) {
+                    enforceBluetoothPrivilegedPermission(service);
                     defaultValue = service.getMaximumNumberOfBroadcasts(
                             source, receiver);
                 }
