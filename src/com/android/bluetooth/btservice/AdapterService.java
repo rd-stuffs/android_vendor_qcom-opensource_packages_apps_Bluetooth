@@ -140,6 +140,7 @@ import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
+import android.bluetooth.IBluetoothPreferredAudioProfilesCallback;
 import android.bluetooth.IBluetoothSocketManager;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
@@ -4291,6 +4292,47 @@ public class AdapterService extends Service {
         private Bundle getPreferredAudioProfiles(BluetoothDevice device,
                 AttributionSource source) {
             return null;
+        }
+
+        @Override
+        public void registerPreferredAudioProfilesChangedCallback(
+                IBluetoothPreferredAudioProfilesCallback callback,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(registerPreferredAudioProfilesChangedCallback(callback,
+                        attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private int registerPreferredAudioProfilesChangedCallback(
+                IBluetoothPreferredAudioProfilesCallback callback, AttributionSource source) {
+            return BluetoothStatusCodes.SUCCESS;
+        }
+
+        @Override
+        public void unregisterPreferredAudioProfilesChangedCallback(
+                IBluetoothPreferredAudioProfilesCallback callback,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(unregisterPreferredAudioProfilesChangedCallback(callback,
+                        attributionSource));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(allOf = {
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private int unregisterPreferredAudioProfilesChangedCallback(
+                IBluetoothPreferredAudioProfilesCallback callback, AttributionSource source) {
+            return BluetoothStatusCodes.SUCCESS;
         }
     };
 
