@@ -932,7 +932,7 @@ public class AdapterService extends Service {
 
     void startProfileServices() {
         debugLog("startCoreServices()");
-        Config.initAdvAudioSupport(getApplicationContext());
+        Config.initAdvAudioSupport(getApplicationContext(), true);
         Class[] supportedProfileServices = Config.getSupportedProfiles();
         if (supportedProfileServices.length == 1 && GattService.class.getSimpleName()
                 .equals(supportedProfileServices[0].getSimpleName())) {
@@ -1769,6 +1769,15 @@ public class AdapterService extends Service {
         if (BluetoothProperties.isProfileBapUnicastClientEnabled().orElse(false)) {
             return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    }
+
+    public int isLeAudioBroadcastSourcePropertySet() {
+        if (BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false)) {
+            Log.e(TAG, "isLeAudioBroadcastSourceSupported: supported");
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        Log.e(TAG, "isLeAudioBroadcastSourceSupported: not supported");
         return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
