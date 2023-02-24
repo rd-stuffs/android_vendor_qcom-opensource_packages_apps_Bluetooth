@@ -4295,6 +4295,25 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void notifyPreferredAudioProfileChangeApplied(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(notifyPreferredAudioProfileChangeApplied(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int notifyPreferredAudioProfileChangeApplied(BluetoothDevice device,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            return BluetoothStatusCodes.SUCCESS;
+        }
+
+        @Override
         public void registerPreferredAudioProfilesChangedCallback(
                 IBluetoothPreferredAudioProfilesCallback callback,
                 AttributionSource attributionSource, SynchronousResultReceiver receiver) {
