@@ -2900,6 +2900,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void getCreateBondCaller(BluetoothDevice device,
+                SynchronousResultReceiver receiver) {
+        }
+
+        @Override
         public void removeActiveDevice(@ActiveDeviceUse int profiles,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
