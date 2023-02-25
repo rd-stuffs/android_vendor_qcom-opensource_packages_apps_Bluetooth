@@ -3904,6 +3904,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void isDistanceMeasurementSupported(AttributionSource source,
+            SynchronousResultReceiver receiver) {
+        }
+
+        @Override
         public void getLeMaximumAdvertisingDataLength(SynchronousResultReceiver receiver) {
             try {
                 receiver.send(getLeMaximumAdvertisingDataLength());
