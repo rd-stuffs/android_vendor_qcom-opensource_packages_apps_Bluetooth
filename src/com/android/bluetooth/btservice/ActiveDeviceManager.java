@@ -345,6 +345,7 @@ public class ActiveDeviceManager {
                     int nextState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
                     if (prevState == nextState) {
                         // Nothing has changed
+                        Log.d(TAG, "prevState and nextState are same, break.");
                         break;
                     }
 
@@ -397,6 +398,8 @@ public class ActiveDeviceManager {
                               } break;
                            }
                         }
+
+                        Log.d(TAG, "mA2dpActiveDevice: " + mA2dpActiveDevice);
                         if (Objects.equals(mA2dpActiveDevice, device)) {
                             final A2dpService mA2dpService = mFactory.getA2dpService();
                             BluetoothDevice mDevice = null;
@@ -541,6 +544,9 @@ public class ActiveDeviceManager {
                         final HeadsetService hfpService = mFactory.getHeadsetService();
 
                         mHfpConnectedDevices.remove(device);
+
+                        Log.d(TAG, "mHfpActiveDevice: " + mHfpActiveDevice);
+
                         if (ApmConstIntf.getAospLeaEnabled()) {
                            int mCallProfile =
                                getCurrentActiveProfile(ApmConstIntf.AudioFeatures.CALL_AUDIO);
@@ -561,8 +567,8 @@ public class ActiveDeviceManager {
                             boolean isGrpDevice = false;
 
                             if (hfpService == null) {
-                                    Log.e(TAG, "no headsetService, FATAL");
-                                    return;
+                                Log.e(TAG, "hfp service is null, retun");
+                                return;
                             }
 
                             if (mHfpActiveDevice != null &&
@@ -889,6 +895,8 @@ public class ActiveDeviceManager {
             return false;
         }
         mA2dpActiveDevice = device;
+        Log.d(TAG, "setA2dpActiveDevice(): mA2dpActiveDevice: " +
+                                                     mA2dpActiveDevice);
         return true;
     }
 
@@ -911,11 +919,14 @@ public class ActiveDeviceManager {
            if ((ApmConstIntf.getQtiLeAudioEnabled() ||
                 ApmConstIntf.getAospLeaEnabled()) &&
                 mAdapterService.isGroupDevice(device)) {
-                Log.d(TAG, "setHfpActiveDevice(" + device + ")" + "is a group device, ignore");
-                return true;
+               Log.d(TAG, "setHfpActiveDevice(" + device + ")" +
+                                            " is a group device, ignore");
+               return true;
            }
         }
         mHfpActiveDevice = device;
+        Log.d(TAG, "setHfpActiveDevice(): mHfpActiveDevice: " +
+                                                   mHfpActiveDevice);
         return true;
     }
 
@@ -932,6 +943,8 @@ public class ActiveDeviceManager {
             return;
         }
         mHearingAidActiveDevice = device;
+        Log.d(TAG, "setHearingAidActiveDevice(): mHearingAidActiveDevice: " +
+                                                   mHearingAidActiveDevice);
     }
 
     private void setBroadcastActiveDevice(BluetoothDevice device) {
@@ -962,8 +975,11 @@ public class ActiveDeviceManager {
             return false;
         }
         mLeAudioActiveDevice = device;
+        Log.d(TAG, "setLeAudioActiveDevice(): mLeAudioActiveDevice: " +
+                                                   mLeAudioActiveDevice);
         return true;
     }
+
     private int getCurrentActiveProfile(int mAudioType) {
         if (DBG) {
             Log.d(TAG, "getCurrentActiveProfile for (" + mAudioType + ")");
@@ -973,6 +989,8 @@ public class ActiveDeviceManager {
         ActiveDeviceManagerServiceIntf.get();
         int mActiveProfile =
                mActiveDeviceManager.getActiveProfile(mAudioType);
+        Log.d(TAG, "getCurrentActiveProfile for (" + mAudioType + ")" + ": " +
+                                                                mActiveProfile);
         return mActiveProfile;
     }
 
@@ -1088,7 +1106,7 @@ public class ActiveDeviceManager {
                    " state: " + state + ", prevState: " + prevState +
                    " for device " + device);
         if (audioType == ApmConstIntf.AudioFeatures.CALL_AUDIO &&
-                         state == BluetoothProfile.STATE_DISCONNECTED) {
+                         prevState == BluetoothProfile.STATE_CONNECTED) {
             Intent intent = new Intent(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, state);
