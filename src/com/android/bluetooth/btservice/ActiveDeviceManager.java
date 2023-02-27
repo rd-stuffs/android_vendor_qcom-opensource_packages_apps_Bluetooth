@@ -309,12 +309,16 @@ public class ActiveDeviceManager {
                                         (mMediaProfile == ApmConstIntf.AudioProfiles.BROADCAST_LE) ?
                                         true : false;
                                 if (activeDeviceManager != null && device != null) {
-                                    isMediaActive =
-                                      device.equals(activeDeviceManager.getActiveAbsoluteDevice(
-                                                           ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
-                                    isCallActive =
-                                      device.equals(activeDeviceManager.getActiveAbsoluteDevice(
-                                                           ApmConstIntf.AudioFeatures.CALL_AUDIO));
+                                    BluetoothDevice mediaActiveDevice = activeDeviceManager.getActiveAbsoluteDevice(
+                                                           ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+                                    BluetoothDevice voiceActiveDevice = activeDeviceManager.getActiveAbsoluteDevice(
+                                                           ApmConstIntf.AudioFeatures.CALL_AUDIO);
+                                    if (mediaActiveDevice != null) {
+                                        isMediaActive = (groupId == leAudioService.getGroupId(mediaActiveDevice));
+                                    }
+                                    if (voiceActiveDevice != null) {
+                                        isCallActive = (groupId == leAudioService.getGroupId(voiceActiveDevice));
+                                    }
                                 }
 
                                 Log.w(TAG, "isMediaActive: " + isMediaActive +
