@@ -55,6 +55,7 @@
 
 package com.android.bluetooth.gatt;
 
+import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 
 import android.annotation.RequiresPermission;
@@ -1218,21 +1219,38 @@ public class GattService extends ProfileService {
                                        maxConnectionEventLen, attributionSource);
         }
 
-        @Override
-        public void subrateModeRequest(int clientIf, String address,
-                int subrateMode, AttributionSource attributionSource) {
+        public void subrateModeRequest(int clientIf, String address, int subrateMode,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                subrateModeRequest(clientIf, address, subrateMode, attributionSource);
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private void subrateModeRequest(int clientIf, String address, int subrateMode,
+                AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
                 return;
             }
-            service.subrateModeRequest(clientIf, address, subrateMode,
-                                       attributionSource);
+            service.subrateModeRequest(clientIf, address, subrateMode, attributionSource);
         }
 
         @Override
-        public void leSubrateRequest(int clientIf, String address,
-                int subrateMin, int subrateMax, int maxLatency,
-                int contNumber, int supervisionTimeout,
+        public void leSubrateRequest(int clientIf, String address, int subrateMin, int subrateMax,
+                int maxLatency, int contNumber, int supervisionTimeout,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+            try {
+                leSubrateRequest(clientIf, address, subrateMin, subrateMax, maxLatency, contNumber,
+                                 supervisionTimeout, attributionSource);
+                receiver.send(null);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+        private void leSubrateRequest(int clientIf, String address, int subrateMin, int subrateMax,
+                int maxLatency, int contNumber, int supervisionTimeout,
                 AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -2484,8 +2502,8 @@ public class GattService extends ProfileService {
             try {
                 permissionCheck(connId, handle);
             } catch (SecurityException ex) {
-                // Only throws on T+ as this is an older API and did not throw prior to T
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+                if (checkCallerTargetSdk(this, app.name, Build.VERSION_CODES.TIRAMISU)) {
                     throw ex;
                 }
                 Log.w(TAG, "onNotify() - permission check failed!");
@@ -3152,7 +3170,7 @@ public class GattService extends ProfileService {
                 callingPackage.equals(mExposureNotificationPackage);
         scanClient.hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, attributionSource, isTestModeEnabled());
-        scanClient.isQApp = Utils.isQApp(this, callingPackage);
+        scanClient.isQApp = checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q);
         if (!scanClient.hasDisavowedLocation) {
             if (scanClient.isQApp) {
                 scanClient.hasLocationPermission = Utils.checkCallerHasFineLocation(
@@ -3235,10 +3253,9 @@ public class GattService extends ProfileService {
         app.mHasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, attributionSource, isTestModeEnabled());
 
-        app.mIsQApp = Utils.isQApp(this, callingPackage);
         if (!app.mHasDisavowedLocation) {
             try {
-                if (app.mIsQApp) {
+                if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q)) {
                     app.hasLocationPermission = Utils.checkCallerHasFineLocation(
                             this, attributionSource, app.mUserHandle);
                 } else {
@@ -3266,7 +3283,7 @@ public class GattService extends ProfileService {
                 new ScanClient(scannerId, piInfo.settings, piInfo.filters);
         scanClient.hasLocationPermission = app.hasLocationPermission;
         scanClient.userHandle = app.mUserHandle;
-        scanClient.isQApp = app.mIsQApp;
+        scanClient.isQApp = checkCallerTargetSdk(this, app.name, Build.VERSION_CODES.Q);
         scanClient.eligibleForSanitizedExposureNotification =
                 app.mEligibleForSanitizedExposureNotification;
         scanClient.hasNetworkSettingsPermission = app.mHasNetworkSettingsPermission;
@@ -3785,8 +3802,9 @@ public class GattService extends ProfileService {
         try {
             permissionCheck(connId, handle);
         } catch (SecurityException ex) {
-            // Only throws on T+ as this is an older API and did not throw prior to T
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            String callingPackage = attributionSource.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex;
             }
             Log.w(TAG, "readCharacteristic() - permission check failed!");
@@ -3817,8 +3835,9 @@ public class GattService extends ProfileService {
         try {
             permissionCheck(uuid);
         } catch (SecurityException ex) {
-            // Only throws on T+ as this is an older API and did not throw prior to T
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            String callingPackage = attributionSource.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex;
             }
             Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!");
@@ -3894,8 +3913,9 @@ public class GattService extends ProfileService {
         try {
             permissionCheck(connId, handle);
         } catch (SecurityException ex) {
-            // Only throws on T+ as this is an older API and did not throw prior to T
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            String callingPackage = attributionSource.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex;
             }
             Log.w(TAG, "readDescriptor() - permission check failed!");
@@ -3982,8 +4002,9 @@ public class GattService extends ProfileService {
         try {
             permissionCheck(connId, handle);
         } catch (SecurityException ex) {
-            // Only throws on T+ as this is an older API and did not throw prior to T
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            String callingPackage = attributionSource.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex;
             }
             Log.w(TAG, "registerForNotification() - permission check failed!");
@@ -4111,7 +4132,7 @@ public class GattService extends ProfileService {
         int supervisionTimeout = 500; // 5s
 
         switch (subrateMode) {
-            case BluetoothGatt.SUBRATE_REQ_HIGH:
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_HIGH:
                 subrateMin =
                         getResources().getInteger(R.integer.subrate_mode_high_priority_min_subrate);
                 subrateMax =
@@ -4122,7 +4143,7 @@ public class GattService extends ProfileService {
                         getResources().getInteger(R.integer.subrate_mode_high_priority_cont_number);
                 break;
 
-            case BluetoothGatt.SUBRATE_REQ_LOW_POWER:
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_LOW_POWER:
                 subrateMin =
                         getResources().getInteger(R.integer.subrate_mode_low_power_min_subrate);
                 subrateMax =
@@ -4131,6 +4152,7 @@ public class GattService extends ProfileService {
                 contNumber = getResources().getInteger(R.integer.subrate_mode_low_power_cont_number);
                 break;
 
+            case BluetoothGatt.SUBRATE_REQUEST_MODE_BALANCED:
             default:
                 // Using the values for SUBRATE_REQ_BALANCED.
                 subrateMin =

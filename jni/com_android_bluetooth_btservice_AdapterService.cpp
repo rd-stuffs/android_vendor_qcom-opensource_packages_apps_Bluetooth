@@ -310,7 +310,8 @@ static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
                                        bt_acl_state_t state,
                                        int transport_link_type,
                                        bt_hci_error_code_t hci_reason,
-                                       bt_conn_direction_t direction) {
+                                       bt_conn_direction_t direction,
+                                       uint16_t acl_handle) {
   if (!bd_addr) {
     ALOGE("Address is null in %s", __func__);
     return;
@@ -330,7 +331,8 @@ static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_aclStateChangeCallback,
                                (jint)status, addr.get(), (jint)state,
-                               (jint)transport_link_type, (jint)hci_reason);
+                               (jint)transport_link_type, (jint)hci_reason,
+                               (jint)acl_handle);
 }
 
 static void discovery_state_changed_callback(bt_discovery_state_t state) {
@@ -635,9 +637,8 @@ static bt_callbacks_t sBluetoothCallbacks = {
     pin_request_callback,        ssp_request_callback,
     bond_state_changed_callback, NULL, NULL,
     acl_state_changed_callback,  callback_thread_event,
-    dut_mode_recv_callback,      le_test_mode_recv_callback,
-    energy_info_recv_callback,   link_quality_report_callback,
-    generate_local_oob_data_callback,
+    dut_mode_recv_callback,      energy_info_recv_callback,
+    link_quality_report_callback,generate_local_oob_data_callback,
     switch_buffer_size_callback, switch_codec_callback, NULL};
 
 // The callback to call when the wake alarm fires.
