@@ -4308,16 +4308,16 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public void notifyPreferredAudioProfileChangeApplied(BluetoothDevice device,
+        public void notifyActiveDeviceChangeApplied(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
-                receiver.send(notifyPreferredAudioProfileChangeApplied(device, source));
+                receiver.send(notifyActiveDeviceChangeApplied(device, source));
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
 
-        private int notifyPreferredAudioProfileChangeApplied(BluetoothDevice device,
+        private int notifyActiveDeviceChangeApplied(BluetoothDevice device,
                 AttributionSource source) {
             AdapterService service = getService();
             if (service == null) {
