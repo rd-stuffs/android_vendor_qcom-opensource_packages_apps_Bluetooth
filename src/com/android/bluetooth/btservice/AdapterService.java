@@ -2911,10 +2911,27 @@ public class AdapterService extends Service {
         private boolean canBondWithoutDialog(BluetoothDevice device, AttributionSource source) {
             return false;
         }
+        // @Override
+        // public void getCreateBondCaller(BluetoothDevice device,
+        //         SynchronousResultReceiver receiver) {
+        // }
 
         @Override
-        public void getCreateBondCaller(BluetoothDevice device,
+        public void getPackageNameOfBondingApplication(BluetoothDevice device,
                 SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getPackageNameOfBondingApplication(device));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private String getPackageNameOfBondingApplication(BluetoothDevice device)  {
+            return "";
         }
 
         @Override
