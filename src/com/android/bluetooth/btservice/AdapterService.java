@@ -4376,6 +4376,22 @@ public class AdapterService extends Service {
                 IBluetoothPreferredAudioProfilesCallback callback, AttributionSource source) {
             return BluetoothStatusCodes.SUCCESS;
         }
+
+        @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+        @Override
+        public void isOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(isOffloadedTransportDiscoveryDataScanSupported(source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int isOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource attributionSource) {
+            return 0;
+        }
     };
 
     public boolean isEnabled() {
