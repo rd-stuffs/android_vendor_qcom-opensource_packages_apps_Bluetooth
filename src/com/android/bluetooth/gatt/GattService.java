@@ -77,7 +77,9 @@ import android.bluetooth.IBluetoothGattServerCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.IAdvertisingSetCallback;
+import android.bluetooth.le.IDistanceMeasurementCallback;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
@@ -1480,7 +1482,7 @@ public class GattService extends ProfileService {
         public void startAdvertisingSet(AdvertisingSetParameters parameters,
                 AdvertiseData advertiseData, AdvertiseData scanResponse,
                 PeriodicAdvertisingParameters periodicParameters, AdvertiseData periodicData,
-                int duration, int maxExtAdvEvents, IAdvertisingSetCallback callback,
+                int duration, int maxExtAdvEvents, int serverIf, IAdvertisingSetCallback callback,
                 AttributionSource attributionSource, SynchronousResultReceiver receiver) {
             try {
                 startAdvertisingSet(parameters, advertiseData, scanResponse, periodicParameters,
@@ -1807,6 +1809,21 @@ public class GattService extends ProfileService {
             }
             return service.numHwTrackFiltersAvailable(attributionSource);
         }
+        @Override
+        public void startDistanceMeasurement(ParcelUuid uuid,
+                DistanceMeasurementParams distanceMeasurementParams,
+                IDistanceMeasurementCallback callback, AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+        }
+        @Override
+        public void stopDistanceMeasurement(ParcelUuid uuid, BluetoothDevice device, int method,
+                AttributionSource attributionSource, SynchronousResultReceiver receiver) {
+        }
+        @Override
+        public void getSupportedDistanceMeasurementMethods(AttributionSource attributionSource,
+                SynchronousResultReceiver receiver) {
+        }
+
     }
 
     ;
