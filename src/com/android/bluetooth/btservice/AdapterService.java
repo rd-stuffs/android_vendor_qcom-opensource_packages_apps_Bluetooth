@@ -4444,18 +4444,18 @@ public class AdapterService extends Service {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
         @Override
-        public void isOffloadedTransportDiscoveryDataScanSupported(
+        public void getOffloadedTransportDiscoveryDataScanSupported(
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
-                receiver.send(isOffloadedTransportDiscoveryDataScanSupported(source));
+                receiver.send(getOffloadedTransportDiscoveryDataScanSupported(source));
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
 
-        private int isOffloadedTransportDiscoveryDataScanSupported(
+        private int getOffloadedTransportDiscoveryDataScanSupported(
                 AttributionSource attributionSource) {
-            return 0;
+            return mService.getOffloadedTransportDiscoveryDataScanSupported();
         }
     };
 
@@ -6187,6 +6187,14 @@ public class AdapterService extends Service {
 
     public int getTotalNumOfTrackableAdvertisements() {
         return mAdapterProperties.getTotalNumOfTrackableAdvertisements();
+    }
+
+    /**
+     * Return if offloaded TDS filter is supported.
+     * @return  {@code BluetoothStatusCodes.FEATURE_SUPPORTED} if supported
+     */
+    public int getOffloadedTransportDiscoveryDataScanSupported() {
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
     void updateQuietModeStatus(boolean quietMode) {
