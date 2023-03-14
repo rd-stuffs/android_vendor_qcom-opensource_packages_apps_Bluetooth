@@ -122,7 +122,6 @@ import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceUse;
-import android.bluetooth.BluetoothAudioPolicy;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMap;
@@ -130,6 +129,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -4088,17 +4088,17 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public void getAudioPolicyRemoteSupported(BluetoothDevice device,
+        public void isRequestAudioPolicyAsSinkSupported(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
-        public void setAudioPolicy(BluetoothDevice device, BluetoothAudioPolicy policies,
+        public void requestAudioPolicyAsSink(BluetoothDevice device, BluetoothSinkAudioPolicy policies,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
-        public void getAudioPolicy(BluetoothDevice device,
+        public void getRequestedAudioPolicyAsSink(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
