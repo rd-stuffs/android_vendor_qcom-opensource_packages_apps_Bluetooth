@@ -18,9 +18,13 @@ package com.android.bluetooth.hearingaid;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
+import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
+
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
+import android.bluetooth.BluetoothHearingAid.AdvertisementServiceData;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHearingAid;
@@ -598,6 +602,16 @@ public class HearingAidService extends ProfileService {
         return mDeviceCapabilitiesMap.getOrDefault(device, -1);
     }
 
+    @RequiresPermission(
+            allOf = {
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+            })
+    private AdvertisementServiceData getAdvertisementServiceData(
+            BluetoothDevice device, AttributionSource attributionSource) {
+        return null;
+    }
+
     /**
      * Set the active device.
      * @param device the new active device
@@ -1156,6 +1170,29 @@ public class HearingAidService extends ProfileService {
                     mode = service.getCapabilities(device) >> 1 & 1;
                 }
                 receiver.send(mode);
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(
+                allOf = {
+                    android.Manifest.permission.BLUETOOTH_SCAN,
+                    android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+                })
+        @Override
+        public void getAdvertisementServiceData(
+                BluetoothDevice device,
+                AttributionSource source,
+                SynchronousResultReceiver receiver) {
+            try {
+                if (!Utils.checkServiceAvailable(mService, TAG)
+                        || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
+                        || !Utils.checkScanPermissionForDataDelivery(mService, source, TAG)) {
+                    receiver.send(null);
+                    return;
+                }
+                receiver.send(mService.getAdvertisementServiceData(device, source));
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
