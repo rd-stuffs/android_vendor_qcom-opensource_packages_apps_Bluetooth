@@ -2909,6 +2909,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void getCreateBondCaller(BluetoothDevice device,
+                SynchronousResultReceiver receiver) {
+        }
+
+        @Override
         public void removeActiveDevice(@ActiveDeviceUse int profiles,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             try {
@@ -3908,6 +3913,11 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void isDistanceMeasurementSupported(AttributionSource source,
+            SynchronousResultReceiver receiver) {
+        }
+
+        @Override
         public void getLeMaximumAdvertisingDataLength(SynchronousResultReceiver receiver) {
             try {
                 receiver.send(getLeMaximumAdvertisingDataLength());
@@ -4301,6 +4311,25 @@ public class AdapterService extends Service {
         private Bundle getPreferredAudioProfiles(BluetoothDevice device,
                 AttributionSource source) {
             return null;
+        }
+
+        @Override
+        public void notifyActiveDeviceChangeApplied(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(notifyActiveDeviceChangeApplied(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int notifyActiveDeviceChangeApplied(BluetoothDevice device,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            return BluetoothStatusCodes.SUCCESS;
         }
 
         @Override

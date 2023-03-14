@@ -30,6 +30,7 @@ import android.bluetooth.BluetoothLeAudioCodecConfig;
 import android.bluetooth.BluetoothLeAudioCodecStatus;
 import android.bluetooth.BluetoothLeAudioContentMetadata;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
+import android.bluetooth.BluetoothLeBroadcastSettings;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -2430,6 +2431,11 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
+        public void isInbandRingtoneEnabled(AttributionSource source,
+                SynchronousResultReceiver receiver, int groupId) {
+        }
+
+        @Override
         public void setConnectionPolicy(BluetoothDevice device, int connectionPolicy,
                 AttributionSource source, SynchronousResultReceiver receiver) {
             Objects.requireNonNull(device, "device cannot be null");
@@ -2671,11 +2677,13 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
-        public void startBroadcast(BluetoothLeAudioContentMetadata contentMetadata,
-                byte[] broadcastCode, AttributionSource source) {
+        public void startBroadcast(
+                BluetoothLeBroadcastSettings broadcastSettings, AttributionSource source) {
             LeAudioService service = getService(source);
             if (service != null) {
-                service.startBroadcast(contentMetadata, broadcastCode, source);
+                service.startBroadcast(broadcastSettings.getPublicBroadcastMetadata(),
+                    broadcastSettings.getBroadcastCode(),
+                    source);
             }
         }
 
@@ -2688,11 +2696,13 @@ public class LeAudioService extends ProfileService {
         }
 
         @Override
-        public void updateBroadcast(int broadcastId,
-                BluetoothLeAudioContentMetadata contentMetadata, AttributionSource source) {
+        public void updateBroadcast(
+                int broadcastId,
+                BluetoothLeBroadcastSettings broadcastSettings,
+                AttributionSource source) {
             LeAudioService service = getService(source);
             if (service != null) {
-                service.updateBroadcast(broadcastId, contentMetadata, source);
+                service.updateBroadcast(broadcastId, broadcastSettings.getPublicBroadcastMetadata(), source);
             }
         }
 
@@ -2741,6 +2751,16 @@ public class LeAudioService extends ProfileService {
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
+        }
+
+        @Override
+        public void getMaximumStreamsPerBroadcast(
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+
+        @Override
+        public void getMaximumSubgroupsPerBroadcast(
+                AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
