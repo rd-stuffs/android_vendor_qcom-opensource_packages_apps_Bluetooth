@@ -67,6 +67,7 @@ public class HeadsetA2dpSync {
 
     // internal variables.
     private int mA2dpSuspendTriggered;// to keep track if A2dp was supended by HFP.
+    private int mLeaSuspendTriggered;
     private BluetoothDevice mDummyDevice = null;
 
     //reason for a2dp suspended.
@@ -141,7 +142,7 @@ public class HeadsetA2dpSync {
      * caller need to send reason for suspend request( VR/CS-CALL/VOIP-CALL)
      */
 
-    public void updateSuspendState() {
+    public void updateSuspendState(int profile) {
       if(ApmConstIntf.getQtiLeAudioEnabled()) {
           ActiveDeviceManagerServiceIntf mActiveDeviceManager =
                   ActiveDeviceManagerServiceIntf.get();
@@ -153,7 +154,10 @@ public class HeadsetA2dpSync {
             mSystemInterface.getAudioManager().setParameters("A2dpSuspended=true");
           }
       } else {
-          mSystemInterface.getAudioManager().setParameters("A2dpSuspended=true");
+          if ((profile & BluetoothProfile.A2DP) == BluetoothProfile.A2DP)
+              mSystemInterface.getAudioManager().setParameters("A2dpSuspended=true");
+          if ((profile & BluetoothProfile.LE_AUDIO) == BluetoothProfile.LE_AUDIO)
+              mSystemInterface.getAudioManager().setParameters("LEASuspended=true");
       }
     }
 
@@ -216,6 +220,13 @@ public class HeadsetA2dpSync {
         mBroadcastIsActive = mAdapterService.getBroadcastActive();
         mBroadcastIsStreaming = mAdapterService.getBroadcastStreaming();
         a2dpSuspendStatus = mSystemInterface.getAudioManager().getParameters("A2dpSuspended");
+        int voiceProfile = ApmConstIntf.AudioProfiles.NONE;
+        if (ApmConstIntf.getAospLeaEnabled()) {
+            ActiveDeviceManagerServiceIntf mActiveDeviceManager =
+                   ActiveDeviceManagerServiceIntf.get();
+            voiceProfile =
+               mActiveDeviceManager.getActiveProfile(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+        }
         boolean is_broadcast_active = false;
         if (mBroadcastService != null && mBroadcastIsActive != null) {
             try {
@@ -269,11 +280,11 @@ public class HeadsetA2dpSync {
             if (is_broadcast_streaming) {
                 Log.d(TAG," Broadcast Playing ,wait for suspend ");
                 mA2dpSuspendTriggered = reason;
-                updateSuspendState();
+                updateSuspendState(BluetoothProfile.A2DP);
                 return true;
             } else {
                 mA2dpSuspendTriggered = reason;
-                updateSuspendState();
+                updateSuspendState(BluetoothProfile.A2DP);
                 Log.d(TAG, "Broadcast is in configured state, dont wait for suspend");
                 return false;
             }
@@ -285,33 +296,63 @@ public class HeadsetA2dpSync {
         }
         if(a2dpState == A2DP_CONNECTED) {
             mA2dpSuspendTriggered = reason;
-            updateSuspendState();
+            updateSuspendState(BluetoothProfile.A2DP);
+            if (mSystemInterface.isInCall() &&
+                voiceProfile != ApmConstIntf.AudioProfiles.NONE &&
+                voiceProfile == ApmConstIntf.AudioProfiles.HFP) {
+                Log.d(TAG,"HFP active for voice, suspend LE-A");
+                suspendLeAudio(reason);
+            }
             Log.d(TAG," A2DP Connected,don't wait for suspend ");
             return false;
         }
         if(a2dpState == A2DP_PLAYING) {
             mA2dpSuspendTriggered = reason;
-            updateSuspendState();
+            updateSuspendState(BluetoothProfile.A2DP);
+            if (ApmConstIntf.getAospLeaEnabled()) {
+               if(voiceProfile != ApmConstIntf.AudioProfiles.NONE &&
+                  voiceProfile == ApmConstIntf.AudioProfiles.HFP) {
+                  Log.d(TAG,"HFP active for voice, suspend LE-A");
+                  suspendLeAudio(reason);
+               }
+            }
             Log.d(TAG," A2DP Playing ,wait for suspend ");
-            hfpCallBapMediaSync(true);
+            //hfpCallBapMediaSync(true);
             return true;
         }
         return false;
     }
 
+    public void suspendLeAudio(int reason) {
+        Log.d(TAG,"suspendLeAudio");
+        mLeaSuspendTriggered = reason;
+        updateSuspendState(BluetoothProfile.LE_AUDIO);
+    }
+
+    public boolean releaseLeAudio() {
+        Log.d(TAG, "releaseLeAudio: mLeaSuspendTriggered = " + mLeaSuspendTriggered);
+        if (mLeaSuspendTriggered > 0) {
+            mSystemInterface.getAudioManager().setParameters("LEASuspended=false");
+            mLeaSuspendTriggered = A2DP_SUSPENDED_NOT_TRIGGERED;
+            return true;
+        }
+        return true;
+    }
     /*
      *This api will be called by SMs, to make A2dpSuspended=false
      */
     public boolean releaseA2DP(BluetoothDevice device) {
         Log.d(TAG," releaseA2DP mA2dpSuspendTriggered " + mA2dpSuspendTriggered +
                             " by device " + device);
-        if(mA2dpSuspendTriggered == A2DP_SUSPENDED_NOT_TRIGGERED) {
+        if (mA2dpSuspendTriggered == A2DP_SUSPENDED_NOT_TRIGGERED &&
+            mLeaSuspendTriggered == A2DP_SUSPENDED_NOT_TRIGGERED) {
             return true;
         }
 
         if (!mHeadsetService.isAvailable()) {
             Log.d(TAG, "HeadsetService is stopping");
             mSystemInterface.getAudioManager().setParameters("A2dpSuspended=false");
+            mSystemInterface.getAudioManager().setParameters("LEASuspended=false");
             return true;
         }
 
@@ -335,11 +376,23 @@ public class HeadsetA2dpSync {
             }
         } else {
             mSystemInterface.getAudioManager().setParameters("A2dpSuspended=false");
-            hfpCallBapMediaSync(false);
+            releaseLeAudio();
+            //hfpCallBapMediaSync(false);
         }
         return true;
     }
 
+    private BluetoothDevice getBapPlayingDevice() {
+        BluetoothDevice mDevice = null;
+        for(ConcurrentHashMap.Entry<BluetoothDevice, Integer> entry: mBapConnState.entrySet()) {
+            if(entry.getValue() == A2DP_PLAYING) {
+               mDevice = entry.getKey();
+               Log.d(TAG," LE Audio playing");
+               return mDevice;
+            }
+        }
+        return mDevice;
+    }
     public void updateA2DPPlayingState(Intent intent) {
         int currState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE,
                                        BluetoothA2dp.STATE_NOT_PLAYING);
@@ -373,6 +426,12 @@ public class HeadsetA2dpSync {
                    Log.d(TAG," The LE media device is null ");
                    mBapConnState.remove(device);
                }
+            } else {
+                BluetoothDevice mDev = getBapPlayingDevice();
+                if (mDev != null) {
+                    Log.d(TAG," A2dp active, BAP profile NOT_PLAYING " + mDev);
+                    mBapConnState.put(mDev, A2DP_CONNECTED);
+                }
             }
         }
 
