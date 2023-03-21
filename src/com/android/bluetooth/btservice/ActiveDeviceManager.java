@@ -305,6 +305,9 @@ public class ActiveDeviceManager {
                                                          ActiveDeviceManagerServiceIntf.get();
                                 boolean isMediaActive = false;
                                 boolean isCallActive = false;
+                                boolean isBroadcastActive =
+                                        (mMediaProfile == ApmConstIntf.AudioProfiles.BROADCAST_LE) ?
+                                        true : false;
                                 if (activeDeviceManager != null && device != null) {
                                     BluetoothDevice mediaActiveDevice = activeDeviceManager.getActiveAbsoluteDevice(
                                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
@@ -319,12 +322,13 @@ public class ActiveDeviceManager {
                                 }
 
                                 Log.w(TAG, "isMediaActive: " + isMediaActive +
-                                           ", isCallActive: " + isCallActive);
+                                           ", isCallActive: " + isCallActive +
+                                           ", isBroadcastActive: " +isBroadcastActive);
 
-                                if (isMediaActive && isCallActive) {
+                                if ((isMediaActive || isBroadcastActive) && isCallActive) {
                                     Log.w(TAG, "Set leAudio active device to null");
                                     setLeAudioActiveDevice(null);
-                                } else if(isMediaActive) {
+                                } else if(isMediaActive || isBroadcastActive) {
                                     activeDeviceManager.setActiveDevice(null,
                                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                                 } else if(isCallActive) {
