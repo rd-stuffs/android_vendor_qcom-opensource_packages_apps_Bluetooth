@@ -78,6 +78,7 @@ import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
+import android.os.SystemProperties;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.CsipWrapper;
@@ -115,7 +116,7 @@ final class RemoteDevices {
 
     private static final int UUID_INTENT_DELAY = 6000;
     private static final int MESSAGE_UUID_INTENT = 1;
-
+    private static boolean mLeaOnly = false;
     private final HashMap<String, DeviceProperties> mDevices;
     private Queue<String> mDeviceQueue;
     private CsipWrapper mCsipWrapper;
@@ -211,6 +212,7 @@ final class RemoteDevices {
                 + BluetoothAssignedNumbers.APPLE);
         filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
         sAdapterService.registerReceiver(mReceiver, filter);
+        mLeaOnly = SystemProperties.getBoolean("persist.vendor.service.bt.lea_only", true);
     }
 
     /**
@@ -622,6 +624,7 @@ final class RemoteDevices {
         Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothDevice.EXTRA_UUID, prop == null ? null : prop.mUuids);
+        intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         sAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT,
                 Utils.getTempAllowlistBroadcastOptions());
 
@@ -885,6 +888,9 @@ final class RemoteDevices {
                                                             device.autoConnect ) {
                                 //TODO remove log
                                 debugLog("sendUuidIntent as Auto connect is set for Adv AUDIO");
+                                if (mLeaOnly) {
+                                    sAdapterService.updatePhonePolicyWithUuid(bdDevice, device.mUuids);
+                                }
                                 sAdapterService.deviceUuidUpdated(bdDevice);
                                 if (!sAdapterService.isIgnoreDevice(bdDevice)) {
                                   sendUuidIntent(bdDevice, device);

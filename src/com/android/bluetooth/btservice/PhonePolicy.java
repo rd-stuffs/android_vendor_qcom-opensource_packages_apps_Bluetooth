@@ -387,7 +387,12 @@ class PhonePolicy {
         mAdapterService.unregisterReceiver(mReceiver);
         resetStates();
     }
-
+    public void populateUuid(BluetoothDevice device, ParcelUuid[] uuids) {
+        Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+        mHandler.obtainMessage(MESSAGE_PROFILE_INIT_PRIORITIES, intent).sendToTarget();
+    }
     PhonePolicy(AdapterService service, ServiceFactory factory) {
         mAdapterService = service;
         mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
@@ -1071,9 +1076,9 @@ class PhonePolicy {
                 Log.d(TAG, "not a BC connected device earlier, Ignoring");
                 continue;
             }
-            final BluetoothDevice mostRecentlyActiveA2dpDevice =
-                mDatabaseManager.getMostRecentlyConnectedA2dpDevice();
-            if (Objects.equals(mostRecentlyActiveA2dpDevice, device)) {
+            final BluetoothDevice mostRecentlyActiveLEADevice =
+                mDatabaseManager.getMostRecentlyConnectedLeAudioDevice();
+            if (Objects.equals(mostRecentlyActiveLEADevice, device)) {
                 GroupService setCoordinator = GroupService.getGroupService();
                 List<BluetoothDevice> listOfDevices = new ArrayList<BluetoothDevice>();
                 if (setCoordinator != null) {

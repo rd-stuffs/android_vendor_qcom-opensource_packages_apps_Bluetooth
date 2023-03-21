@@ -2008,6 +2008,10 @@ public class AdapterService extends Service {
         }
     }
 
+    public void updatePhonePolicyWithUuid(BluetoothDevice device, ParcelUuid[] uuids) {
+        Log.d(TAG,"updatePhonePolicyWithUuid");
+        mPhonePolicy.populateUuid(device, uuids);
+    }
     private static class RfcommListenerData {
         final BluetoothServerSocket mServerSocket;
         // Service record name
