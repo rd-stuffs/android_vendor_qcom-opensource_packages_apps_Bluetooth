@@ -306,10 +306,10 @@ public class ActiveDeviceManager {
                                 boolean isCallActive = false;
                                 if (activeDeviceManager != null && device != null) {
                                     isMediaActive =
-                                      device.equals(activeDeviceManager.getActiveDevice(
+                                      device.equals(activeDeviceManager.getActiveAbsoluteDevice(
                                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
                                     isCallActive =
-                                      device.equals(activeDeviceManager.getActiveDevice(
+                                      device.equals(activeDeviceManager.getActiveAbsoluteDevice(
                                                            ApmConstIntf.AudioFeatures.CALL_AUDIO));
                                 }
 
