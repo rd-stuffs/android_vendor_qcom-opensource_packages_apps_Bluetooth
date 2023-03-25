@@ -846,18 +846,18 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void clientConnect(int clientIf, String address, boolean isDirect, int transport,
+        public void clientConnect(int clientIf, String address, int addressType, boolean isDirect, int transport,
                 boolean opportunistic, int phy, AttributionSource attributionSource,
                 SynchronousResultReceiver receiver) {
             try {
-                clientConnect(clientIf, address, isDirect, transport, opportunistic, phy,
+                clientConnect(clientIf, address, addressType, isDirect, transport, opportunistic, phy,
                         attributionSource);
                 receiver.send(null);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
-        private void clientConnect(int clientIf, String address, boolean isDirect, int transport,
+        private void clientConnect(int clientIf, String address, int addressType, boolean isDirect, int transport,
                 boolean opportunistic, int phy, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
