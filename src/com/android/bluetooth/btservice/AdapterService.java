@@ -845,6 +845,34 @@ public class AdapterService extends Service {
         }
     };
 
+    /**
+     *  Log L2CAP CoC Client Connection Metrics
+     *
+     *  @param device Bluetooth device
+     *  @param port port of socket
+     *  @param isSecured if secured API is called
+     *  @param result transaction result of the connection
+     *  @param connectionLatencyMillis latency of the connection
+     */
+    public void logL2capcocClientConnection(
+            BluetoothDevice device,
+            int port,
+            boolean isSecured,
+            int result,
+            long connectionLatencyMillis,
+            int appUid) {
+
+        int metricId = getMetricId(device);
+        Log.i(TAG, "Statslog L2capcoc client connection. metricId "
+                + metricId + " port " + port + " isSecured " + isSecured
+                + " result " + result + " connectionLatencyMillis " + connectionLatencyMillis
+                + " appUid " + appUid);
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLUETOOTH_L2CAP_COC_CLIENT_CONNECTION,
+                metricId, port, isSecured, result, connectionLatencyMillis, appUid);
+    }
+
+
     void bringUpBle() {
         debugLog("bleOnProcessStart()");
         /* To reload profile support in BLE turning ON state. So even if profile support
@@ -3536,6 +3564,26 @@ public class AdapterService extends Service {
             }
 
             return IBluetoothSocketManager.Stub.asInterface(service.mBluetoothSocketManagerBinder);
+        }
+
+        @Override
+        public void logL2capcocClientConnection(
+                BluetoothDevice device,
+                int port,
+                boolean isSecured,
+                int result,
+                long connectionLatencyMillis) {
+            AdapterService service = getService();
+            if (service == null) {
+                return;
+            }
+            service.logL2capcocClientConnection(
+                    device,
+                    port,
+                    isSecured,
+                    result,
+                    connectionLatencyMillis,
+                    Binder.getCallingUid());
         }
 
         @Override
