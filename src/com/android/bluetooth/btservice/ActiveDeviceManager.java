@@ -252,8 +252,18 @@ public class ActiveDeviceManager {
                              "handleMessage(MESSAGE_LE_AUDIO_ACTION_CONNECTION_STATE_CHANGED):"
                              + " device " + device + " connected");
                         }
-
-                        setLeAudioActiveDevice(device);
+                        if (mLeAudioActiveDevice != null) {
+                            LeAudioService leAudioService = mFactory.getLeAudioService();
+                            int groupId = leAudioService.getGroupId(mLeAudioActiveDevice);
+                            if (leAudioService.getGroupId(device) == groupId) {
+                                Log.d(TAG, "Lead device is already active");
+                            } else {
+                                setLeAudioActiveDevice(device);
+                                break;
+                            }
+                        } else {
+                            setLeAudioActiveDevice(device);
+                        }
                         break;
                     }
 
@@ -267,6 +277,7 @@ public class ActiveDeviceManager {
                         int mMediaProfile =
                             getCurrentActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                         if (mMediaProfile == ApmConstIntf.AudioProfiles.A2DP) {
+                            mLeAudioActiveDevice = null;
                            if (DBG) {
                               Log.d(TAG, "cuurent active profile is A2DP"
                               + "Not setting active device null for LEAUDIO");
