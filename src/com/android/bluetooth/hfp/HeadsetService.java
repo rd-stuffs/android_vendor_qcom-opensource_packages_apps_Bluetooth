@@ -2618,6 +2618,10 @@ public class HeadsetService extends ProfileService {
                        }
                     } else {
                         stopScoUsingVirtualVoiceCall();
+                        // send delayed message for all connected devices
+                        doForEachConnectedStateMachine(
+                             stateMachine -> stateMachine.sendMessageDelayed(
+                             HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 100));
                     }
                 }
                 if (mVoiceRecognitionStarted) {

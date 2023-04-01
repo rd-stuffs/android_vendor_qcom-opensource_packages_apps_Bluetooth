@@ -482,9 +482,17 @@ public class HeadsetPhoneState {
             if (prevService == HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE &&
                 cindService == HeadsetHalConstants.NETWORK_STATE_AVAILABLE &&
                 mCindSignal == 0) {
-                Log.d(TAG, "Service is available and signal strength was zero, updating the "+
-                           "current signal strength");
-                mCindSignal = mTelephonyManager.getSignalStrength().getLevel() + 1;
+                if (mTelephonyManager != null) {
+                    if (mTelephonyManager.getSignalStrength() != null) {
+                        Log.d(TAG, "Service is available and signal strength was zero, updating the "+
+                                   "current signal strength");
+                        mCindSignal = mTelephonyManager.getSignalStrength().getLevel() + 1;
+                    } else {
+                        Log.w(TAG, "SignalStrength is null");
+                    }
+                } else {
+                    Log.w(TAG, "TelephonyManager service is null");
+                }
                 // +CIND "signal" indicator is always between 0 to 5
                 mCindSignal = Integer.max(Integer.min(mCindSignal, 5), 0);
                 sendDeviceStateChanged();

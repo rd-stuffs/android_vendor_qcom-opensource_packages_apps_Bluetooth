@@ -122,7 +122,6 @@ import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceUse;
-import android.bluetooth.BluetoothAudioPolicy;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMap;
@@ -130,6 +129,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -844,6 +844,34 @@ public class AdapterService extends Service {
             }
         }
     };
+
+    /**
+     *  Log L2CAP CoC Client Connection Metrics
+     *
+     *  @param device Bluetooth device
+     *  @param port port of socket
+     *  @param isSecured if secured API is called
+     *  @param result transaction result of the connection
+     *  @param connectionLatencyMillis latency of the connection
+     */
+    public void logL2capcocClientConnection(
+            BluetoothDevice device,
+            int port,
+            boolean isSecured,
+            int result,
+            long connectionLatencyMillis,
+            int appUid) {
+
+        int metricId = getMetricId(device);
+        Log.i(TAG, "Statslog L2capcoc client connection. metricId "
+                + metricId + " port " + port + " isSecured " + isSecured
+                + " result " + result + " connectionLatencyMillis " + connectionLatencyMillis
+                + " appUid " + appUid);
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLUETOOTH_L2CAP_COC_CLIENT_CONNECTION,
+                metricId, port, isSecured, result, connectionLatencyMillis, appUid);
+    }
+
 
     void bringUpBle() {
         debugLog("bleOnProcessStart()");
@@ -2911,10 +2939,27 @@ public class AdapterService extends Service {
         private boolean canBondWithoutDialog(BluetoothDevice device, AttributionSource source) {
             return false;
         }
+        // @Override
+        // public void getCreateBondCaller(BluetoothDevice device,
+        //         SynchronousResultReceiver receiver) {
+        // }
 
         @Override
-        public void getCreateBondCaller(BluetoothDevice device,
+        public void getPackageNameOfBondingApplication(BluetoothDevice device,
                 SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getPackageNameOfBondingApplication(device));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        @RequiresPermission(allOf = {
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        })
+        private String getPackageNameOfBondingApplication(BluetoothDevice device)  {
+            return "";
         }
 
         @Override
@@ -3522,6 +3567,26 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public void logL2capcocClientConnection(
+                BluetoothDevice device,
+                int port,
+                boolean isSecured,
+                int result,
+                long connectionLatencyMillis) {
+            AdapterService service = getService();
+            if (service == null) {
+                return;
+            }
+            service.logL2capcocClientConnection(
+                    device,
+                    port,
+                    isSecured,
+                    result,
+                    connectionLatencyMillis,
+                    Binder.getCallingUid());
+        }
+
+        @Override
         public void sdpSearch(BluetoothDevice device, ParcelUuid uuid, AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
@@ -4088,17 +4153,17 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public void getAudioPolicyRemoteSupported(BluetoothDevice device,
+        public void isRequestAudioPolicyAsSinkSupported(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
-        public void setAudioPolicy(BluetoothDevice device, BluetoothAudioPolicy policies,
+        public void requestAudioPolicyAsSink(BluetoothDevice device, BluetoothSinkAudioPolicy policies,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
-        public void getAudioPolicy(BluetoothDevice device,
+        public void getRequestedAudioPolicyAsSink(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
@@ -4375,6 +4440,22 @@ public class AdapterService extends Service {
         private int unregisterPreferredAudioProfilesChangedCallback(
                 IBluetoothPreferredAudioProfilesCallback callback, AttributionSource source) {
             return BluetoothStatusCodes.SUCCESS;
+        }
+
+        @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)
+        @Override
+        public void isOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(isOffloadedTransportDiscoveryDataScanSupported(source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
+        }
+
+        private int isOffloadedTransportDiscoveryDataScanSupported(
+                AttributionSource attributionSource) {
+            return 0;
         }
     };
 
@@ -6545,12 +6626,18 @@ public class AdapterService extends Service {
         }
     }
 
+    /**
+     * Returns scan quota count.
+     */
     public int getScanQuotaCount() {
         synchronized (mDeviceConfigLock) {
             return mScanQuotaCount;
         }
     }
 
+    /**
+     * Returns scan quota window in millis.
+     */
     public long getScanQuotaWindowMillis() {
         synchronized (mDeviceConfigLock) {
             return mScanQuotaWindowMillis;
@@ -6593,6 +6680,9 @@ public class AdapterService extends Service {
         }
     }
 
+    /**
+     * Returns scan timeout in millis.
+     */
     public long getScanTimeoutMillis() {
         synchronized (mDeviceConfigLock) {
             return mScanTimeoutMillis;

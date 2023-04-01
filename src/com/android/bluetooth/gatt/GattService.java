@@ -121,6 +121,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
@@ -261,12 +262,13 @@ public class GattService extends ProfileService {
 
     /**
      * HashMap used to synchronize writeCharacteristic calls mapping remote device address to
-     * available permit (either 1 or 0).
+     * available permit (connectId or -1).
      */
-    private final HashMap<String, AtomicBoolean> mPermits = new HashMap<>();
+    private final HashMap<String, Integer> mPermits = new HashMap<>();
 
     private BluetoothAdapter mAdapter;
     private AdapterService mAdapterService;
+    private BluetoothAdapterProxy mBluetoothAdapterProxy;
     private AdvertiseManager mAdvertiseManager;
     private PeriodicScanManager mPeriodicScanManager;
     private ScanManager mScanManager;
@@ -358,13 +360,14 @@ public class GattService extends ProfileService {
         mNativeAvailable = true;
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAdapterService = AdapterService.getAdapterService();
+        mBluetoothAdapterProxy = BluetoothAdapterProxy.getInstance();
         mCompanionManager = ICompanionDeviceManager.Stub.asInterface(
                 ServiceManager.getService(Context.COMPANION_DEVICE_SERVICE));
         mAppOps = getSystemService(AppOpsManager.class);
         mAdvertiseManager = new AdvertiseManager(this, AdapterService.getAdapterService());
         mAdvertiseManager.start();
 
-        mScanManager = new ScanManager(this, mAdapterService);
+        mScanManager = new ScanManager(this, mAdapterService, mBluetoothAdapterProxy);
         mScanManager.start();
 
         mPeriodicScanManager = new PeriodicScanManager(AdapterService.getAdapterService());
@@ -490,6 +493,15 @@ public class GattService extends ProfileService {
             return null;
         }
         return sGattService;
+    }
+
+    @VisibleForTesting
+    ScanManager getScanManager() {
+        if (mScanManager == null) {
+            Log.w(TAG, "getScanManager(): scan manager is null");
+            return null;
+        }
+        return mScanManager;
     }
 
     private static synchronized void setGattService(GattService instance) {
@@ -834,18 +846,18 @@ public class GattService extends ProfileService {
         }
 
         @Override
-        public void clientConnect(int clientIf, String address, boolean isDirect, int transport,
+        public void clientConnect(int clientIf, String address, int addressType, boolean isDirect, int transport,
                 boolean opportunistic, int phy, AttributionSource attributionSource,
                 SynchronousResultReceiver receiver) {
             try {
-                clientConnect(clientIf, address, isDirect, transport, opportunistic, phy,
+                clientConnect(clientIf, address, addressType, isDirect, transport, opportunistic, phy,
                         attributionSource);
                 receiver.send(null);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }
         }
-        private void clientConnect(int clientIf, String address, boolean isDirect, int transport,
+        private void clientConnect(int clientIf, String address, int addressType, boolean isDirect, int transport,
                 boolean opportunistic, int phy, AttributionSource attributionSource) {
             GattService service = getService();
             if (service == null) {
@@ -2183,7 +2195,7 @@ public class GattService extends ProfileService {
             synchronized (mPermits) {
                 Log.d(TAG, "onConnected() - adding permit for address="
                     + address);
-                mPermits.putIfAbsent(address, new AtomicBoolean(true));
+                mPermits.putIfAbsent(address, -1);
             }
         }
         ClientMap.App app = mClientMap.getById(clientIf);
@@ -2210,6 +2222,13 @@ public class GattService extends ProfileService {
                 Log.d(TAG, "onDisconnected() - removing permit for address="
                     + address);
                 mPermits.remove(address);
+            }
+        } else {
+            synchronized (mPermits) {
+                if (mPermits.get(address) == connId) {
+                    Log.d(TAG, "onDisconnected() - set permit -1 for address=" + address);
+                    mPermits.put(address, -1);
+                }
             }
         }
 
@@ -2551,7 +2570,7 @@ public class GattService extends ProfileService {
         synchronized (mPermits) {
             Log.d(TAG, "onWriteCharacteristic() - increasing permit for address="
                     + address);
-            mPermits.get(address).set(true);
+            mPermits.put(address, -1);
         }
 
         if (VDBG) {
@@ -3891,18 +3910,18 @@ public class GattService extends ProfileService {
         Log.d(TAG, "writeCharacteristic() - trying to acquire permit.");
         // Lock the thread until onCharacteristicWrite callback comes back.
         synchronized (mPermits) {
-            AtomicBoolean atomicBoolean = mPermits.get(address);
-            if (atomicBoolean == null) {
+            Integer permit = mPermits.get(address);
+            if (permit == null) {
                 Log.d(TAG, "writeCharacteristic() -  atomicBoolean uninitialized!");
                 return BluetoothStatusCodes.ERROR_UNKNOWN;
             }
 
-            boolean success = atomicBoolean.get();
+            boolean success = (permit == -1);
             if (!success) {
                  Log.d(TAG, "writeCharacteristic() - no permit available.");
                  return BluetoothStatusCodes.ERROR_GATT_WRITE_REQUEST_BUSY;
             }
-            atomicBoolean.set(false);
+            mPermits.put(address, connId);
         }
 
         gattClientWriteCharacteristicNative(connId, handle, writeType, authReq, value);

@@ -797,14 +797,16 @@ public class BluetoothInCallService extends InCallService {
             mAudioManager.removeOnModeChangedListener(mBluetoothOnModeChangedListener);
             mBluetoothOnModeChangedListener = null;
         }
-        if (mBluetoothAdapterReceiver != null) {
-            unregisterReceiver(mBluetoothAdapterReceiver);
-            mBluetoothAdapterReceiver = null;
-        }
-        if (mBluetoothHeadset != null) {
-            mBluetoothHeadset.closeBluetoothHeadsetProxy(this);
-            mBluetoothHeadset = null;
-        }
+        synchronized (LOCK) {
+          if (mBluetoothAdapterReceiver != null) {
+              unregisterReceiver(mBluetoothAdapterReceiver);
+              mBluetoothAdapterReceiver = null;
+          }
+          if (mBluetoothHeadset != null) {
+              mBluetoothHeadset.closeBluetoothHeadsetProxy(this);
+              mBluetoothHeadset = null;
+          }
+        }//synchronized (LOCK)
         mServiceCreated = false;
         super.onDestroy();
     }
@@ -1153,8 +1155,8 @@ public class BluetoothInCallService extends InCallService {
                 }
             }
         }
-
-        if (mBluetoothHeadset != null
+        synchronized (LOCK) {
+          if (mBluetoothHeadset != null
                 && (force
                     || (!callsPendingSwitch
                         && (numActiveCalls != mNumActiveCalls
@@ -1210,7 +1212,8 @@ public class BluetoothInCallService extends InCallService {
                     ringingName);
 
             mHeadsetUpdatedRecently = true;
-        }
+          }
+        }//synchronized (LOCK)
     }
 
     private int getBluetoothCallStateForUpdate() {
