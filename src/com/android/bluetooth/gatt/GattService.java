@@ -3670,7 +3670,7 @@ public class GattService extends ProfileService {
             Log.d(TAG, "clientConnect() - address=" + address + ", isDirect=" + isDirect
                     + ", opportunistic=" + opportunistic + ", phy=" + phy);
         }
-        gattClientConnectNative(clientIf, address, isDirect, transport, opportunistic, phy);
+        gattClientConnectNative(clientIf, address, 0, isDirect, transport, opportunistic, phy);
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -5070,8 +5070,8 @@ public class GattService extends ProfileService {
 
     private native void gattClientUnregisterAppNative(int clientIf);
 
-    private native void gattClientConnectNative(int clientIf, String address, boolean isDirect,
-            int transport, boolean opportunistic, int initiatingPhys);
+    private native void gattClientConnectNative(int clientIf, String address, int addressType,
+            boolean isDirect, int transport, boolean opportunistic, int initiatingPhys);
 
     private native void gattClientDisconnectNative(int clientIf, String address, int connId);
 
