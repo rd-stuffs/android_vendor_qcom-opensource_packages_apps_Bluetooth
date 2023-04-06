@@ -171,6 +171,9 @@ class Metadata {
             case BluetoothProfile.CSIP_SET_COORDINATOR:
                 profileConnectionPolicies.csip_set_coordinator_connection_policy = connectionPolicy;
                 break;
+            case BluetoothProfile.HAP_CLIENT:
+                profileConnectionPolicies.hap_client_connection_policy = connectionPolicy;
+                break;
             case BluetoothProfile.LE_AUDIO:
                 profileConnectionPolicies.le_audio_connection_policy = connectionPolicy;
                 break;
@@ -217,6 +220,8 @@ class Metadata {
                 return profileConnectionPolicies.csip_set_coordinator_connection_policy;
             case BluetoothProfile.LE_AUDIO:
                 return profileConnectionPolicies.le_audio_connection_policy;
+            case BluetoothProfile.HAP_CLIENT:
+                return profileConnectionPolicies.hap_client_connection_policy;
             case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT:
                 return profileConnectionPolicies.bass_client_connection_policy;
             case BluetoothProfile.VOLUME_CONTROL:
