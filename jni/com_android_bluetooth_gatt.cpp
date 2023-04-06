@@ -2644,7 +2644,7 @@ static JNINativeMethod sMethods[] = {
      (void*)gattClientRegisterAppNative},
     {"gattClientUnregisterAppNative", "(I)V",
      (void*)gattClientUnregisterAppNative},
-    {"gattClientConnectNative", "(ILjava/lang/String;ZIZI)V",
+    {"gattClientConnectNative", "(ILjava/lang/String;IZIZI)V",
      (void*)gattClientConnectNative},
     {"gattClientDisconnectNative", "(ILjava/lang/String;I)V",
      (void*)gattClientDisconnectNative},
