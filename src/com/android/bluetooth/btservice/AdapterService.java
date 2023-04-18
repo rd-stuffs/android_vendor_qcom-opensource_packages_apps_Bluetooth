@@ -370,6 +370,7 @@ public class AdapterService extends Service {
     private RemoteCallbackList<IBluetoothCallback> mCallbacks;
     private int mCurrentRequestId;
     private boolean mQuietmode = false;
+    private HashMap<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
     private final Map<UUID, RfcommListenerData> mBluetoothServerSockets = new ConcurrentHashMap<>();
     private final Executor mSocketServersExecutor = r -> new Thread(r).start();
@@ -2917,6 +2918,12 @@ public class AdapterService extends Service {
         @Override
         public void getConnectionHandle(BluetoothDevice device, int transport,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+
+            try {
+                receiver.send(getConnectionHandle(device, transport, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
         @RequiresPermission(allOf = {
                 android.Manifest.permission.BLUETOOTH_CONNECT,
@@ -2924,7 +2931,18 @@ public class AdapterService extends Service {
         })
         private int getConnectionHandle(
                 BluetoothDevice device, int transport, AttributionSource attributionSource) {
-            return BluetoothDevice.ERROR;
+            AdapterService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getConnectionHandle")
+                    || !Utils.checkConnectPermissionForDataDelivery(
+                          service, attributionSource, TAG)) {
+              return BluetoothDevice.ERROR;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+
+            return service.getConnectionHandle(device, transport);
+
         }
 
         @Override
@@ -2959,7 +2977,15 @@ public class AdapterService extends Service {
                 android.Manifest.permission.BLUETOOTH_PRIVILEGED,
         })
         private String getPackageNameOfBondingApplication(BluetoothDevice device)  {
-            return "";
+            AdapterService service = getService();
+
+            if (service == null) {
+                return null;
+            }
+
+            enforceBluetoothPrivilegedPermission(service);
+
+            return service.getPackageNameOfBondingApplication(device);
         }
 
         @Override
@@ -4707,6 +4733,13 @@ public class AdapterService extends Service {
         return mRemoteDevices.getDevice(address);
     }
 
+
+
+    private static class CallerInfo {
+        public String callerPackageName;
+        public UserHandle user;
+    }
+
     public boolean createBond(BluetoothDevice device, int transport, OobData remoteP192Data,
             OobData remoteP256Data, String callingPackage) {
 
@@ -4718,6 +4751,13 @@ public class AdapterService extends Service {
         if (!isPackageNameAccurate(this, callingPackage, Binder.getCallingUid())) {
             return false;
         }
+
+
+        CallerInfo createBondCaller = new CallerInfo();
+        createBondCaller.callerPackageName = callingPackage;
+        createBondCaller.user = Binder.getCallingUserHandle();
+        mBondAttemptCallerInfo.put(device.getAddress(), createBondCaller);
+
         mRemoteDevices.setBondingInitiatedLocally(Utils.getByteAddress(device));
 
         // Pairing is unreliable while scanning, so cancel discovery
@@ -4843,6 +4883,7 @@ public class AdapterService extends Service {
         if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDED) {
             return false;
         }
+        mBondAttemptCallerInfo.remove(device.getAddress());
         deviceProp.setBondingInitiatedLocally(false);
         if (device.isTwsPlusDevice()) {
             mActiveDeviceManager.notify_active_device_unbonding(device);
@@ -4905,6 +4946,14 @@ public class AdapterService extends Service {
 
     int getConnectionHandle(BluetoothDevice device, int transport) {
         return BluetoothDevice.ERROR;
+    }
+
+    public String getPackageNameOfBondingApplication(BluetoothDevice device) {
+        CallerInfo info = mBondAttemptCallerInfo.get(device.getAddress());
+        if (info == null) {
+            return null;
+        }
+        return info.callerPackageName;
     }
 
     /**
