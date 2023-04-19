@@ -13,6 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  */
 
 package com.android.bluetooth.le_audio;
@@ -64,6 +69,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.lebroadcast.LeBroadcastServIntf;
 import com.android.internal.annotations.GuardedBy;
@@ -457,9 +463,13 @@ public class LeAudioService extends ProfileService {
             }
         }
 
-        if (!mPtsTmapConfBandC && mPtsMediaAndVoice == 2) {
+        if (!mPtsTmapConfBandC && 
+            (mPtsMediaAndVoice == 2 || mPtsMediaAndVoice == 3)) {
             if (mCallAudio != null) {
+                Log.d(TAG, "connect(): Connecting call AUdio");
                 mCallAudio.connect(device);
+            } else {
+                Log.d(TAG, "call AUdio is null");
             }
         }
 
@@ -1615,7 +1625,7 @@ public class LeAudioService extends ProfileService {
     }
 
     @VisibleForTesting
-    synchronized void connectionStateChanged(BluetoothDevice device, int fromState,
+    synchronized public void connectionStateChanged(BluetoothDevice device, int fromState,
                                                      int toState) {
         Log.e(TAG, "connectionStateChanged: invocation. device=" + device
                 + " fromState=" + fromState + " toState=" + toState);
@@ -1757,7 +1767,7 @@ public class LeAudioService extends ProfileService {
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             int toState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
             int fromState = intent.getIntExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, -1);
-            connectionStateChanged(device, fromState, toState);
+            Log.d(TAG,"Connection state updated via api call, ignoring intent");
         }
     }
 
@@ -1889,6 +1899,17 @@ public class LeAudioService extends ProfileService {
                 "Need BLUETOOTH_PRIVILEGED permission");
         if (DBG) {
             Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
+        }
+
+        ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        if (ArrayUtils.contains(featureUuids, BluetoothUuid.HAS)) {
+            Log.e(TAG, ": Remote has Hearing Aid UUID");
+           //Calling HapClient Setconnection policy
+           HapClientService hapClientService = HapClientService.getHapClientService();
+           if (hapClientService != null) {
+              hapClientService.setConnectionPolicy(device, connectionPolicy);
+              Log.d(TAG, "Hap connectionPolicy ");
+           }
         }
 
         if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
@@ -2242,8 +2263,8 @@ public class LeAudioService extends ProfileService {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private LeAudioService getService(AttributionSource source) {
-            if (!Utils.checkCallerIsSystemOrActiveUser(TAG)
-                    || !Utils.checkServiceAvailable(mService, TAG)
+            if (!Utils.checkServiceAvailable(mService, TAG)
+                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
                 return null;
             }

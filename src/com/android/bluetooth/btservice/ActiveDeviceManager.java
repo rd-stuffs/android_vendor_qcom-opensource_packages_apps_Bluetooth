@@ -44,6 +44,7 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.apm.ActiveDeviceManagerServiceIntf;
 import com.android.bluetooth.apm.CallAudioIntf;
+import com.android.bluetooth.cc.CCService;
 
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -252,8 +253,18 @@ public class ActiveDeviceManager {
                              "handleMessage(MESSAGE_LE_AUDIO_ACTION_CONNECTION_STATE_CHANGED):"
                              + " device " + device + " connected");
                         }
-
-                        setLeAudioActiveDevice(device);
+                        if (mLeAudioActiveDevice != null) {
+                            LeAudioService leAudioService = mFactory.getLeAudioService();
+                            int groupId = leAudioService.getGroupId(mLeAudioActiveDevice);
+                            if (leAudioService.getGroupId(device) == groupId) {
+                                Log.d(TAG, "Lead device is already active");
+                            } else {
+                                setLeAudioActiveDevice(device);
+                                break;
+                            }
+                        } else {
+                            setLeAudioActiveDevice(device);
+                        }
                         break;
                     }
 
@@ -267,6 +278,7 @@ public class ActiveDeviceManager {
                         int mMediaProfile =
                             getCurrentActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                         if (mMediaProfile == ApmConstIntf.AudioProfiles.A2DP) {
+                            mLeAudioActiveDevice = null;
                            if (DBG) {
                               Log.d(TAG, "cuurent active profile is A2DP"
                               + "Not setting active device null for LEAUDIO");
@@ -779,6 +791,10 @@ public class ActiveDeviceManager {
                         broadcastLeActiveDeviceChange(AbsDevice);
                         onLeActiveDeviceChange(AbsDevice);
                         mLeAudioActiveDevice = AbsDevice;
+                        CCService ccService = CCService.getCCService();
+                        if (ccService != null) {
+                            ccService.handleAnswerCall(AbsDevice);
+                        }
                     }
                 }
             }

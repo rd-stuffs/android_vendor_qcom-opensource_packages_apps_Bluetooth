@@ -174,6 +174,7 @@ class AdapterProperties {
     private boolean mHostAdvAudioLC3QFeatureSupported;
     private boolean mHostQHSFeatureSupported;
     private boolean mHostAddonFeaturesSupported;
+    private byte[] mEncKeyMaterial;
 
     private int mIsDynamicAudioBufferSizeSupported;
     private int mDynamicAudioBufferSizeSupportedCodecsGroup1;
@@ -587,6 +588,13 @@ class AdapterProperties {
      */
     int getTotalNumOfTrackableAdvertisements() {
         return mTotNumOfTrackableAdv;
+    }
+
+    /**
+     * @return the getEncKeyMaterialValue
+     */
+    byte[] getEncKeyMaterialValue() {
+        return mEncKeyMaterial;
     }
 
     /**
@@ -1347,6 +1355,10 @@ class AdapterProperties {
                     case AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS_BLE:
                         mLocalIOCapabilityBLE = Utils.byteArrayToInt(val);
                         debugLog("mLocalIOCapabilityBLE set to " + mLocalIOCapabilityBLE);
+                        break;
+
+                    case AbstractionLayer.BT_PROPERTY_ENC_KEY_MATERIAL:
+                        mEncKeyMaterial = val;
                         break;
 
                     default:

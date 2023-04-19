@@ -340,6 +340,17 @@ public class HeadsetA2dpSync {
         return true;
     }
 
+    private BluetoothDevice getBapPlayingDevice() {
+        BluetoothDevice mDevice = null;
+        for(ConcurrentHashMap.Entry<BluetoothDevice, Integer> entry: mBapConnState.entrySet()) {
+            if(entry.getValue() == A2DP_PLAYING) {
+               mDevice = entry.getKey();
+               Log.d(TAG," LE Audio playing");
+               return mDevice;
+            }
+        }
+        return mDevice;
+    }
     public void updateA2DPPlayingState(Intent intent) {
         int currState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE,
                                        BluetoothA2dp.STATE_NOT_PLAYING);
@@ -373,6 +384,12 @@ public class HeadsetA2dpSync {
                    Log.d(TAG," The LE media device is null ");
                    mBapConnState.remove(device);
                }
+            } else {
+                BluetoothDevice mDev = getBapPlayingDevice();
+                if (mDev != null) {
+                    Log.d(TAG," A2dp active, BAP profile NOT_PLAYING " + mDev);
+                    mBapConnState.put(mDev, A2DP_CONNECTED);
+                }
             }
         }
 
