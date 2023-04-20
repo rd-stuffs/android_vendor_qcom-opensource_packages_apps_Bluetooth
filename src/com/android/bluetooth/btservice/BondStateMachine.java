@@ -536,6 +536,14 @@ final class BondStateMachine extends StateMachine {
         return false;
     }
 
+    private boolean isDeviceBlacklistedforSendBondedIntent(
+            BluetoothDevice device) {
+       boolean matched = InteropUtil.interopMatchAddrOrName(
+           InteropUtil.InteropFeature.INTEROP_SEND_BONDED_INTENT_AFTER_SDP_TIMEOUT,
+           device.getAddress());
+       return matched;
+    }
+
     @VisibleForTesting
     void sendIntent(BluetoothDevice device, int newState, int reason,
             boolean isTriggerFromDelayMessage) {
@@ -592,9 +600,11 @@ final class BondStateMachine extends StateMachine {
             infoLog(device + " is bonded, wait for SDP complete to broadcast bonded intent");
             if (!mPendingBondedDevices.contains(device)) {
                 mPendingBondedDevices.add(device);
-                Message msg = obtainMessage(BONDED_INTENT_DELAY);
-                msg.obj = device;
-                sendMessageDelayed(msg, sPendingUuidUpdateTimeoutMillis);
+                if (isDeviceBlacklistedforSendBondedIntent(device)) {
+                    Message msg = obtainMessage(BONDED_INTENT_DELAY);
+                    msg.obj = device;
+                    sendMessageDelayed(msg, sPendingUuidUpdateTimeoutMillis);
+                }
             }
             if (oldState == BluetoothDevice.BOND_NONE) {
                 // Broadcast NONE->BONDING for NONE->BONDED case.
