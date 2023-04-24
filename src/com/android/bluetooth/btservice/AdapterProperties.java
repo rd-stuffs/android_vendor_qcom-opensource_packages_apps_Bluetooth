@@ -426,7 +426,7 @@ class AdapterProperties {
     boolean setLeIoCapability(int capability) {
         synchronized (mObject) {
             boolean result = mService.setAdapterPropertyNative(
-                    AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS_BLE,
+                    AbstractionLayer.BT_PROPERTY_RESERVED_0F,
                     Utils.intToByteArray(capability));
 
             if (result) {
@@ -1352,7 +1352,7 @@ class AdapterProperties {
                         debugLog("mLocalIOCapability set to " + mLocalIOCapability);
                         break;
 
-                    case AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS_BLE:
+                    case AbstractionLayer.BT_PROPERTY_RESERVED_0F:
                         mLocalIOCapabilityBLE = Utils.byteArrayToInt(val);
                         debugLog("mLocalIOCapabilityBLE set to " + mLocalIOCapabilityBLE);
                         break;
