@@ -1239,16 +1239,8 @@ public class LeAudioService extends ProfileService {
         if (ActiveAudioMediaProfile == ApmConst.AudioProfiles.BAP_RECORDING ||
             ActiveAudioMediaProfile == ApmConst.AudioProfiles.BAP_GCP_VBC ||
             ActiveAudioCallProfile == ApmConst.AudioProfiles.TMAP_CALL ||
-            ActiveAudioCallProfile == ApmConst.AudioProfiles.BAP_CALL) {
-            if ((ActiveAudioMediaProfile == ApmConst.AudioProfiles.BROADCAST_LE) &&
-                (ActiveAudioCallProfile == ApmConst.AudioProfiles.TMAP_CALL ||
-                 ActiveAudioCallProfile == ApmConst.AudioProfiles.BAP_CALL)) {
-                activeDevices.add(0, mActiveAudioInDevice);
-                activeDevices.add(1, mActiveAudioInDevice);
-            } else {
-                activeDevices.add(1, mActiveAudioInDevice);
-            }
-        }
+            ActiveAudioCallProfile == ApmConst.AudioProfiles.BAP_CALL)
+            activeDevices.add(1, mActiveAudioInDevice);
 
         Log.d(TAG, "getActiveDevices: LeAudio devices: Out[" + activeDevices.get(0) +
                                               "] - In[" + activeDevices.get(1) + "]");
