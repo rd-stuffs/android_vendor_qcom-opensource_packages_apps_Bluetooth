@@ -464,7 +464,7 @@ public class LeAudioService extends ProfileService {
         }
 
         if (!mPtsTmapConfBandC && 
-            (mPtsMediaAndVoice == 2 || mPtsMediaAndVoice == 3)) {
+            mPtsMediaAndVoice == 2) {
             if (mCallAudio != null) {
                 Log.d(TAG, "connect(): Connecting call AUdio");
                 mCallAudio.connect(device);
