@@ -4754,8 +4754,20 @@ public class AdapterService extends Service {
 
         private int getOffloadedTransportDiscoveryDataScanSupported(
                 AttributionSource attributionSource) {
-            return mService.getOffloadedTransportDiscoveryDataScanSupported();
+            AdapterService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG,
+                            "getOffloadedTransportDiscoveryDataScanSupported")
+                    || !Utils.checkScanPermissionForDataDelivery(
+                            service, attributionSource,
+                            "getOffloadedTransportDiscoveryDataScanSupported")) {
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+
+            return service.getOffloadedTransportDiscoveryDataScanSupported();
         }
+
     };
 
     public boolean isEnabled() {
@@ -6534,7 +6546,7 @@ public class AdapterService extends Service {
      * @return  {@code BluetoothStatusCodes.FEATURE_SUPPORTED} if supported
      */
     public int getOffloadedTransportDiscoveryDataScanSupported() {
-        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+        return BluetoothStatusCodes.FEATURE_SUPPORTED;
     }
 
     void updateQuietModeStatus(boolean quietMode) {
