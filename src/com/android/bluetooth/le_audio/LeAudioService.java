@@ -897,6 +897,16 @@ public class LeAudioService extends ProfileService {
          for (Map.Entry<BluetoothDevice, Integer> entry : mDeviceGroupIdMap.entrySet()) {
              Log.d(TAG, "Device " + entry.getKey() + " grp " + entry.getValue());
              if (entry.getValue() == groupId) {
+                 AcmServIntf mAcmService = AcmServIntf.get();
+                 BluetoothDevice device = entry.getKey();
+                 if (mAcmService != null) {
+                     int state = mAcmService.getConnectionState(device);
+                     if (state == BluetoothProfile.STATE_DISCONNECTED ||
+                         state == BluetoothProfile.STATE_DISCONNECTING) {
+                         Log.d(TAG,"Group lead device is disconnected: " + device);
+                         continue;
+                     }
+                 }
                  if (groupId == mLeActiveGroupID) {
                      first_group_device = entry.getKey();
                      break;
