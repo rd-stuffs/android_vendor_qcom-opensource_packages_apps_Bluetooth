@@ -1166,13 +1166,17 @@ public class LeAudioService extends ProfileService {
 
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
-        if (((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
+        if (((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
+                                          ApmConst.AudioProfiles.HAP_LE) ||
+            ((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                           ApmConst.AudioProfiles.BAP_CALL)) {
             activeDeviceManager.setActiveDevice(device,
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
         }
 
-        if (((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
+        if (((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
+                                         ApmConst.AudioProfiles.HAP_LE) ||
+            ((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
                                          ApmConst.AudioProfiles.BAP_MEDIA)) {
             activeDeviceManager.setActiveDevice(device,
                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
@@ -1211,13 +1215,17 @@ public class LeAudioService extends ProfileService {
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
 
-        if (((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
+        if (((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
+                                          ApmConst.AudioProfiles.HAP_LE) ||
+            ((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                           ApmConst.AudioProfiles.BAP_CALL)) {
             activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
         }
 
-        if (((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
+        if (((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
+                                                 ApmConst.AudioProfiles.HAP_LE) ||
+            ((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
                                                  ApmConst.AudioProfiles.BAP_MEDIA)) {
             activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
@@ -2470,14 +2478,18 @@ public class LeAudioService extends ProfileService {
 
                     mPreviousActiveDevice = device;
 
-                    if (((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
+                    if (((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
+                                                      ApmConst.AudioProfiles.HAP_LE) ||
+                        ((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                                       ApmConst.AudioProfiles.BAP_CALL)) {
                         defaultValueVoice = activeDeviceManager.setActiveDevice(device,
                                               ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
                     }
 
-                    if (((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
-                                 ApmConst.AudioProfiles.BAP_MEDIA)) {
+                    if (((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
+                                                      ApmConst.AudioProfiles.HAP_LE) ||
+                        ((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
+                                                      ApmConst.AudioProfiles.BAP_MEDIA)) {
                         defaultValueMedia = activeDeviceManager.setActiveDevice(device,
                                               ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
                     }
