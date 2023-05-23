@@ -591,7 +591,6 @@ public class AdapterService extends Service {
                         Log.w(TAG,"onProfileServiceStateChange() - All profile services started..");
                         mAdapterProperties.onBluetoothReady();
                         updateUuids();
-                        setBluetoothClassFromConfig();
                         initProfileServices();
                         getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS);
                         getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_RESERVED_0F);
@@ -987,31 +986,6 @@ public class AdapterService extends Service {
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
-    /**
-     * Sets the Bluetooth CoD value of the local adapter if there exists a config value for it.
-     */
-    void setBluetoothClassFromConfig() {
-        int bluetoothClassConfig = retrieveBluetoothClassConfig();
-        if (bluetoothClassConfig != 0) {
-            mAdapterProperties.setBluetoothClass(new BluetoothClass(bluetoothClassConfig));
-        }
-    }
-
-    private int retrieveBluetoothClassConfig() {
-        return Settings.Global.getInt(
-                getContentResolver(), Settings.Global.BLUETOOTH_CLASS_OF_DEVICE, 0);
-    }
-
-    private boolean storeBluetoothClassConfig(int bluetoothClass) {
-        boolean result = Settings.Global.putInt(
-                getContentResolver(), Settings.Global.BLUETOOTH_CLASS_OF_DEVICE, bluetoothClass);
-
-        if (!result) {
-            Log.e(TAG, "Error storing BluetoothClass config - " + bluetoothClass);
-        }
-
-        return result;
-    }
 
     void startBluetoothDisable() {
         mAdapterStateMachine.sendMessage(AdapterState.BEGIN_BREDR_STOP);
@@ -1025,7 +999,6 @@ public class AdapterService extends Service {
                 .equals(supportedProfileServices[0].getSimpleName())) {
             mAdapterProperties.onBluetoothReady();
             updateUuids();
-            setBluetoothClassFromConfig();
             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
         } else {
             setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_ON);
@@ -2455,56 +2428,6 @@ public class AdapterService extends Service {
             }
 
             return service.mAdapterProperties.setName(name);
-        }
-
-        @Override
-        public void getBluetoothClass(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(getBluetoothClass(source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private BluetoothClass getBluetoothClass(AttributionSource attributionSource) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getBluetoothClass")
-                    || !Utils.checkConnectPermissionForDataDelivery(
-                            service, attributionSource, "AdapterSource getBluetoothClass")) {
-                return null;
-            }
-
-            return service.mAdapterProperties.getBluetoothClass();
-        }
-
-        @Override
-        public void setBluetoothClass(BluetoothClass bluetoothClass, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(setBluetoothClass(bluetoothClass, source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private boolean setBluetoothClass(BluetoothClass bluetoothClass, AttributionSource source) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setBluetoothClass")
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
-
-            if (!service.mAdapterProperties.setBluetoothClass(bluetoothClass)) {
-              return false;
-            }
-
-            return Settings.Global.putInt(
-                    service.getContentResolver(),
-                    Settings.Global.BLUETOOTH_CLASS_OF_DEVICE,
-                    bluetoothClass.getClassOfDevice());
         }
 
         @Override
