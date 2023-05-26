@@ -2708,10 +2708,15 @@ public class HeadsetService extends ProfileService {
                        }
                     } else {
                         stopScoUsingVirtualVoiceCall();
-                        // send delayed message for all connected devices
-                        doForEachConnectedStateMachine(
-                             stateMachine -> stateMachine.sendMessageDelayed(
-                             HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 100));
+
+                        HeadsetStateMachine stateMachine = mStateMachines.get(mActiveDevice);
+                        if (stateMachine != null &&
+                               stateMachine.isDeviceBlacklistedForDelayingCLCCRespAfterVOIPCall()) {
+
+                             // send delayed message for active device if Blacklisted
+                             stateMachine.sendMessageDelayed(
+                             HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 300);
+                        }
                     }
                 }
                 if (mVoiceRecognitionStarted) {
