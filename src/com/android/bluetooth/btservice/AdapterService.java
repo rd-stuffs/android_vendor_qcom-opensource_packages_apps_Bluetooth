@@ -4254,18 +4254,69 @@ public class AdapterService extends Service {
         @Override
         public void isRequestAudioPolicyAsSinkSupported(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(isRequestAudioPolicyAsSinkSupported(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
-
+        private int isRequestAudioPolicyAsSinkSupported(BluetoothDevice device,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(service, TAG,
+                        "isRequestAudioPolicyAsSinkSupported")
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                return BluetoothStatusCodes.FEATURE_NOT_CONFIGURED;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return BluetoothStatusCodes.FEATURE_NOT_CONFIGURED;
+        }
         @Override
         public void requestAudioPolicyAsSink(BluetoothDevice device, BluetoothSinkAudioPolicy policies,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(requestAudioPolicyAsSink(device, policies, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
-
+        private int requestAudioPolicyAsSink(BluetoothDevice device,
+                BluetoothSinkAudioPolicy policies, AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            } else if (!callerIsSystemOrActiveOrManagedUser(service,
+                    TAG, "requestAudioPolicyAsSink")) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+            } else if (!Utils.checkConnectPermissionForDataDelivery(
+                    service, source, TAG)) {
+                return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
         @Override
         public void getRequestedAudioPolicyAsSink(BluetoothDevice device,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+            try {
+                receiver.send(getRequestedAudioPolicyAsSink(device, source));
+            } catch (RuntimeException e) {
+                receiver.propagateException(e);
+            }
         }
-
+        private BluetoothSinkAudioPolicy getRequestedAudioPolicyAsSink(BluetoothDevice device,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null
+                    || !callerIsSystemOrActiveOrManagedUser(service,
+                            TAG, "getRequestedAudioPolicyAsSink")
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                return null;
+            }
+            enforceBluetoothPrivilegedPermission(service);
+            return null;
+        }
         @Override
         public void requestActivityInfo(IBluetoothActivityEnergyInfoListener listener,
                     AttributionSource source) {
