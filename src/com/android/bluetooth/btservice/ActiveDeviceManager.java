@@ -997,7 +997,7 @@ public class ActiveDeviceManager {
         if (leAudioService == null) {
             return false;
         }
-        if (!leAudioService.setActiveDevice(device)) {
+        if (!leAudioService.setActiveDeviceBlocking(device)) {
             return false;
         }
         mLeAudioActiveDevice = device;
