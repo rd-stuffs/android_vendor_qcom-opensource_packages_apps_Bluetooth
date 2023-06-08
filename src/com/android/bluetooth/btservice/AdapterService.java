@@ -591,10 +591,9 @@ public class AdapterService extends Service {
                         Log.w(TAG,"onProfileServiceStateChange() - All profile services started..");
                         mAdapterProperties.onBluetoothReady();
                         updateUuids();
-                        setBluetoothClassFromConfig();
                         initProfileServices();
                         getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS);
-                        getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS_BLE);
+                        getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_RESERVED_0F);
                         getAdapterPropertyNative(AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER);
                         mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
                         //update wifi state to lower layers
@@ -987,31 +986,6 @@ public class AdapterService extends Service {
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
-    /**
-     * Sets the Bluetooth CoD value of the local adapter if there exists a config value for it.
-     */
-    void setBluetoothClassFromConfig() {
-        int bluetoothClassConfig = retrieveBluetoothClassConfig();
-        if (bluetoothClassConfig != 0) {
-            mAdapterProperties.setBluetoothClass(new BluetoothClass(bluetoothClassConfig));
-        }
-    }
-
-    private int retrieveBluetoothClassConfig() {
-        return Settings.Global.getInt(
-                getContentResolver(), Settings.Global.BLUETOOTH_CLASS_OF_DEVICE, 0);
-    }
-
-    private boolean storeBluetoothClassConfig(int bluetoothClass) {
-        boolean result = Settings.Global.putInt(
-                getContentResolver(), Settings.Global.BLUETOOTH_CLASS_OF_DEVICE, bluetoothClass);
-
-        if (!result) {
-            Log.e(TAG, "Error storing BluetoothClass config - " + bluetoothClass);
-        }
-
-        return result;
-    }
 
     void startBluetoothDisable() {
         mAdapterStateMachine.sendMessage(AdapterState.BEGIN_BREDR_STOP);
@@ -1025,7 +999,6 @@ public class AdapterService extends Service {
                 .equals(supportedProfileServices[0].getSimpleName())) {
             mAdapterProperties.onBluetoothReady();
             updateUuids();
-            setBluetoothClassFromConfig();
             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
         } else {
             setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_ON);
@@ -2458,56 +2431,6 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public void getBluetoothClass(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(getBluetoothClass(source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private BluetoothClass getBluetoothClass(AttributionSource attributionSource) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getBluetoothClass")
-                    || !Utils.checkConnectPermissionForDataDelivery(
-                            service, attributionSource, "AdapterSource getBluetoothClass")) {
-                return null;
-            }
-
-            return service.mAdapterProperties.getBluetoothClass();
-        }
-
-        @Override
-        public void setBluetoothClass(BluetoothClass bluetoothClass, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(setBluetoothClass(bluetoothClass, source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private boolean setBluetoothClass(BluetoothClass bluetoothClass, AttributionSource source) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setBluetoothClass")
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
-
-            if (!service.mAdapterProperties.setBluetoothClass(bluetoothClass)) {
-              return false;
-            }
-
-            return Settings.Global.putInt(
-                    service.getContentResolver(),
-                    Settings.Global.BLUETOOTH_CLASS_OF_DEVICE,
-                    bluetoothClass.getClassOfDevice());
-        }
-
-        @Override
         public void getIoCapability(AttributionSource source, SynchronousResultReceiver receiver) {
             try {
                 receiver.send(getIoCapability(source));
@@ -2551,53 +2474,6 @@ public class AdapterService extends Service {
             }
 
             return service.mAdapterProperties.setIoCapability(capability);
-        }
-
-        @Override
-        public void getLeIoCapability(AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(getLeIoCapability(source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private int getLeIoCapability(AttributionSource attributionSource) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getLeIoCapability")
-                    || !Utils.checkConnectPermissionForDataDelivery(
-                            service, attributionSource, "AdapterService getLeIoCapability")) {
-                return BluetoothAdapter.IO_CAPABILITY_UNKNOWN;
-            }
-
-            return service.mAdapterProperties.getLeIoCapability();
-        }
-
-        @Override
-        public void setLeIoCapability(int capability, AttributionSource source,
-                SynchronousResultReceiver receiver) {
-            try {
-                receiver.send(setLeIoCapability(capability, source));
-            } catch (RuntimeException e) {
-                receiver.propagateException(e);
-            }
-        }
-        private boolean setLeIoCapability(int capability, AttributionSource source) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setLeIoCapability")
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
-
-            if (!isValidIoCapability(capability)) {
-              return false;
-            }
-
-            return service.mAdapterProperties.setLeIoCapability(capability);
         }
 
         @Override
@@ -5241,6 +5117,30 @@ public class AdapterService extends Service {
         return info.callerPackageName;
     }
 
+    public boolean handleLeSetActiveDevice(BluetoothDevice device) {
+        boolean isAospLeaEnabled = ApmConstIntf.getAospLeaEnabled();
+        boolean isLeActiveDevice = false;
+        Log.i(TAG, "handleLeSetActiveDevice: isAospLeaEnabled: "
+                              + isAospLeaEnabled + ", device: " + device);
+        for (BluetoothDevice dev : getActiveDevices(BluetoothProfile.LE_AUDIO)) {
+            if (dev != null) {
+                Log.i(TAG, "handleLeSetActiveDevice: LE audio device is active");
+                isLeActiveDevice = true;
+                break;
+            }
+        }
+
+        if (isAospLeaEnabled &&
+            mLeAudioService != null && (device == null && isLeActiveDevice
+                || mLeAudioService.getConnectionPolicy(device)
+                == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
+            Log.i(TAG, "handleLeSetActiveDevice: Setting active Le Audio device " + device);
+            mLeAudioService.setActiveDeviceBlocking(device);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Sets device as the active devices for the profiles passed into the function
      *
@@ -5279,22 +5179,10 @@ public class AdapterService extends Service {
                 return false;
         }
 
-        boolean isLeAudioDeviceActive = false;
-        for (BluetoothDevice dev : getActiveDevices(BluetoothProfile.LE_AUDIO)) {
-            if (dev != null) {
-                Log.i(TAG, "setActiveDevice: LE audio device is active");
-                isLeAudioDeviceActive = true;
-                break;
-            }
-        }
-
-        //Make only Le-A device setactive when qti LE-A not enabled.
-        if (!isQtiLeAudioEnabled &&
-            mLeAudioService != null && (device == null && isLeAudioDeviceActive
-                || mLeAudioService.getConnectionPolicy(device)
-                == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
-            Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
-            mLeAudioService.setActiveDeviceBlocking(device);
+        boolean isLeActiveDeviceHandled = false;
+        isLeActiveDeviceHandled = handleLeSetActiveDevice(device);
+        if (isLeActiveDeviceHandled) {
+            Log.i(TAG, "setActiveDevice: LE audio device made active");
             return true;
         }
 
@@ -5315,13 +5203,17 @@ public class AdapterService extends Service {
         }
 
         if (setHeadset && mHeadsetService != null) {
-            if(isQtiLeAudioEnabled || isAospLeaEnabled) {
-                activeDeviceManager.setActiveDevice(device,
-                        ApmConstIntf.AudioFeatures.CALL_AUDIO, true);
+            if (isQtiLeAudioEnabled || isAospLeaEnabled) {
+                activeDeviceManager.setActiveDeviceBlocking(device,
+                                     ApmConstIntf.AudioFeatures.CALL_AUDIO);
             } else {
                 Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
                 mHeadsetService.setActiveDevice(device);
             }
+        }
+
+        if (device == null) {
+            handleLeSetActiveDevice(device);
         }
 
         return true;
