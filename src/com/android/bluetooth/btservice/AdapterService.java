@@ -4895,8 +4895,9 @@ public class AdapterService extends Service {
                         Log.i(TAG, "getQtiLeAudioEnabled() is true, get A2DP active dev from APM");
                         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                    ActiveDeviceManagerServiceIntf.get();
+                        Log.i(TAG, "getActiveAbsoluteDevice for Media from APM");
                         defaultValue = activeDeviceManager.
-                                  getActiveDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+                                   getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                         activeDevices.add(defaultValue);
                     } else {
                         activeDevices.add(mA2dpService.getActiveDevice());
