@@ -97,6 +97,7 @@ import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
 import static com.android.bluetooth.Utils.addressToBytes;
+import static com.android.bluetooth.Utils.callerIsSystem;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 import static com.android.bluetooth.Utils.enforceCdmAssociation;
@@ -4515,6 +4516,14 @@ public class AdapterService extends Service {
 
         private int setPreferredAudioProfiles(BluetoothDevice device, Bundle modeToProfileBundle,
                 AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            Objects.requireNonNull(device);
+            if (service.getBondState(device) != BluetoothDevice.BOND_BONDED) {
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
             return 1;
         }
 
@@ -4548,6 +4557,9 @@ public class AdapterService extends Service {
             AdapterService service = getService();
             if (service == null) {
                 return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+            }
+            if (!callerIsSystem(TAG, "setPreferredAudioProfiles")) {
+                return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
             }
             return BluetoothStatusCodes.SUCCESS;
         }
