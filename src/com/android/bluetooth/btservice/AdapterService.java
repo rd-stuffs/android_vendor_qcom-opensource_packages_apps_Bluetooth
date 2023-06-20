@@ -134,6 +134,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -4115,6 +4116,21 @@ public class AdapterService extends Service {
             enforceBluetoothPrivilegedPermission(service);
 
             return service.mDatabaseManager.getCustomMeta(device, key);
+        }
+
+        @Override
+        public void isRequestAudioPolicyAsSinkSupported(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+
+        @Override
+        public void requestAudioPolicyAsSink(BluetoothDevice device, BluetoothSinkAudioPolicy policies,
+                AttributionSource source, SynchronousResultReceiver receiver) {
+        }
+
+        @Override
+        public void getRequestedAudioPolicyAsSink(BluetoothDevice device,
+                AttributionSource source, SynchronousResultReceiver receiver) {
         }
 
         @Override
