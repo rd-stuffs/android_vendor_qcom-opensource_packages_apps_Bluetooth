@@ -382,7 +382,7 @@ class PhonePolicy {
         filter.addAction(BluetoothCsipSetCoordinator.ACTION_CSIS_CONNECTION_STATE_CHANGED);
         filter.addAction(BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED);
         filter.addAction(BluetoothVolumeControl.ACTION_CONNECTION_STATE_CHANGED);
-        mAdapterService.registerReceiver(mReceiver, filter);
+        mAdapterService.registerReceiver(mReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     protected void cleanup() {
