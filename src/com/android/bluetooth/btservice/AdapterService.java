@@ -201,6 +201,7 @@ import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreServic
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.btservice.AdapterState;
+import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.groupclient.GroupService;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
@@ -5580,37 +5581,7 @@ public class AdapterService extends Service {
 
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
         Log.i(TAG, "disconnectAllEnabledProfiles(): isQtiLeAudioEnabled: " + isQtiLeAudioEnabled);
-        if(isQtiLeAudioEnabled) {
-            if (mMediaAudio != null &&
-                mMediaAudio.getConnectionState(device) ==
-                              BluetoothProfile.STATE_CONNECTED) {
-                Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MEDIA");
-                mMediaAudio.disconnect(device, true);
-                disconnectMedia = true;
-            }
-        } else if (mA2dpService != null && mA2dpService.getConnectionState(device)
-                == BluetoothProfile.STATE_CONNECTED) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp");
-            mA2dpService.disconnect(device);
-        }
 
-        if (!isQtiLeAudioEnabled &&
-            mLeAudioService != null && mLeAudioService.getConnectionState(device)
-                == BluetoothProfile.STATE_CONNECTED) {
-            Log.i(TAG, "connectAllEnabledProfiles: Disconnecting Le Audio");
-            mLeAudioService.disconnect(device);
-        }
-        if (!isQtiLeAudioEnabled &&
-            mHapClientService != null && mHapClientService.getConnectionState(device)
-                == BluetoothProfile.STATE_CONNECTED) {
-            Log.i(TAG, "connectAllEnabledProfiles: Disconnecting HAP");
-            mHapClientService.disconnect(device);
-        }
-        if (mA2dpSinkService != null && mA2dpSinkService.getConnectionState(device)
-                == BluetoothProfile.STATE_CONNECTED) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp Sink");
-            mA2dpSinkService.disconnect(device);
-        }
         if(isQtiLeAudioEnabled) {
             if (mCallAudio != null) {
                 Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting CALL," +
@@ -5628,6 +5599,45 @@ public class AdapterService extends Service {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting HFP");
             mHeadsetClientService.disconnect(device);
         }
+
+        //Adding A2DP Disconnect delay for blacklisted devices
+        if (isDelayA2dpDiscDevice(device) &&
+                (mHeadsetService.isInCall() || mHeadsetService.isRinging())) {
+          Log.e(TAG,"isDelayA2dpDiscDevice sleep 400ms");
+          SystemClock.sleep(400);
+        }
+
+        if(isQtiLeAudioEnabled) {
+            if (mMediaAudio != null &&
+                mMediaAudio.getConnectionState(device) ==
+                              BluetoothProfile.STATE_CONNECTED) {
+                Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MEDIA");
+                mMediaAudio.disconnect(device, true);
+                disconnectMedia = true;
+            }
+        } else if (mA2dpService != null && mA2dpService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp");
+            mA2dpService.disconnect(device);
+        }
+        if (!isQtiLeAudioEnabled &&
+            mLeAudioService != null && mLeAudioService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Le Audio");
+            mLeAudioService.disconnect(device);
+        }
+        if (!isQtiLeAudioEnabled &&
+            mHapClientService != null && mHapClientService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting HAP");
+            mHapClientService.disconnect(device);
+        }
+        if (mA2dpSinkService != null && mA2dpSinkService.getConnectionState(device)
+                == BluetoothProfile.STATE_CONNECTED) {
+            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp Sink");
+            mA2dpSinkService.disconnect(device);
+        }
+
         if (mMapClientService != null && mMapClientService.getConnectionState(device)
                 == BluetoothProfile.STATE_CONNECTED) {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MAP Client");
@@ -7541,5 +7551,15 @@ public class AdapterService extends Service {
             return 0;
         }
         return deviceProp.getBluetoothClass();
+    }
+
+    //Delaying A2DP Disconnect
+    boolean isDelayA2dpDiscDevice(BluetoothDevice device) {
+      if (device == null) return false;
+      boolean matched = InteropUtil.interopMatchAddrOrName(
+             InteropUtil.InteropFeature.INTEROP_A2DP_DELAY_DISCONNECT,
+             device.getAddress());
+      Log.d(TAG, "isDelayA2dpDiscDevice: matched: " + matched);
+      return matched;
     }
 }
