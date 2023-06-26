@@ -1176,7 +1176,7 @@ public class LeAudioService extends ProfileService {
 
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
-        if (((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
+        if (device == null || ((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
                                           ApmConst.AudioProfiles.HAP_LE) ||
             ((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                           ApmConst.AudioProfiles.BAP_CALL)) {
@@ -1184,7 +1184,7 @@ public class LeAudioService extends ProfileService {
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
         }
 
-        if (((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
+        if (device == null || ((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
                                          ApmConst.AudioProfiles.HAP_LE) ||
             ((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
                                          ApmConst.AudioProfiles.BAP_MEDIA)) {
@@ -1225,7 +1225,7 @@ public class LeAudioService extends ProfileService {
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
 
-        if (((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
+        if (device == null || ((ApmConst.AudioProfiles.HAP_LE & VoiceProfID) ==
                                           ApmConst.AudioProfiles.HAP_LE) ||
             ((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                           ApmConst.AudioProfiles.BAP_CALL)) {
@@ -1233,7 +1233,7 @@ public class LeAudioService extends ProfileService {
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
         }
 
-        if (((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
+        if (device == null || ((ApmConst.AudioProfiles.HAP_LE & MediaProfID) ==
                                                  ApmConst.AudioProfiles.HAP_LE) ||
             ((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
                                                  ApmConst.AudioProfiles.BAP_MEDIA)) {
