@@ -2801,6 +2801,14 @@ public class HeadsetService extends ProfileService {
                         }
                     }else if (!ApmConstIntf.getQtiLeAudioEnabled()) {
                         setActiveDevice(null);
+                    } else if (mVoiceRecognitionStarted) {
+                        /*
+                         * clear mVoiceRecognitionStarted for case that VR connects
+                         * to audio but fails as disconnected is just completed, thus
+                         * mVoiceRecognitionStarted should be set to false here
+                         */
+                        Log.d(TAG, "clear mVoiceRecognitionStarted as it fails to connect audio");
+                        mVoiceRecognitionStarted = false;
                     }
                 }
             }

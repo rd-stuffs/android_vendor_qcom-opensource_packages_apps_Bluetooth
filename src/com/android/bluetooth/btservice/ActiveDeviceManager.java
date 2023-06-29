@@ -341,9 +341,11 @@ public class ActiveDeviceManager {
                                     Log.w(TAG, "Set leAudio active device to null");
                                     setLeAudioActiveDevice(null);
                                 } else if(isMediaActive || isBroadcastActive) {
+                                    mLeAudioActiveDevice = null;
                                     activeDeviceManager.setActiveDevice(null,
                                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
                                 } else if(isCallActive) {
+                                    mLeAudioActiveDevice = null;
                                     activeDeviceManager.setActiveDevice(null,
                                                            ApmConstIntf.AudioFeatures.CALL_AUDIO);
                                 }
