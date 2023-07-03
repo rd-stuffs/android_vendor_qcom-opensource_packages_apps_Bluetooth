@@ -873,7 +873,7 @@ public class GattService extends ProfileService {
             if (service == null) {
                 return;
             }
-            service.clientConnect(clientIf, address, isDirect, transport, opportunistic, phy,
+            service.clientConnect(clientIf, address, addressType, isDirect, transport, opportunistic, phy,
                     attributionSource);
         }
 
@@ -3668,18 +3668,19 @@ public class GattService extends ProfileService {
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    void clientConnect(int clientIf, String address, boolean isDirect, int transport,
-            boolean opportunistic, int phy, AttributionSource attributionSource) {
+    void clientConnect(int clientIf, String address, int addressType, boolean isDirect,
+            int transport, boolean opportunistic, int phy, AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
                 this, attributionSource, "GattService clientConnect")) {
             return;
         }
 
         if (DBG) {
-            Log.d(TAG, "clientConnect() - address=" + address + ", isDirect=" + isDirect
-                    + ", opportunistic=" + opportunistic + ", phy=" + phy);
+            Log.d(TAG, "clientConnect() - address=" + address + ", addressType="
+                    + addressType + ", isDirect=" + isDirect + ", opportunistic="
+                    + opportunistic + ", phy=" + phy);
         }
-        gattClientConnectNative(clientIf, address, 0, isDirect, transport, opportunistic, phy);
+        gattClientConnectNative(clientIf, address, addressType, isDirect, transport, opportunistic, phy);
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
