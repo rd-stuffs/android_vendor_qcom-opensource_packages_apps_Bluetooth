@@ -741,6 +741,26 @@ public class ActiveDeviceManager {
                              Utils.getTempAllowlistBroadcastOptions());
         }
 
+        private void broadcastHearingAidActiveDeviceChange(BluetoothDevice device) {
+            if (DBG) {
+                Log.d(TAG, "broadcastHearingAidActiveDeviceChange(" + device + ")");
+            }
+
+            Intent intent = new Intent(BluetoothHearingAid.ACTION_ACTIVE_DEVICE_CHANGED);
+            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                           | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+
+            HearingAidService mHearingAidService = HearingAidService.getHearingAidService();
+            if (mHearingAidService == null) {
+                Log.e(TAG, "Hearing aid Service not ready");
+                return;
+            }
+            mHearingAidService.sendBroadcastAsUser(intent, UserHandle.ALL,
+                                              BLUETOOTH_CONNECT,
+                           Utils.getTempAllowlistBroadcastOptions());
+        }
+
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             if (DBG) {
@@ -762,6 +782,15 @@ public class ActiveDeviceManager {
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
                    hasAddedBleDevice = true;
                    bleDeviceInfo = deviceInfo;
+                }
+                if (deviceInfo.getType() == AudioDeviceInfo.TYPE_HEARING_AID) {
+                   HearingAidService hearingAidService = mFactory.getHearingAidService();
+                   BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                   BluetoothDevice device = adapter.getRemoteDevice(deviceInfo.getAddress());
+                   if (device.equals(hearingAidService.getActiveDevice())) {
+                      Log.d(TAG, " hearing aid device:" + device);
+                      broadcastHearingAidActiveDeviceChange(device);
+                   }
                 }
             }
 
@@ -997,7 +1026,7 @@ public class ActiveDeviceManager {
         if (leAudioService == null) {
             return false;
         }
-        if (!leAudioService.setActiveDevice(device)) {
+        if (!leAudioService.setActiveDeviceBlocking(device)) {
             return false;
         }
         mLeAudioActiveDevice = device;
@@ -1095,11 +1124,16 @@ public class ActiveDeviceManager {
                    " mMediaActiveProfile: " + mMediaActiveProfile +
                    ", mCallActiveProfile: " + mCallActiveProfile);
 
-        if (mMediaActiveProfile == ApmConstIntf.AudioProfiles.A2DP) {
+        if(ApmConstIntf.getQtiLeAudioEnabled() ||
+            ApmConstIntf.getAospLeaEnabled()) {
+            if (mMediaActiveProfile == ApmConstIntf.AudioProfiles.A2DP) {
+                setA2dpActiveDevice(null);
+            }
+            if (mCallActiveProfile == ApmConstIntf.AudioProfiles.HFP) {
+                setHfpActiveDevice(null);
+            }
+        } else {
             setA2dpActiveDevice(null);
-        }
-
-        if (mCallActiveProfile == ApmConstIntf.AudioProfiles.HFP) {
             setHfpActiveDevice(null);
         }
 

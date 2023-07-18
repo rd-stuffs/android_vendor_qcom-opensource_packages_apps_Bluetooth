@@ -89,6 +89,11 @@
  * Changes from Qualcomm Innovation Center are provided under the following license:
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  */
 
 package com.android.bluetooth.btservice;
@@ -108,6 +113,7 @@ import static com.android.bluetooth.Utils.enforceLocalMacAddressPermission;
 import static com.android.bluetooth.Utils.hasBluetoothPrivilegedPermission;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
+import static com.android.bluetooth.Utils.getAnonymizedUuid;
 
 import android.annotation.NonNull;
 import android.annotation.RequiresPermission;
@@ -1224,10 +1230,6 @@ public class AdapterService extends Service {
             mSdpManager = null;
         }
 
-        if (mBluetoothKeystoreService != null) {
-            mBluetoothKeystoreService.cleanup();
-        }
-
         if (mNativeAvailable) {
             debugLog("cleanup() - Cleaning up adapter native");
             cleanupNative();
@@ -1248,6 +1250,11 @@ public class AdapterService extends Service {
 
         if (mJniCallbacks != null) {
             mJniCallbacks.cleanup();
+        }
+
+        if (mBluetoothKeystoreService != null) {
+            debugLog("cleanup(): mBluetoothKeystoreService.cleanup()");
+            mBluetoothKeystoreService.cleanup();
         }
 
         if (mPhonePolicy != null) {
@@ -1959,7 +1966,8 @@ public class AdapterService extends Service {
         synchronized (mBluetoothServerSockets) {
             if (mBluetoothServerSockets.containsKey(uuid.getUuid())) {
                 Log.d(TAG, String.format(
-                        "Cannot start RFCOMM listener: UUID %s already in use.", uuid.getUuid()));
+                        "Cannot start RFCOMM listener: UUID %s already in use.",
+                        getAnonymizedUuid(uuid.toString())));
                 return BluetoothStatusCodes.RFCOMM_LISTENER_START_FAILED_UUID_IN_USE;
             }
         }
@@ -1981,7 +1989,8 @@ public class AdapterService extends Service {
 
             if (listenerData == null) {
                 Log.d(TAG, String.format(
-                        "Cannot stop RFCOMM listener: UUID %s is not registered.", uuid.getUuid()));
+                        "Cannot stop RFCOMM listener: UUID %s is not registered.",
+                        getAnonymizedUuid(uuid.toString())));
                 return BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_NO_MATCHING_SERVICE_RECORD;
             }
 
@@ -3773,7 +3782,7 @@ public class AdapterService extends Service {
             AdapterService service = getService();
             if (service == null || !Utils.checkConnectPermissionForDataDelivery(
                     service, attributionSource, "AdapterService getMaxConnectedAudioDevices")) {
-                return AdapterProperties.MAX_CONNECTED_AUDIO_DEVICES_LOWER_BOND;
+                return AdapterProperties.MAX_CONNECTED_AUDIO_DEVICES_LOWER_BOUND;
             }
             return service.getMaxConnectedAudioDevices();
         }
@@ -5013,7 +5022,8 @@ public class AdapterService extends Service {
 
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getBondState() != BluetoothDevice.BOND_NONE) {
-            return false;
+            // true for BONDING, false for BONDED
+            return deviceProp.getBondState() == BluetoothDevice.BOND_BONDING;
         }
 
         if (!isPackageNameAccurate(this, callingPackage, Binder.getCallingUid())) {
@@ -5295,7 +5305,7 @@ public class AdapterService extends Service {
 
         if (setA2dp && mA2dpService != null) {
             if(isQtiLeAudioEnabled || isAospLeaEnabled) {
-                activeDeviceManager.setActiveDevice(device,
+                activeDeviceManager.setActiveDeviceBlocking(device,
                         ApmConstIntf.AudioFeatures.MEDIA_AUDIO, true);
             } else {
                 Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
@@ -5347,7 +5357,9 @@ public class AdapterService extends Service {
                     Log.e(TAG, "getActiveDevices: HeadsetService is null");
                 } else {
                     BluetoothDevice defaultValue = null;
-                    if (ApmConstIntf.getQtiLeAudioEnabled()) {
+                    CallAudioIntf mCallAudio = CallAudioIntf.get();
+                    if (ApmConstIntf.getQtiLeAudioEnabled() ||
+                            (ApmConstIntf.getAospLeaEnabled() && mCallAudio.isVoipLeaWarEnabled())) {
                         Log.i(TAG, "getQtiLeAudioEnabled() is true, get HFP active dev from APM");
                         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                   ActiveDeviceManagerServiceIntf.get();
