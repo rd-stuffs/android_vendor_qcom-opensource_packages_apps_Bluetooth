@@ -300,7 +300,8 @@ public class ActiveDeviceManager {
                                 List<BluetoothDevice> leAudioConnectedDevice =
                                         leAudioService.getConnectedDevices();
                                 for (BluetoothDevice peerDevice : leAudioConnectedDevice) {
-                                    if (leAudioService.getGroupId(peerDevice) == groupId) {
+                                    if (!Objects.equals(peerDevice, device) &&
+                                        leAudioService.getGroupId(peerDevice) == groupId) {
                                         peerLeAudioDevice = peerDevice;
                                         break;
                                     }
