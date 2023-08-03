@@ -695,6 +695,7 @@ final class BondStateMachine extends StateMachine {
                 }
             }
         }
+        mAdapterService.onBondStateChanged(device, newState);
         mAdapterService.sendBroadcastAsUser(intent, UserHandle.ALL, BLUETOOTH_CONNECT,
                 Utils.getTempAllowlistBroadcastOptions());
         infoLog("Bond State Change Intent:" + device + " " + state2str(oldState) + " => "
