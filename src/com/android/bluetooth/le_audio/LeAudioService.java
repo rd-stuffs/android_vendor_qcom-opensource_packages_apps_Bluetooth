@@ -70,7 +70,9 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.lebroadcast.LeBroadcastServIntf;
+import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
@@ -162,6 +164,12 @@ public class LeAudioService extends ProfileService {
     //LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface = null;
     @VisibleForTesting
     AudioManager mAudioManager;
+
+    @VisibleForTesting
+    VolumeControlService mVolumeControlService;
+
+    @VisibleForTesting
+    CsipSetCoordinatorService mCsipSetCoordinatorService;
 
     @VisibleForTesting
     RemoteCallbackList<IBluetoothLeBroadcastCallback> mBroadcastCallbacks;
@@ -395,6 +403,8 @@ public class LeAudioService extends ProfileService {
         mAudioManager = null;
         mAdapterService = null;
         mAudioManager = null;
+        mVolumeControlService = null;
+        mCsipSetCoordinatorService = null;
 
         return true;
     }
@@ -2010,7 +2020,33 @@ public class LeAudioService extends ProfileService {
         } else if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
+        setLeAudioGattClientProfilesPolicy(device, connectionPolicy);
         return true;
+    }
+
+    /**
+     * Sets the connection policy for LE Audio GATT client profiles
+     * @param device is the remote device
+     * @param connectionPolicy is the connection policy we wish to set
+     */
+    private void setLeAudioGattClientProfilesPolicy(BluetoothDevice device, int connectionPolicy) {
+        if (DBG) {
+            Log.d(TAG, "setLeAudioGattClientProfilesPolicy for device " + device + " to policy="
+                    + connectionPolicy);
+        }
+        if (mVolumeControlService == null) {
+            mVolumeControlService = mServiceFactory.getVolumeControlService();
+        }
+        if (mVolumeControlService != null) {
+            mVolumeControlService.setConnectionPolicy(device, connectionPolicy);
+        }
+
+        if (mCsipSetCoordinatorService == null) {
+            mCsipSetCoordinatorService = mServiceFactory.getCsipSetCoordinatorService();
+        }
+        if (mCsipSetCoordinatorService != null) {
+            mCsipSetCoordinatorService.setConnectionPolicy(device, connectionPolicy);
+        }
     }
 
     /**
