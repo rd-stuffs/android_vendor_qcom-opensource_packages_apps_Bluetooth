@@ -71,6 +71,7 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.lebroadcast.BassClientService;
 import com.android.bluetooth.lebroadcast.LeBroadcastServIntf;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
@@ -170,6 +171,9 @@ public class LeAudioService extends ProfileService {
 
     @VisibleForTesting
     CsipSetCoordinatorService mCsipSetCoordinatorService;
+
+    @VisibleForTesting
+    BassClientService mBassClientService;
 
     @VisibleForTesting
     RemoteCallbackList<IBluetoothLeBroadcastCallback> mBroadcastCallbacks;
@@ -405,6 +409,7 @@ public class LeAudioService extends ProfileService {
         mAudioManager = null;
         mVolumeControlService = null;
         mCsipSetCoordinatorService = null;
+        mBassClientService = null;
 
         return true;
     }
@@ -2046,6 +2051,13 @@ public class LeAudioService extends ProfileService {
         }
         if (mCsipSetCoordinatorService != null) {
             mCsipSetCoordinatorService.setConnectionPolicy(device, connectionPolicy);
+        }
+
+        if (mBassClientService == null) {
+            mBassClientService = mServiceFactory.getBassClientService();
+        }
+        if (mBassClientService != null) {
+            mBassClientService.setConnectionPolicy(device, connectionPolicy);
         }
     }
 
