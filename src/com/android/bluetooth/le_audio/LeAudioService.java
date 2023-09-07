@@ -1200,19 +1200,32 @@ public class LeAudioService extends ProfileService {
                    ", VoiceProfID:" + VoiceProfID);
 
         mPreviousActiveDevice = device;
+        CallAudioIntf mCallAudio = CallAudioIntf.get();
+        boolean isInCall =
+                mCallAudio != null && mCallAudio.isVoiceOrCallActive();
 
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
         if (((ApmConst.AudioProfiles.BAP_CALL & VoiceProfID) ==
                                           ApmConst.AudioProfiles.BAP_CALL)) {
-            activeDeviceManager.setActiveDevice(device,
-                                            ApmConstIntf.AudioFeatures.CALL_AUDIO);
+            if (isInCall) {
+                activeDeviceManager.setActiveDeviceBlocking(device,
+                                                ApmConstIntf.AudioFeatures.CALL_AUDIO);
+            } else {
+                activeDeviceManager.setActiveDevice(device,
+                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
+            }
         }
 
         if (((ApmConst.AudioProfiles.BAP_MEDIA & MediaProfID) ==
                                          ApmConst.AudioProfiles.BAP_MEDIA)) {
-            activeDeviceManager.setActiveDevice(device,
-                                            ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+            if (isInCall) {
+                activeDeviceManager.setActiveDeviceBlocking(device,
+                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+            } else {
+                activeDeviceManager.setActiveDevice(device,
+                                          ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+            }
         }
         return true;
     }
