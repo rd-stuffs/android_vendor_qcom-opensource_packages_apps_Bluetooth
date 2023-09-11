@@ -1919,6 +1919,13 @@ public class AdapterService extends Service {
         return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
     }
 
+    public int isHapClientSupported() {
+        if (BluetoothProperties.isProfileHapClientEnabled().orElse(false)) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    }
+
     public int isLeAudioBroadcastSourcePropertySet() {
         if (BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false)) {
             Log.e(TAG, "isLeAudioBroadcastSourceSupported: supported");
