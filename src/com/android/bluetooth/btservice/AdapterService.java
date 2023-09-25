@@ -4611,15 +4611,13 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                             ActiveDeviceManagerServiceIntf.get();
-            Bundle mMedia = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-            Bundle mCall = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.CALL_AUDIO);
-            int outputOnlyProfile = mMedia.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
-            int duplexProfile = mCall.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.CALL_AUDIO));
-            return null;
+            Bundle mPreferredAudioProfiles = activeDeviceManager.getpreferredProfile(
+                                                ApmConstIntf.AudioFeatures.MAX_AUDIO_FEATURES );
+            Log.e(TAG, "getPreferredAudioProfiles: OUTPUT_ONLY: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY));
+            Log.e(TAG, "getPreferredAudioProfiles: AUDIO_MODE_DUPLEX: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_DUPLEX));
+            return mPreferredAudioProfiles;
         }
 
         @Override
