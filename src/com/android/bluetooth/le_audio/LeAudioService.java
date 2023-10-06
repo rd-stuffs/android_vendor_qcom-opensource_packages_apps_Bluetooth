@@ -80,7 +80,6 @@ import com.android.modules.utils.SynchronousResultReceiver;
 
 import com.android.bluetooth.apm.ActiveDeviceManagerServiceIntf;
 import com.android.bluetooth.apm.ApmConstIntf;
-import com.android.bluetooth.apm.ApmConst;
 import com.android.bluetooth.apm.MediaAudioIntf;
 import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.apm.VolumeManagerIntf;
@@ -1213,9 +1212,6 @@ public class LeAudioService extends ProfileService {
                 activeDevices.add(1, mActiveAudioInDevice);
         }*/
 
-        activeDevices.add(0, null);
-        activeDevices.add(1, null);
-
         ActiveDeviceManagerServiceIntf activeDeviceManager =
                                             ActiveDeviceManagerServiceIntf.get();
         BluetoothDevice outDevice = activeDeviceManager.getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
@@ -1233,11 +1229,6 @@ public class LeAudioService extends ProfileService {
         mActiveAudioInDevice =
             activeDeviceManager.getActiveAbsoluteDevice(ApmConstIntf.AudioFeatures.CALL_AUDIO);
 */
-        int ActiveAudioMediaProfile =
-            activeDeviceManager.getActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-        int ActiveAudioCallProfile =
-            activeDeviceManager.getActiveProfile(ApmConstIntf.AudioFeatures.CALL_AUDIO);
-
         /*if (ActiveAudioMediaProfile == ApmConst.AudioProfiles.TMAP_MEDIA ||
             ActiveAudioMediaProfile == ApmConst.AudioProfiles.BAP_MEDIA ||
             ActiveAudioMediaProfile == ApmConst.AudioProfiles.BAP_GCP ||
