@@ -4609,6 +4609,16 @@ public class AdapterService extends Service {
 
         private Bundle getPreferredAudioProfiles(BluetoothDevice device,
                 AttributionSource source) {
+            ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                                            ActiveDeviceManagerServiceIntf.get();
+            Bundle mMedia = activeDeviceManager.getpreferredProfile(
+                                                ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
+            Bundle mCall = activeDeviceManager.getpreferredProfile(
+                                                ApmConstIntf.AudioFeatures.CALL_AUDIO);
+            int outputOnlyProfile = mMedia.getInt(Integer.toString(
+                                                        ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
+            int duplexProfile = mCall.getInt(Integer.toString(
+                                                        ApmConstIntf.AudioFeatures.CALL_AUDIO));
             return null;
         }
 
@@ -7551,9 +7561,14 @@ public class AdapterService extends Service {
             if (DBG) Log.d(TAG, "getIdentityAddress null retruning " + address);
             return address;
         }
-        if (DBG) Log.d(TAG, "getIdentityAddress " + address + " - "
-                + identityDevice.getAddress());
-        return identityDevice.getAddress();
+        String maddress = identityDevice.getAddress();
+        if (Utils.isValidBtAddress(maddress)) {
+            if (DBG) Log.d(TAG, "getIdentityAddress " + address + " - "
+                + maddress);
+            return maddress;
+        }
+
+        return address;
     }
 
     public boolean isAdvAudioDevice(BluetoothDevice device) {
