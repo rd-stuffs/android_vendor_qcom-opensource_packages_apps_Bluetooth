@@ -129,7 +129,6 @@ public class A2dpService extends ProfileService {
     private boolean mIsTwsPlusMonoSupported = false;
     private boolean mShoActive = false;
     private boolean mGamingEnabled = false;
-    private boolean mAlsDisabled;
     private String  mTwsPlusChannelMode = "dual-mono";
     private BluetoothDevice mDummyDevice = null;
     private static final int max_tws_connection = 2;
@@ -255,8 +254,6 @@ public class A2dpService extends ProfileService {
                 if (!TwsPlusChannelMode.isEmpty() && "mono".equals(TwsPlusChannelMode)) {
                     mTwsPlusChannelMode = "mono";
                 }
-                mAlsDisabled = SystemProperties.getBoolean
-                                                ("persist.vendor.service.bt.als_disabled", false);
                 Log.d(TAG, "Default TwsPlus ChannelMode: " + mTwsPlusChannelMode);
             }
 
@@ -1246,7 +1243,6 @@ public class A2dpService extends ProfileService {
             mGamingEnabled = true;
             mA2dpCodecConfig.setCodecConfigPreference(device, codecStatus, a2dpGamingConfig);
         } else {
-            Log.d(TAG,"CodecType is not AptX AD");
             return;
         }
     }
@@ -1260,14 +1256,12 @@ public class A2dpService extends ProfileService {
         BluetoothDevice device = getActiveDevice();
         BluetoothCodecStatus codecStatus = getCodecStatus(device);
         if (codecStatus == null) {
-            Log.v(TAG,"disableGamingModeinA2DP: CodecStatus is empty, resetting gaming mode");
-            mGamingEnabled = false;
+            Log.v(TAG,"disableGamingModeinA2DP: CodecStatus is empty");
             return;
         }
         BluetoothCodecConfig codecConfig = codecStatus.getCodecConfig();
         if (codecConfig == null) {
-            Log.v(TAG,"disableGamingModeinA2DP: CodecConfig is empty, resetting gaming mode");
-            mGamingEnabled = false;
+            Log.v(TAG,"disableGamingModeinA2DP: CodecConfig is empty");
             return;
         }
         BluetoothCodecConfig a2dpGamingConfig =
@@ -1678,15 +1672,12 @@ public class A2dpService extends ProfileService {
 
         long cs4 = codecConfig.getCodecSpecific4();
         GattService mGattService = GattService.getGattService();
-
-        if (mAlsDisabled) {
-            if (cs4 > 0 && codecConfig.getCodecType() ==
-                                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_ADAPTIVE) {
-                Log.e(TAG, "setCodecConfigPreference: ALS trigger is ignored");
-                return;
-            }
+        /*
+        if (cs4 > 0) {
+            Log.e(TAG, "setCodecConfigPreference: QTI check");
+            return;
         }
-
+        */
         if(cs4 > 0 && mGattService != null) {
             switch((int)(cs4 & APTX_MODE_MASK)) {
                 case APTX_HQ:
@@ -1730,15 +1721,12 @@ public class A2dpService extends ProfileService {
                     + Objects.toString(codecConfig));
         }
         long cs4 = codecConfig.getCodecSpecific4();
-
-        if (mAlsDisabled) {
-            if (cs4 > 0 && codecConfig.getCodecType() ==
-                                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_ADAPTIVE) {
-                Log.e(TAG, "setCodecConfigPreferenceA2dp: ALS trigger is ignored");
-                return;
-            }
+        /*
+        if (cs4 > 0) {
+            Log.e(TAG, "setCodecConfigPreference: QTI check..");
+            return;
         }
-
+        */
         GattService mGattService = GattService.getGattService();
         if(cs4 > 0 && mGattService != null) {
             switch((int)(cs4 & APTX_MODE_MASK)) {
