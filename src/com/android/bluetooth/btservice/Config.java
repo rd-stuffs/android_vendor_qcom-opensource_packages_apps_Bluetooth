@@ -89,7 +89,6 @@ import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.ba.BATService;
 import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.vc.VolumeControlService;
 
 import java.util.ArrayList;
@@ -232,9 +231,6 @@ public class Config {
                             R.bool.profile_supported_le_audio,
                             (1L << BluetoothProfile.LE_AUDIO |
                              1L << BluetoothProfile.LE_AUDIO_BROADCAST)),
-                    new ProfileConfig(HapClientService.class,
-                            R.bool.profile_supported_hap_client,
-                            (1L << BluetoothProfile.HAP_CLIENT)),
                     new ProfileConfig(VolumeControlService.class,
                             R.bool.profile_supported_volume_control,
                             (1L << BluetoothProfile.VOLUME_CONTROL))
