@@ -631,7 +631,6 @@ final class A2dpStateMachine extends StateMachine {
                             mA2dpService.setAvrcpAudioState(BluetoothA2dp.STATE_NOT_PLAYING, mDevice);
                             broadcastAudioState(BluetoothA2dp.STATE_NOT_PLAYING,
                                                 BluetoothA2dp.STATE_PLAYING);
-                            mA2dpService.setGamingMode(mDevice, false);
                         }
                     }
                     break;
@@ -817,7 +816,10 @@ final class A2dpStateMachine extends StateMachine {
         log("A2DP Playing state : device: " + mDevice + " State:" + audioStateToString(prevState)
                 + "->" + audioStateToString(newState));
 
-        mA2dpService.updateStreamState(mDevice, newState);
+        if(mA2dpService.isQtiLeAudioEnabled()) {
+            mA2dpService.updateStreamState(mDevice, newState);
+            return;
+        }
 
         BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_A2DP_PLAYBACK_STATE_CHANGED, newState);
         Intent intent = new Intent(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED);
