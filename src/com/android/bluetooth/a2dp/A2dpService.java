@@ -1034,8 +1034,6 @@ public class A2dpService extends ProfileService {
 
     public int setActiveDevice(BluetoothDevice device, boolean playReq) {
         HeadsetService headsetService = HeadsetService.getHeadsetService();
-        boolean isInCall = headsetService != null && headsetService.isScoOrCallActive();
-        boolean isFMActive = mAudioManager.getParameters("fm_status").contains("1");
 
         Log.w(TAG, "setActiveDevice(" + device +")");
         synchronized (mBtA2dpLock) {
@@ -1046,8 +1044,12 @@ public class A2dpService extends ProfileService {
         }
 
         if (setActiveDeviceA2dp(device)) {
-            if(playReq && !(isInCall || isFMActive)) {
-                mShoActive = true;
+            if(playReq) {
+                boolean isInCall = headsetService != null && headsetService.isScoOrCallActive();
+                boolean isFMActive = mAudioManager.getParameters("fm_status").contains("1");
+                if (!(isInCall || isFMActive)) {
+                    mShoActive = true;
+                }
             }
 
             if(mShoActive) {
