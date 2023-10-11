@@ -110,6 +110,9 @@ public class LeAudioService extends ProfileService {
     private static final boolean DBG = true;
     private static final String TAG = "LeAudioService";
 
+    public static final ParcelUuid CAP_UUID =
+            ParcelUuid.fromString("00001853-0000-1000-8000-00805F9B34FB");
+
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
@@ -1747,7 +1750,11 @@ public class LeAudioService extends ProfileService {
         if (toState == BluetoothProfile.STATE_CONNECTING) {
             Log.d(TAG, "connectionStateChanged as connecting for device " + device);
             CsipWrapper csipWrapper = CsipWrapper.getInstance();
-            int groupId = csipWrapper.getRemoteDeviceGroupId(device, null);
+            ParcelUuid uuid = null;
+            if (csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
+                uuid = CAP_UUID;
+            }
+            int groupId = csipWrapper.getRemoteDeviceGroupId(device, uuid);
             if (groupId != LE_AUDIO_GROUP_ID_INVALID) {
                 if (groupId == INVALID_SET_ID) {
                     groupId = getNonCsipGroupId();
@@ -2102,7 +2109,11 @@ public class LeAudioService extends ProfileService {
             return setId;
         }
         CsipWrapper csipWrapper = CsipWrapper.getInstance();
-        int setId = csipWrapper.getRemoteDeviceGroupId(device, null);
+        ParcelUuid uuid = null;
+        if (csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
+            uuid = CAP_UUID;
+        }
+        int setId = csipWrapper.getRemoteDeviceGroupId(device, uuid);
         if (setId == INVALID_SET_ID)
             setId = mDeviceGroupIdMap.getOrDefault(device, INVALID_SET_ID);
         Log.d(TAG, "getGroupId device: " + device + " groupId: " + setId);
