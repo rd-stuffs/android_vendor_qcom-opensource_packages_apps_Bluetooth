@@ -1082,7 +1082,8 @@ public class ActiveDeviceManager {
         CsipWrapper csipWrapper = CsipWrapper.getInstance();
         if (device != null) {
             ParcelUuid uuid = null;
-            if (csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
+            if (csipWrapper != null &&
+                csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
                 uuid = CAP_UUID;
             }
             groupId = csipWrapper.getRemoteDeviceGroupId(device, uuid);
