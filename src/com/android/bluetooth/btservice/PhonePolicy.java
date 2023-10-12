@@ -1019,7 +1019,8 @@ class PhonePolicy {
         List<BluetoothDevice> deviceSet = null;
         CsipWrapper csipWrapper = CsipWrapper.getInstance();
         ParcelUuid uuid = null;
-        if (csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
+        if (csipWrapper != null &&
+            csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
             uuid = CAP_UUID;
         }
         int setId = csipWrapper.getRemoteDeviceGroupId(device, uuid);

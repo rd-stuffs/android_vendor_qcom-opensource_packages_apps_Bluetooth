@@ -7522,8 +7522,10 @@ public class AdapterService extends Service {
 
         int groupId = INVALID_GROUP_ID;
         ParcelUuid uuid = null;
-        if (mGroupService.checkIncludingServiceForDevice(device, CAP_UUID) &&
-            mCsipSetCoordinatorService.checkIncludingServiceForDevice(device, CAP_UUID)) {
+        if ((mGroupService != null && mGroupService
+            .checkIncludingServiceForDevice(device, CAP_UUID)) ||
+            (mCsipSetCoordinatorService!= null && mCsipSetCoordinatorService
+            .checkIncludingServiceForDevice(device, CAP_UUID))) {
             uuid = CAP_UUID;
         }
 
