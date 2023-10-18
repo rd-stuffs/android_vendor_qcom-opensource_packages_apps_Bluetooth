@@ -195,6 +195,7 @@ public class HeadsetService extends ProfileService {
     private static final int AUDIO_CONNECTION_DELAY_DEFAULT = 100;
     private static final String ACTION_BATTERY_STATE_CHANGED = "android.bluetooth.action.BATTERY_STATE_CHANGED";
     private static final String EXTRA_BATTERY_STATE = "android.bluetooth.extra.battery.STATE";
+    private static final String ACTION_ROAMING_STATE_CHANGED = "android.bluetooth.action.ROAMING_STATE_CHANGED";
 
     @Override
     public IProfileServiceBinder initBinder() {
@@ -282,6 +283,7 @@ public class HeadsetService extends ProfileService {
         filter.addAction(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED);
         filter.addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED);
         filter.addAction(ACTION_BATTERY_STATE_CHANGED);
+        filter.addAction(ACTION_ROAMING_STATE_CHANGED);
         registerReceiver(mHeadsetReceiver, filter, Context.RECEIVER_EXPORTED);
         // Step 7: Mark service as started
 
@@ -556,6 +558,12 @@ public class HeadsetService extends ProfileService {
                     }
                     int cindBatteryLevel = Math.round(batteryLevel * 5 / ((float) scale));
                     mSystemInterface.getHeadsetPhoneState().setCindBatteryCharge(cindBatteryLevel);
+                    break;
+                }
+                case ACTION_ROAMING_STATE_CHANGED: {
+                    logD(" Received ACtion_Roaming_STATE_CHANGED ");
+                    doForEachConnectedStateMachine(stateMachine -> stateMachine.sendMessage(
+                            HeadsetStateMachine.UPDATE_ROAMING_STATE, intent));
                     break;
                 }
                 case AudioManager.VOLUME_CHANGED_ACTION: {
