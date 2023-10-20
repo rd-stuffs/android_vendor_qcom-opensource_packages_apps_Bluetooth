@@ -1964,6 +1964,11 @@ public class LeAudioService extends ProfileService {
             Log.d(TAG, "device is null");
             return LE_AUDIO_GROUP_ID_INVALID;
         }
+        if (device.getAddress().contains("9E:8B:00:00:00")) {
+            byte[] addrByte = Utils.getByteAddress(device);
+            int setId = addrByte[5];
+            return setId;
+        }
         CsipWrapper csipWrapper = CsipWrapper.getInstance();
         int setId = csipWrapper.getRemoteDeviceGroupId(device, null);
         if (setId == INVALID_SET_ID)
