@@ -2470,10 +2470,19 @@ public class HeadsetService extends ProfileService {
                             return false;
                         }
                     }
-                } else if (!stopScoUsingVirtualVoiceCall()) {
-                    Log.e(TAG, "dialOutgoingCall failed to stop current virtual call");
-                    return false;
-                }
+                } else {
+                    if (!stopScoUsingVirtualVoiceCall()) {
+                        Log.e(TAG, "dialOutgoingCall failed to stop current virtual call");
+                        return false;
+                    }
+                    HeadsetStateMachine stateMachine = mStateMachines.get(mActiveDevice);
+                    if (stateMachine != null &&
+                        stateMachine.isDeviceBlacklistedForDelayingCLCCRespAfterVOIPCall()) {
+                        // send delayed message for active device if Blacklisted
+                        stateMachine.sendMessageDelayed(
+                        HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 1000); 
+                    }
+               }
             }
             if (fromDevice == null) {
                 Log.e(TAG, "dialOutgoingCall, fromDevice is null");
