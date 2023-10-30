@@ -37,6 +37,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.os.UserHandle;
 import android.util.Log;
 import com.android.bluetooth.a2dp.A2dpService;
@@ -118,6 +119,9 @@ import java.util.Objects;
 public class ActiveDeviceManager {
     private static final boolean DBG = true;
     private static final String TAG = "BluetoothActiveDeviceManager";
+
+    public static final ParcelUuid CAP_UUID =
+            ParcelUuid.fromString("00001853-0000-1000-8000-00805F9B34FB");
 
     // Message types for the handler
     private static final int MESSAGE_ADAPTER_ACTION_STATE_CHANGED = 1;
@@ -1077,7 +1081,12 @@ public class ActiveDeviceManager {
         int groupId = -1;
         CsipWrapper csipWrapper = CsipWrapper.getInstance();
         if (device != null) {
-            groupId = csipWrapper.getRemoteDeviceGroupId(device, null);
+            ParcelUuid uuid = null;
+            if (csipWrapper != null &&
+                csipWrapper.checkIncludingServiceForDeviceGroup(device, CAP_UUID)) {
+                uuid = CAP_UUID;
+            }
+            groupId = csipWrapper.getRemoteDeviceGroupId(device, uuid);
         } else {
             groupId = INVALID_SET_ID;
         }

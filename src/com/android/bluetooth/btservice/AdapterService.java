@@ -293,6 +293,9 @@ public class AdapterService extends Service {
     private final ArrayList<ProfileService> mRegisteredProfiles = new ArrayList<>();
     private final ArrayList<ProfileService> mRunningProfiles = new ArrayList<>();
 
+    public static final ParcelUuid CAP_UUID =
+                ParcelUuid.fromString("00001853-0000-1000-8000-00805F9B34FB");
+
     public static final String ACTION_LOAD_ADAPTER_PROPERTIES =
             "com.android.bluetooth.btservice.action.LOAD_ADAPTER_PROPERTIES";
     public static final String ACTION_SERVICE_STATE_CHANGED =
@@ -4611,15 +4614,13 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                             ActiveDeviceManagerServiceIntf.get();
-            Bundle mMedia = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-            Bundle mCall = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.CALL_AUDIO);
-            int outputOnlyProfile = mMedia.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
-            int duplexProfile = mCall.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.CALL_AUDIO));
-            return null;
+            Bundle mPreferredAudioProfiles = activeDeviceManager.getpreferredProfile(
+                                                ApmConstIntf.AudioFeatures.MAX_AUDIO_FEATURES );
+            Log.e(TAG, "getPreferredAudioProfiles: OUTPUT_ONLY: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY));
+            Log.e(TAG, "getPreferredAudioProfiles: AUDIO_MODE_DUPLEX: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_DUPLEX));
+            return mPreferredAudioProfiles;
         }
 
         @Override
@@ -7518,10 +7519,18 @@ public class AdapterService extends Service {
         }
 
         int groupId = INVALID_GROUP_ID;
+        ParcelUuid uuid = null;
+        if ((mGroupService != null && mGroupService
+            .checkIncludingServiceForDevice(device, CAP_UUID)) ||
+            (mCsipSetCoordinatorService!= null && mCsipSetCoordinatorService
+            .checkIncludingServiceForDevice(device, CAP_UUID))) {
+            uuid = CAP_UUID;
+        }
+
         if (mGroupService != null) {
-            groupId = mGroupService.getRemoteDeviceGroupId(device, null);
+            groupId = mGroupService.getRemoteDeviceGroupId(device, uuid);
         } else if (mCsipSetCoordinatorService != null) {
-            groupId = mCsipSetCoordinatorService.getRemoteDeviceGroupId(device, null);
+            groupId = mCsipSetCoordinatorService.getRemoteDeviceGroupId(device, uuid);
         }
 
         debugLog("getGroupId " + groupId);
