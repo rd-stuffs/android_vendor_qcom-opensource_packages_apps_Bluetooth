@@ -274,6 +274,10 @@ public class AdapterService extends Service {
     private static final int MIN_OFFLOADED_FILTERS = 10;
     private static final int MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024;
     private static final Duration PENDING_SOCKET_HANDOFF_TIMEOUT = Duration.ofMinutes(1);
+    private static final int BT_TRANSPORT_BR_EDR = 1;
+    private static final int BT_TRANSPORT_LE = 2;
+    private static final int HCI_BTLE_AFH_CHANNEL_MAP_LEN = 5;
+    private static final int HCI_AFH_CHANNEL_MAP_LEN = 10;
 
     private final Object mEnergyInfoLock = new Object();
     private int mStackReportedState;
@@ -286,6 +290,9 @@ public class AdapterService extends Service {
 
     private final ArrayList<ProfileService> mRegisteredProfiles = new ArrayList<>();
     private final ArrayList<ProfileService> mRunningProfiles = new ArrayList<>();
+
+    public static final ParcelUuid CAP_UUID =
+                ParcelUuid.fromString("00001853-0000-1000-8000-00805F9B34FB");
 
     public static final String ACTION_LOAD_ADAPTER_PROPERTIES =
             "com.android.bluetooth.btservice.action.LOAD_ADAPTER_PROPERTIES";
@@ -2516,6 +2523,7 @@ public class AdapterService extends Service {
                 receiver.propagateException(e);
             }
         }
+
         @VisibleForTesting
         int getScanMode(AttributionSource attributionSource) {
             AdapterService service = getService();
@@ -2526,6 +2534,36 @@ public class AdapterService extends Service {
             }
 
             return service.mAdapterProperties.getScanMode();
+        }
+
+        @Override
+        public boolean setAfhChannelMap(int transport, int len, byte [] afhMap,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source,
+                        "setAfhChannelMap")) {
+                return false;
+            }
+            if ((transport == BT_TRANSPORT_BR_EDR && len == HCI_AFH_CHANNEL_MAP_LEN)
+                ||(transport == BT_TRANSPORT_LE && len == HCI_BTLE_AFH_CHANNEL_MAP_LEN)) {
+                return service.setAfhChannelMap(transport, len, afhMap);
+            } else {
+                Log.d(TAG, "Invalid Transport or length");
+                return false;
+            }
+        }
+
+        @Override
+        public boolean getAfhChannelMap(BluetoothDevice device, int transport,
+                AttributionSource source) {
+            AdapterService service = getService();
+            if (service == null
+                    || !Utils.checkConnectPermissionForDataDelivery(service, source,
+                        "getAfhChannelMap")) {
+                return false;
+            }
+            return service.getAfhChannelMap(device, transport);
         }
 
         @Override
@@ -3779,6 +3817,27 @@ public class AdapterService extends Service {
         }
 
         @Override
+        public int setLeHighPriorityMode(BluetoothDevice device, boolean enable,
+                                         AttributionSource attributionSource) {
+            AdapterService service = getService();
+            if (service == null || !Utils.checkConnectPermissionForDataDelivery(
+                    service, attributionSource, "setLeHighPriorityMode")) {
+                return BluetoothDevice.LE_HIGH_PRIOTY_MODE_FAIL;
+            }
+            return service.setLeHighPriorityMode(device, enable);
+        }
+
+        @Override
+        public boolean isLeHighPriorityModeSet(BluetoothDevice device,
+                AttributionSource attributionSource) {
+            AdapterService service = getService();
+            if (service == null || !Utils.checkConnectPermissionForDataDelivery(
+                    service, attributionSource, "isLeHighPriorityModeSet")) {
+                return false;
+            }
+            return service.isLeHighPriorityModeSet(device);
+       }
+        @Override
         public void getMaxConnectedAudioDevices(AttributionSource source,
                 SynchronousResultReceiver receiver) {
             try {
@@ -4587,15 +4646,13 @@ public class AdapterService extends Service {
                 AttributionSource source) {
             ActiveDeviceManagerServiceIntf activeDeviceManager =
                                                             ActiveDeviceManagerServiceIntf.get();
-            Bundle mMedia = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-            Bundle mCall = activeDeviceManager.getpreferredProfile(
-                                                ApmConstIntf.AudioFeatures.CALL_AUDIO);
-            int outputOnlyProfile = mMedia.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.MEDIA_AUDIO));
-            int duplexProfile = mCall.getInt(Integer.toString(
-                                                        ApmConstIntf.AudioFeatures.CALL_AUDIO));
-            return null;
+            Bundle mPreferredAudioProfiles = activeDeviceManager.getpreferredProfile(
+                                                ApmConstIntf.AudioFeatures.MAX_AUDIO_FEATURES );
+            Log.e(TAG, "getPreferredAudioProfiles: OUTPUT_ONLY: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY));
+            Log.e(TAG, "getPreferredAudioProfiles: AUDIO_MODE_DUPLEX: " +
+                        mPreferredAudioProfiles.getInt(BluetoothAdapter.AUDIO_MODE_DUPLEX));
+            return mPreferredAudioProfiles;
         }
 
         @Override
@@ -5022,6 +5079,24 @@ public class AdapterService extends Service {
         }
         byte[] address = deviceProp.getTwsPlusPeerAddress();
         return Utils.getAddressStringFromByte(address);
+    }
+
+    public int setLeHighPriorityMode(BluetoothDevice device, boolean enable) {
+        return mVendor.setLeHighPriorityMode(device.toString(), enable);
+    }
+
+    public boolean isLeHighPriorityModeSet(BluetoothDevice device) {
+        return mVendor.isLeHighPriorityModeSet(device.toString());
+    }
+
+    public boolean setAfhChannelMap(int transport, int len, byte [] afhMap) {
+        Log.d(TAG,"setAfhChannelMap for transport : "+transport);
+        return mVendor.setAfhChannelMap(transport, len, afhMap);
+    }
+
+    public boolean getAfhChannelMap(BluetoothDevice device, int transport) {
+        Log.d(TAG,"getAfhChannelMap for transport : "+transport);
+        return mVendor.getAfhChannelMap(device.toString(), transport);
     }
 
     public BluetoothDevice getTwsPlusPeerDevice(BluetoothDevice device) {
@@ -7462,10 +7537,18 @@ public class AdapterService extends Service {
         }
 
         int groupId = INVALID_GROUP_ID;
+        ParcelUuid uuid = null;
+        if ((mGroupService != null && mGroupService
+            .checkIncludingServiceForDevice(device, CAP_UUID)) ||
+            (mCsipSetCoordinatorService!= null && mCsipSetCoordinatorService
+            .checkIncludingServiceForDevice(device, CAP_UUID))) {
+            uuid = CAP_UUID;
+        }
+
         if (mGroupService != null) {
-            groupId = mGroupService.getRemoteDeviceGroupId(device, null);
+            groupId = mGroupService.getRemoteDeviceGroupId(device, uuid);
         } else if (mCsipSetCoordinatorService != null) {
-            groupId = mCsipSetCoordinatorService.getRemoteDeviceGroupId(device, null);
+            groupId = mCsipSetCoordinatorService.getRemoteDeviceGroupId(device, uuid);
         }
 
         debugLog("getGroupId " + groupId);
