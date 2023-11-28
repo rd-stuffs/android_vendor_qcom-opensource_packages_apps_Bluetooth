@@ -52,6 +52,8 @@
 
 package com.android.bluetooth.btservice;
 
+import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
+
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothA2dpSink;
@@ -729,10 +731,25 @@ class PhonePolicy {
             }
         }
         if (device != null) {
-           if (profileId == BluetoothProfile.A2DP) {
-                Log.w(TAG, "processActiveDeviceChanged: received active device changed for A2dp " +
-                           " reset active status for LEA ");
-               mDatabaseManager.resetActiveDevice(BluetoothProfile.LE_AUDIO);
+            Boolean isDeviceLE = false;
+            Boolean isDeviceA2DP = false;
+            if (mDatabaseManager.getMostRecentlyConnectedLeAudioDevice() != null) {
+                isDeviceLE =
+                (device.getAddress().contains(mDatabaseManager.
+                        getMostRecentlyConnectedLeAudioDevice().toString())) ? true : false;
+            }
+            if (mDatabaseManager.getMostRecentlyConnectedA2dpDevice() != null) {
+                isDeviceA2DP =
+                (device.getAddress().contains(mDatabaseManager.
+                        getMostRecentlyConnectedA2dpDevice().toString())) ? true : false;
+            }
+            Log.w(TAG, "isDeviceLE: " + isDeviceLE + " isDeviceA2DP:" + isDeviceA2DP);
+            if (profileId == BluetoothProfile.A2DP) {
+                if (!(isDualModeAudioEnabled() && isDeviceLE)) {
+                    Log.w(TAG, "processActiveDeviceChanged: received active device changed " +
+                               " for A2dp reset active status for LEA ");
+                    mDatabaseManager.resetActiveDevice(BluetoothProfile.LE_AUDIO);
+                }
             }
             mDatabaseManager.setConnection(device, profileId == BluetoothProfile.A2DP);
 
@@ -748,10 +765,12 @@ class PhonePolicy {
             if (isAospLeAudioEnabled && (profileId == BluetoothProfile.LE_AUDIO)) {
                 Log.w(TAG, "processActiveDeviceChanged: Calling " +
                            " setConnectionForLeAudio for device " + device);
-                Log.w(TAG, "processActiveDeviceChanged: received active device changed for LEA " +
-                           " reset active status for A2dp and HFP ");
-                mDatabaseManager.resetActiveDevice(BluetoothProfile.A2DP);
-                mDatabaseManager.resetActiveDevice(BluetoothProfile.HEADSET);
+                if(!(isDualModeAudioEnabled() && isDeviceA2DP)) {
+                    Log.w(TAG, "processActiveDeviceChanged: received active device changed " +
+                               " for LEA reset active status for A2dp and HFP ");
+                    mDatabaseManager.resetActiveDevice(BluetoothProfile.A2DP);
+                    mDatabaseManager.resetActiveDevice(BluetoothProfile.HEADSET);
+                }
                 mDatabaseManager.setConnectionForLeAudio(device);
             }
 
