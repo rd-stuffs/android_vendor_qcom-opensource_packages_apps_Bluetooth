@@ -2466,11 +2466,31 @@ public class LeAudioService extends ProfileService {
 
         @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
         private LeAudioService getService(AttributionSource source) {
-            Log.d(TAG, "BluetoothLeAudioBinder: getService()");
+            Log.d(TAG, "BluetoothLeAudioBinder::getService()");
+            if(Utils.checkServiceAvailable(mService, TAG)) {
+                Log.d(TAG, "getService(): Service is available");
+            } else {
+                Log.d(TAG, "getService(): Service is not available");
+            }
+            if(Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)) {
+                Log.d(TAG, "getService(): checkCallerIsSystemOrActiveOrManagedUser is true");
+            } else {
+                Log.d(TAG, "getService(): checkCallerIsSystemOrActiveOrManagedUser is false");
+            }
+            if(Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
+                Log.d(TAG, "getService(): checkConnectPermissionForDataDelivery is true");
+            } else {
+                Log.d(TAG, "getService(): checkConnectPermissionForDataDelivery is false");
+            }
             if (!Utils.checkServiceAvailable(mService, TAG)
                     || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
                     || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
                 return null;
+            }
+            if(mService == null) {
+                Log.d(TAG, "BluetoothLeAudioBinder::getService(): mService is null");
+            } else {
+                Log.d(TAG, "BluetoothLeAudioBinder::getService(): mService is not null");
             }
             return mService;
         }
@@ -2875,20 +2895,31 @@ public class LeAudioService extends ProfileService {
         @Override
         public void registerCallback(IBluetoothLeAudioCallback callback,
                 AttributionSource source, SynchronousResultReceiver receiver) {
+            Log.i(TAG, "registerCallback");
             try {
                 Objects.requireNonNull(callback, "callback cannot be null");
                 Objects.requireNonNull(source, "source cannot be null");
                 Objects.requireNonNull(receiver, "receiver cannot be null");
 
                 LeAudioService service = getService(source);
-                if ((service == null) || (service.mLeAudioCallbacks == null)) {
+                if(service == null) {
+                    Log.i(TAG, "registerCallback: service is null");
                     throw new IllegalStateException("Service is unavailable: " + service);
+                } else {
+                    Log.i(TAG, "registerCallback: service is NOT null");
+                    if(service.mLeAudioCallbacks == null) {
+                        Log.i(TAG, "registerCallback: service.mLeAudioCallbacks is null");
+                        throw new IllegalStateException("Service is unavailable: " + service);
+                    } else{
+                        Log.i(TAG, "registerCallback: service.mLeAudioCallbacks is NOT null");
+                    }
                 }
 
                 enforceBluetoothPrivilegedPermission(service);
                 service.mLeAudioCallbacks.register(callback);
                 receiver.send(null);
             } catch (RuntimeException e) {
+                Log.i(TAG, "registerCallback: catch exception");
                 receiver.propagateException(e);
             }
         }
