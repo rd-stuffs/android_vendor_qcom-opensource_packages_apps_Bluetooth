@@ -157,6 +157,8 @@ public class ActiveDeviceManager {
     private boolean mWiredDeviceConnected = false;
     private boolean mIsRecentPendingA2dpActiveDevice = false;
 
+    private static final int DELAY_A2DP_SLEEP_MILLIS = 50;
+
     Object mBroadcastService = null;
     Method mBroadcastIsActive = null;
     Method mBroadcastNotifyState = null;
@@ -248,6 +250,13 @@ public class ActiveDeviceManager {
                     int nextState = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
 
                     Log.d(TAG, "prevState: " + prevState + ", nextState: " + nextState);
+                    Log.d(TAG, "Thread sleep for " + DELAY_A2DP_SLEEP_MILLIS + "ms");
+                    try {
+                        Thread.sleep(DELAY_A2DP_SLEEP_MILLIS);
+                    } catch(InterruptedException ex) {
+                        Log.e(TAG, " MESSAGE_LE_AUDIO_ACTION_CONNECTION_STATE_CHANGED was interrupted");
+                        Thread.currentThread().interrupt();
+                    }
                     if (prevState == nextState) {
                         // Nothing has changed
                         Log.d(TAG, "prevState is same as nextState.");
