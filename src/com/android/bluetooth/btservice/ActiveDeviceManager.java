@@ -860,6 +860,8 @@ public class ActiveDeviceManager {
 
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
                    Log.d(TAG, "BLE Device is removed");
+                   Log.d(TAG, "Setting mLeAudioActiveDevice Null");
+                   mLeAudioActiveDevice = null;
                    hasRemovedBleDevice = true;
                    bleDeviceInfo = deviceInfo;
                 }
