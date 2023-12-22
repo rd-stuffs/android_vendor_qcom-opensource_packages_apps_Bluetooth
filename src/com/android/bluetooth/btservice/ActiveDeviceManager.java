@@ -259,6 +259,10 @@ public class ActiveDeviceManager {
                         }
                         if (mLeAudioActiveDevice != null) {
                             LeAudioService leAudioService = mFactory.getLeAudioService();
+                            if (leAudioService == null) {
+                                 Log.d(TAG, "LeAudioService is NULL");
+                                 break;
+                            }
                             int groupId = leAudioService.getGroupId(mLeAudioActiveDevice);
                             if (leAudioService.getGroupId(device) == groupId) {
                                 Log.d(TAG, "Lead device is already active");
