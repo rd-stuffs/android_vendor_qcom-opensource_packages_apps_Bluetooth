@@ -545,6 +545,30 @@ public class AdapterService extends Service {
         return mVendor.isSwbPmEnabled();
     }
 
+    public void sendPreferredAudioProfilesCallbackToApps(BluetoothDevice device,
+    Bundle preferredAudioProfiles, int status) {
+        if (mPreferredAudioProfilesCallbacks == null) {
+            return;
+        }
+
+        int n = mPreferredAudioProfilesCallbacks.beginBroadcast();
+        debugLog("sendPreferredAudioProfilesCallbackToApps() - Broadcasting audio profile "
+                + "change callback to device: " + device + " and status=" + status + " to " + n
+                + " receivers.");
+        for (int i = 0; i < n; i++) {
+            try {
+                mPreferredAudioProfilesCallbacks.getBroadcastItem(i)
+                        .onPreferredAudioProfilesChanged(device,
+                                preferredAudioProfiles,
+                                status);
+            } catch (RemoteException e) {
+                debugLog("sendPreferredAudioProfilesCallbackToApps() - Callback #" + i
+                        + " failed (" + e + ")");
+            }
+        }
+        mPreferredAudioProfilesCallbacks.finishBroadcast();
+    }
+
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
@@ -1890,6 +1914,13 @@ public class AdapterService extends Service {
 
     public int isLeAudioSupported() {
         if (BluetoothProperties.isProfileBapUnicastClientEnabled().orElse(false)) {
+            return BluetoothStatusCodes.FEATURE_SUPPORTED;
+        }
+        return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+    }
+
+    public int isHapClientSupported() {
+        if (BluetoothProperties.isProfileHapClientEnabled().orElse(false)) {
             return BluetoothStatusCodes.FEATURE_SUPPORTED;
         }
         return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
@@ -4712,7 +4743,8 @@ public class AdapterService extends Service {
             if (!isDualModeAudioEnabled()) {
                 return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
             }
-
+            
+            Log.i(TAG,"registerPreferredAudioProfilesChangedCallback");
             service.mPreferredAudioProfilesCallbacks.register(callback);
             return BluetoothStatusCodes.SUCCESS;
         }

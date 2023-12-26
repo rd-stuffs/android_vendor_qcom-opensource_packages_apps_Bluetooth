@@ -717,8 +717,12 @@ class PhonePolicy {
                 return;
             }
         }
-
         if (device != null) {
+           if (profileId == BluetoothProfile.A2DP) {
+                Log.w(TAG, "processActiveDeviceChanged: received active device changed for A2dp " +
+                           " reset active status for LEA ");
+               mDatabaseManager.resetActiveDevice(BluetoothProfile.LE_AUDIO);
+            }
             mDatabaseManager.setConnection(device, profileId == BluetoothProfile.A2DP);
 
             if (profileId == BluetoothProfile.HEADSET) {
@@ -733,6 +737,10 @@ class PhonePolicy {
             if (isAospLeAudioEnabled && (profileId == BluetoothProfile.LE_AUDIO)) {
                 Log.w(TAG, "processActiveDeviceChanged: Calling " +
                            " setConnectionForLeAudio for device " + device);
+                Log.w(TAG, "processActiveDeviceChanged: received active device changed for LEA " +
+                           " reset active status for A2dp and HFP ");
+                mDatabaseManager.resetActiveDevice(BluetoothProfile.A2DP);
+                mDatabaseManager.resetActiveDevice(BluetoothProfile.HEADSET);
                 mDatabaseManager.setConnectionForLeAudio(device);
             }
 
