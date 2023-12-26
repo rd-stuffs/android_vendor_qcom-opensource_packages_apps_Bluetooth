@@ -1164,7 +1164,7 @@ public class LeAudioService extends ProfileService {
                                             ActiveDeviceManagerServiceIntf.get();
         activeDeviceManager.setActiveDevice(device,
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
-        activeDeviceManager.setActiveDevice(device,
+        activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
         return true;
     }
@@ -1175,7 +1175,7 @@ public class LeAudioService extends ProfileService {
                                             ActiveDeviceManagerServiceIntf.get();
         activeDeviceManager.setActiveDeviceBlocking(device,
                                             ApmConstIntf.AudioFeatures.CALL_AUDIO);
-        activeDeviceManager.setActiveDeviceBlocking(device,
+        activeDeviceManager.setActiveDevice(device,
                                             ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
         return true;
     }
