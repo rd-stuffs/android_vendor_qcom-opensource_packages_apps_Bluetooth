@@ -103,6 +103,7 @@ import com.android.bluetooth.apm.ApmConst;
 import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.apm.CallControlIntf;
 import com.android.bluetooth.apm.ActiveDeviceManagerServiceIntf;
+import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.modules.utils.SynchronousResultReceiver;
 import com.android.bluetooth.cc.CCService;
 import com.android.bluetooth.acm.AcmService;
@@ -1474,6 +1475,19 @@ public class HeadsetService extends ProfileService {
                     + Utils.getUidPidString());
             return false;
         }
+
+        if(Utils.isDualModeAudioEnabled()) {
+            CallAudioIntf mCalAudio = CallAudioIntf.get();
+            if(mCalAudio != null && mCalAudio.isCsipDevice(device)) {
+                LeAudioService mLeAudio = LeAudioService.getLeAudioService();
+                if(mLeAudio != null) {
+                    int connPolicy = mLeAudio.getConnectionPolicy(device);
+                    if(connPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
+                        return false;
+                }
+            }
+        }
+
         synchronized (mStateMachines) {
             if (mAdapterService == null) {
                 Log.e(TAG, "mAdapterService is null");
@@ -2550,7 +2564,7 @@ public class HeadsetService extends ProfileService {
                         stateMachine.isDeviceBlacklistedForDelayingCLCCRespAfterVOIPCall()) {
                         // send delayed message for active device if Blacklisted
                         stateMachine.sendMessageDelayed(
-                        HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 1000); 
+                        HeadsetStateMachine.SEND_CLCC_RESP_AFTER_VOIP_CALL, 1000);
                     }
                }
             }

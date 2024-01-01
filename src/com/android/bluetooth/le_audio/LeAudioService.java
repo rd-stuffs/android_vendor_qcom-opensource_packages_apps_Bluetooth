@@ -61,6 +61,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.os.SystemProperties;
 
+import com.android.bluetooth.a2dp.A2dpService;
 import android.bluetooth.DeviceGroup;
 import android.bluetooth.BluetoothDeviceGroup;
 import com.android.bluetooth.CsipWrapper;
@@ -69,6 +70,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.hap.HapClientService;
+import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.lebroadcast.BassClientService;
@@ -489,7 +491,7 @@ public class LeAudioService extends ProfileService {
             }
         }
 
-        if (!mPtsTmapConfBandC && 
+        if (!mPtsTmapConfBandC &&
             mPtsMediaAndVoice == 2) {
             if (mCallAudio != null) {
                 Log.d(TAG, "connect(): Connecting call AUdio");
@@ -2077,9 +2079,37 @@ public class LeAudioService extends ProfileService {
             return false;
         }
         if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+            if(Utils.isDualModeAudioEnabled()) {
+                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                boolean isCsipDev = false;
+                if(mMediaAudio != null)
+                    isCsipDev = mMediaAudio.isCsipDevice(device);
+
+                A2dpService mA2dp = A2dpService.getA2dpService();
+                if(mA2dp != null && isCsipDev)
+                    mA2dp.disconnect(device);
+
+                HeadsetService mHfp = HeadsetService.getHeadsetService();
+                if(mHfp != null && isCsipDev)
+                    mHfp.disconnect(device);
+            }
             connect(device);
         } else if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
+            if (Utils.isDualModeAudioEnabled()) {
+                MediaAudioIntf mMediaAudio = MediaAudioIntf.get();
+                boolean isCsipDev = false;
+                if(mMediaAudio != null)
+                    isCsipDev = mMediaAudio.isCsipDevice(device);
+
+                A2dpService mA2dp = A2dpService.getA2dpService();
+                if(mA2dp != null && isCsipDev)
+                    mA2dp.connect(device);
+
+                HeadsetService mHfp = HeadsetService.getHeadsetService();
+                if(mHfp != null && isCsipDev)
+                    mHfp.connect(device);
+            }
         }
         setLeAudioGattClientProfilesPolicy(device, connectionPolicy);
         return true;

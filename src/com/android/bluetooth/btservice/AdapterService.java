@@ -573,7 +573,11 @@ public class AdapterService extends Service {
                         + " failed (" + e + ")");
             }
         }
-        mPreferredAudioProfilesCallbacks.finishBroadcast();
+        try {
+            mPreferredAudioProfilesCallbacks.finishBroadcast();
+        } catch (IllegalStateException e) {
+            debugLog("sendPreferredAudioProfilesCallbackToApps() - Exception " + e);
+        }
     }
 
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
@@ -4768,7 +4772,7 @@ public class AdapterService extends Service {
             if (!isDualModeAudioEnabled()) {
                 return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
             }
-            
+
             Log.i(TAG,"registerPreferredAudioProfilesChangedCallback");
             service.mPreferredAudioProfilesCallbacks.register(callback);
             return BluetoothStatusCodes.SUCCESS;
