@@ -42,10 +42,12 @@ import android.os.UserHandle;
 import android.util.Log;
 import com.android.bluetooth.a2dp.A2dpService;
 
+import com.android.bluetooth.apm.ApmConst;
 import com.android.bluetooth.apm.ApmConstIntf;
 import com.android.bluetooth.apm.ActiveDeviceManagerServiceIntf;
 import com.android.bluetooth.apm.CallAudioIntf;
 import com.android.bluetooth.cc.CCService;
+import com.android.bluetooth.acm.AcmService;
 
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -146,12 +148,14 @@ public class ActiveDeviceManager {
 
     private final List<BluetoothDevice> mA2dpConnectedDevices = new LinkedList<>();
     private final List<BluetoothDevice> mHfpConnectedDevices = new LinkedList<>();
+    private BluetoothDevice mSetRecentPendingA2dpActiveDevice = null;
     private BluetoothDevice mA2dpActiveDevice = null;
     private BluetoothDevice mHfpActiveDevice = null;
     private BluetoothDevice mHearingAidActiveDevice = null;
     private BluetoothDevice mLeAudioActiveDevice = null;
     private boolean mTwsPlusSwitch = false;
     private boolean mWiredDeviceConnected = false;
+    private boolean mIsRecentPendingA2dpActiveDevice = false;
 
     Object mBroadcastService = null;
     Method mBroadcastIsActive = null;
@@ -394,14 +398,43 @@ public class ActiveDeviceManager {
                         }
 
                         mA2dpConnectedDevices.add(device);
+
+                        CallAudioIntf mCallAudio = CallAudioIntf.get();
+
+                        int mCallActiveProfile =
+                                   getCurrentActiveProfile(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+
+                        ActiveDeviceManagerServiceIntf activeDeviceManager =
+                                                        ActiveDeviceManagerServiceIntf.get();
+                        BluetoothDevice mVoiceActiveDevice = null;
+                        AcmService acmService = AcmService.getAcmService();
+                        if (activeDeviceManager != null) {
+                            mVoiceActiveDevice =
+                               activeDeviceManager.getActiveDevice(ApmConstIntf.AudioFeatures.CALL_AUDIO);
+                        }
+                        Log.d(TAG, "mCallActiveProfile: " + mCallActiveProfile +
+                                   ", mVoiceActiveDevice: " + mVoiceActiveDevice);
+
                         if (mHearingAidActiveDevice == null) {
-                            // New connected device: select it as active
-                            setA2dpActiveDevice(device);
+                            if ((mCallActiveProfile == ApmConst.AudioProfiles.BAP_CALL) &&
+                                acmService != null && acmService.isAcmPlayingVoice(mVoiceActiveDevice)) {
+                                Log.d(TAG, "BAP_Call streaming is on-going, cache a2dp active");
+                                setPendingA2dpActiveDevice(device);
+                            } else {
+                               // New connected device: select it as active
+                               setA2dpActiveDevice(device);
+                            }
                             break;
                         } else {
                             if (!ApmConstIntf.getQtiLeAudioEnabled()) {
-                               setHearingAidActiveDevice(null);
-                               setA2dpActiveDevice(device);
+                                setHearingAidActiveDevice(null);
+                                if ((mCallActiveProfile == ApmConst.AudioProfiles.BAP_CALL) &&
+                                    acmService != null && acmService.isAcmPlayingVoice(mVoiceActiveDevice)) {
+                                    Log.d(TAG, "aosp lea, BAP_Call streaming is on-going, cache a2dp active");
+                                    setPendingA2dpActiveDevice(device);
+                                } else {
+                                    setA2dpActiveDevice(device);
+                                }
                             }
                         }
                         break;
@@ -1042,6 +1075,42 @@ public class ActiveDeviceManager {
         }
     }
 
+    private void setPendingA2dpActiveDevice(BluetoothDevice device) {
+        if (DBG) {
+            Log.d(TAG, "setPendingA2dpActiveDevice(" + device + ")");
+        }
+        mIsRecentPendingA2dpActiveDevice = true;
+        mSetRecentPendingA2dpActiveDevice = device;
+    }
+
+    public void resetPendingA2dpActiveDevice() {
+        if (DBG) {
+            Log.d(TAG, "resetPendingA2dpActiveDevice(): " +
+              "mIsRecentPendingA2dpActiveDevice: " + mIsRecentPendingA2dpActiveDevice +
+              " mSetRecentPendingA2dpActiveDevice: " + mSetRecentPendingA2dpActiveDevice);
+        }
+        if (mIsRecentPendingA2dpActiveDevice) {
+            mIsRecentPendingA2dpActiveDevice = false;
+        }
+        if (mSetRecentPendingA2dpActiveDevice != null) {
+            mSetRecentPendingA2dpActiveDevice = null;
+        }
+    }
+
+    public void triggerPendingA2dpActiveDevice() {
+        if (DBG) {
+            Log.d(TAG, "triggerPendingA2dpActiveDevice(): " +
+              "mIsRecentPendingA2dpActiveDevice: " + mIsRecentPendingA2dpActiveDevice +
+              " mSetRecentPendingA2dpActiveDevice: " + mSetRecentPendingA2dpActiveDevice);
+        }
+        if (mIsRecentPendingA2dpActiveDevice &&
+            mSetRecentPendingA2dpActiveDevice != null) {
+            setA2dpActiveDevice(mSetRecentPendingA2dpActiveDevice);
+            mIsRecentPendingA2dpActiveDevice = false;
+            mSetRecentPendingA2dpActiveDevice = null;
+        }
+    }
+
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     private boolean setLeAudioActiveDevice(BluetoothDevice device) {
         if (DBG) {
@@ -1077,6 +1146,7 @@ public class ActiveDeviceManager {
     private void resetState() {
         mA2dpConnectedDevices.clear();
         mA2dpActiveDevice = null;
+        resetPendingA2dpActiveDevice();
 
         mHfpConnectedDevices.clear();
         mHfpActiveDevice = null;
