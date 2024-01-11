@@ -259,6 +259,10 @@ public class ActiveDeviceManager {
                         }
                         if (mLeAudioActiveDevice != null) {
                             LeAudioService leAudioService = mFactory.getLeAudioService();
+                            if (leAudioService == null) {
+                                 Log.d(TAG, "LeAudioService is NULL");
+                                 break;
+                            }
                             int groupId = leAudioService.getGroupId(mLeAudioActiveDevice);
                             if (leAudioService.getGroupId(device) == groupId) {
                                 Log.d(TAG, "Lead device is already active");
@@ -860,6 +864,8 @@ public class ActiveDeviceManager {
 
                 if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLE_HEADSET) {
                    Log.d(TAG, "BLE Device is removed");
+                   Log.d(TAG, "Setting mLeAudioActiveDevice Null");
+                   mLeAudioActiveDevice = null;
                    hasRemovedBleDevice = true;
                    bleDeviceInfo = deviceInfo;
                 }
