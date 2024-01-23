@@ -457,6 +457,12 @@ class PhonePolicy {
         boolean isAospLeAudioEnabled = ApmConstIntf.getAospLeaEnabled();
         BassClientService bcService = mFactory.getBassClientService();
 
+        boolean isLeAudioProfileAllowed =
+                (leAudioService != null)
+                        && ArrayUtils.contains(uuids, BluetoothUuid.LE_AUDIO)
+                        && (leAudioService.getConnectionPolicy(device)
+                                != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+
         BluetoothDevice peerTwsDevice = null;
         if (mAdapterService.isTwsPlusDevice(device)) {
             peerTwsDevice = mAdapterService.getTwsPlusPeerDevice(device);
@@ -534,9 +540,15 @@ class PhonePolicy {
         if ((hearingAidService != null) && ArrayUtils.contains(uuids,
                 BluetoothUuid.HEARING_AID) && (hearingAidService.getConnectionPolicy(device)
                 == BluetoothProfile.CONNECTION_POLICY_UNKNOWN)) {
-            debugLog("setting hearing aid profile connection policy for device " + device);
-            mAdapterService.getDatabase().setProfileConnectionPolicy(device,
+            if (isLeAudioProfileAllowed) {
+                debugLog("LE Audio preferred over ASHA for device " + device);
+                mAdapterService.getDatabase().setProfileConnectionPolicy(device,
+                    BluetoothProfile.HEARING_AID, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+            } else {
+                debugLog("setting hearing aid profile connection policy for device " + device);
+                mAdapterService.getDatabase().setProfileConnectionPolicy(device,
                     BluetoothProfile.HEARING_AID, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            }
         }
 
         if (isAospLeAudioEnabled &&
