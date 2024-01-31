@@ -5777,6 +5777,15 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
+        if(Utils.isDualModeAudioEnabled()) {
+            ActiveDeviceManagerServiceIntf mActiveDeviceManager =
+                ActiveDeviceManagerServiceIntf.get();
+
+            if(mActiveDeviceManager != null) {
+                mActiveDeviceManager.handleInactiveProfileUpdate(device);
+            }
+        }
+
         boolean isQtiLeAudioEnabled = ApmConstIntf.getQtiLeAudioEnabled();
         Log.i(TAG, "disconnectAllEnabledProfiles(): isQtiLeAudioEnabled: " + isQtiLeAudioEnabled);
 
