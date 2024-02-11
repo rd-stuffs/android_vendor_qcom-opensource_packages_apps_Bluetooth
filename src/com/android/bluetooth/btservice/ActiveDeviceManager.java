@@ -285,7 +285,8 @@ public class ActiveDeviceManager {
                         }
                         int mMediaProfile =
                             getCurrentActiveProfile(ApmConstIntf.AudioFeatures.MEDIA_AUDIO);
-                        if (mMediaProfile == ApmConstIntf.AudioProfiles.A2DP) {
+                        if (mMediaProfile == ApmConstIntf.AudioProfiles.NONE ||
+                                    mMediaProfile == ApmConstIntf.AudioProfiles.A2DP) {
                             mLeAudioActiveDevice = null;
                            if (DBG) {
                               Log.d(TAG, "cuurent active profile is A2DP"
