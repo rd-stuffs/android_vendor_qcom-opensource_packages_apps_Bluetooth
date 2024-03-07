@@ -943,6 +943,8 @@ public class CsipSetCoordinatorService extends ProfileService {
                 if (getCoordinatedSet(setId, false) == null) {
                     Log.i(TAG, "Set " + setId + " removed completely");
                 }
+                mGroupScanner.stopSetDiscovery(setId,
+                    BluetoothDeviceGroup.DISCOVERY_STOPPED_BY_APPL);
                 return;
             }
         }
@@ -958,6 +960,8 @@ public class CsipSetCoordinatorService extends ProfileService {
                 if (getCoordinatedSet(setId, false) == null) {
                     Log.i(TAG, "Set " + setId + " removed completely");
                 }
+                mGroupScanner.stopSetDiscovery(setId,
+                    BluetoothDeviceGroup.DISCOVERY_STOPPED_BY_APPL);
             }
         }
     }
@@ -1022,12 +1026,20 @@ public class CsipSetCoordinatorService extends ProfileService {
         if (DBG) {
             Log.d(TAG, "onSetMemberFound setId: " + setId + ", device: " + device);
         }
+
+        boolean isValidEntry = false;
+
         for (DeviceGroup cSet: mCoordinatedSets) {
             if (cSet.getDeviceGroupId() == setId
                     && !cSet.getDeviceGroupMembers().contains(device)) {
                 cSet.getDeviceGroupMembers().add(device);
+                isValidEntry = true;
                 break;
             }
+        }
+        if (!isValidEntry) {
+          Log.e(TAG, "set not found or device is already present. inore it");
+          return;
         }
         sendSetMemberAvailableIntent(setId, device);
     }
@@ -1095,6 +1107,10 @@ public class CsipSetCoordinatorService extends ProfileService {
             Log.d(TAG, "onNewSetMemberFound: setId = " + setId + ", Device = " + device);
         }
         UUID puuid = setUuidMap.get(setId);
+        if (puuid == null) {
+          Log.e(TAG, "No pre-existing group for this device. Ignore the event");
+          return;
+        }
         // Required to group set members in UI
         addDevice(device, setId, new ParcelUuid(puuid));
         if (mAdapterService == null) {
