@@ -939,8 +939,10 @@ public class A2dpSinkService extends ProfileService {
     }
 
     public void onStartIndCallback(byte[] address) {
-        mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
+        if(mHeadsetClientService == null)
+            mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
         BluetoothDevice dev = getDevice(address);
+        BluetoothDevice callingDevice = mHeadsetClientService.getCallingDevice();
         if ( mHeadsetClientService!= null &&
                 mHeadsetClientService.IsHFPDisableInProgress(dev) == true) {
             Log.d(TAG, "HFP Disabling in Progress for device: "+dev);
@@ -950,12 +952,14 @@ public class A2dpSinkService extends ProfileService {
             mA2dpSinkStreamHandler.sendMessageDelayed(msg,HFP_DISABLING_TIMEOUT);
             return;
         }
-        if (mHeadsetClientService!= null && mHeadsetClientService.isA2dpSinkPossible() == false) {
-            if(mA2dpSinkVendor!= null){
-                Log.d(TAG, "Reject A2dpSink");
-                mA2dpSinkVendor.StartIndRsp (address, false);
+        if(dev != null && !dev.equals(callingDevice)) {
+            if (mHeadsetClientService!= null && mHeadsetClientService.isA2dpSinkPossible() == false) {
+                if(mA2dpSinkVendor!= null){
+                    Log.d(TAG, "Reject A2dpSink");
+                    mA2dpSinkVendor.StartIndRsp (address, false);
+                }
+                return;
             }
-            return;
         }
         BluetoothDevice device = getDevice(address);
         Log.d(TAG, "onStartIndCallback dev " + device + "streaming device" + mStreamingDevice);
