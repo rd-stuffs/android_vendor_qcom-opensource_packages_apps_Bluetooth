@@ -317,6 +317,12 @@ public class Config {
                     Log.i(TAG, " Profile " + config.mClass.getSimpleName() + " Not added ");
                     continue;
                 }
+                // ignore adding pbap service for targets where pbap client is enabled
+                if ((config.mClass.getSimpleName().equals("BluetoothPbapService")) &&
+                    mIsPbapClient) {
+                    Log.i(TAG, " Profile " + config.mClass.getSimpleName() + " Not added ");
+                    continue;
+                }
                 Log.v(TAG, "Adding " + config.mClass.getSimpleName());
                 profiles.add(config.mClass);
             }

@@ -788,7 +788,8 @@ public class A2dpSinkService extends ProfileService {
             } else if (device != null && !mIsSplitSink) {
                 mStreamingDevice = device;
             }
-            if (SystemProperties.get("ro.board.platform").equals("neo")) {
+            if (SystemProperties.get("ro.board.platform").equals("neo")
+               || SystemProperties.get("ro.board.platform").equals("neo61")) {
                 if (mAdapterService != null
                     && ArrayUtils.contains(mAdapterService.getRemoteUuids(device),
                                                    BluetoothUuid.MAS)) {
